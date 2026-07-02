@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Smart Society | Ticket Details</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="../styles/styles.css" />
+    <style>
+        /* Custom scrollbar for chat */
+        .chat-scroll::-webkit-scrollbar { width: 6px; }
+        .chat-scroll::-webkit-scrollbar-track { background: transparent; }
+        .chat-scroll::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 20px; }
+
+        /* Smooth fade-in for transitions */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+
+        /* Print Styles */
+        @media print {
+            header, #tab-messages, #content-messages, .action-bar, .back-btn { display: none !important; }
+            main { padding: 0 !important; margin: 0 !important; }
+            .shadow-sm { box-shadow: none !important; }
+            .border-slate-200 { border-color: #000 !important; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col bg-slate-50 text-slate-800 font-sans">
+
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex justify-between items-center">
+            <div class="flex items-center cursor-pointer" onclick="goHome()">
+                <div class="mr-3"><svg viewBox="0 0 100 100" class="w-8 h-8 rounded-md shadow-sm" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" fill="#000000"/><path d="M25 75 L50 25 L75 75" stroke="#ffffff" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                <div><h1 class="font-extrabold text-lg text-slate-900 tracking-tight leading-none">Smart Society</h1><p class="text-[9px] text-indigo-600 font-bold uppercase tracking-widest mt-0.5">Complaint Resolution</p></div>
+            </div>
+            <div class="flex items-center space-x-4 relative">
+                <button onclick="toggleNotifications()" class="relative flex items-center text-slate-500 hover:text-indigo-600 transition px-2 py-1.5 rounded-md hover:bg-slate-50">
+                    <div class="relative">
+                        <i class="fas fa-bell text-xl"></i>
+                        <span id="unreadBadge" class="absolute -top-1 -right-1 flex h-3 w-3 hidden">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-3 w-3 bg-rose-500 border-2 border-white"></span>
+                        </span>
+                    </div>
+                    <span class="hidden sm:inline-block ml-2 font-bold text-sm">Alerts</span>
+                </button>
+                <div class="h-6 w-px bg-slate-200 hidden sm:block"></div>
+                <div class="flex items-center gap-3 cursor-default">
+                    <div class="text-right hidden sm:block">
+                        <p class="text-sm font-bold text-slate-900 leading-tight" id="headerName"></p>
+                        <p class="text-[0.65rem] text-slate-500 font-bold uppercase tracking-wider mt-0.5" id="headerRole"></p>
+                    </div>
+                    <div class="w-8 h-8 rounded-md bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm border border-indigo-200" id="headerAvatar"></div>
+                </div>
+                <button onclick="logout()" class="text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition p-1.5 rounded-md ml-1" title="Sign Out"><i class="fas fa-sign-out-alt text-lg"></i></button>
+
+                <div id="notificationDropdown" class="hidden absolute right-0 top-12 w-80 bg-white border border-slate-200 rounded-lg shadow-xl z-50 max-h-96 overflow-y-auto">
+                    <div class="px-4 py-3 border-b border-slate-200 bg-slate-50 sticky top-0">
+                        <p class="font-bold text-sm text-slate-900">Notifications</p>
+                    </div>
+                    <div id="notifDropdownList" class="divide-y divide-slate-100"></div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full space-y-6">
+
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-4 md:px-6 rounded-xl border border-slate-200 shadow-sm">
+            <div class="flex items-center gap-4">
+                <button onclick="goHome()" title="Back to Dashboard" class="back-btn w-10 h-10 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition">
+                    <i class="fas fa-arrow-left text-lg"></i>
+                </button>
+
+                <div>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <h2 id="ticketIdDisplay" class="font-extrabold text-2xl text-slate-900 tracking-tight"></h2>
+                        <div class="h-5 w-px bg-slate-300 hidden sm:block"></div>
+                        <span id="statusPill" class="px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-widest"></span>
+                        <span id="priorityPill" class="px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-widest"></span>
+                    </div>
+                    <p id="ticketCategoryDisplay" class="text-sm text-slate-500 mt-1"></p>
+                </div>
+            </div>
+
+            <div id="actionBar" class="action-bar flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
+                </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <div class="lg:col-span-2 flex flex-col bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+
+                <div class="flex border-b border-slate-200 bg-slate-50/50 px-4 pt-4 gap-6 overflow-x-auto">
+                    <button onclick="switchTab('details')" id="tab-details" class="tab-btn pb-3 text-sm font-bold border-b-2 border-indigo-600 text-indigo-700 transition relative">
+                        <i class="fas fa-file-alt mr-2"></i> Overview & Media
+                    </button>
+                    <button onclick="switchTab('messages')" id="tab-messages" class="tab-btn pb-3 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition flex items-center">
+                        <i class="fas fa-comments mr-2"></i> Discussions
+                        <span id="msgCountBadge" class="ml-2 bg-indigo-100 text-indigo-700 py-0.5 px-2 rounded-full text-[10px]">0</span>
+                    </button>
+                </div>
+
+                <div class="flex-grow flex flex-col relative">
+
+                    <div id="content-details" class="p-6 space-y-8 animate-fade-in">
+                        <div>
+                            <h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3">Full Description</h3>
+                            <div id="ticketDescriptionDisplay" class="text-slate-700 text-sm leading-relaxed bg-slate-50 p-5 rounded-lg border border-slate-100 whitespace-pre-wrap"></div>
+                        </div>
+
+                        <div>
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Attached Evidence</h3>
+                                <button onclick="document.getElementById('residentMediaUpload').click()" class="text-xs bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 hover:border-indigo-200 px-3 py-1.5 rounded-md font-bold shadow-sm transition flex items-center">
+                                    <i class="fas fa-plus mr-1.5"></i> Add Media
+                                </button>
+                                <input type="file" id="residentMediaUpload" class="hidden" accept="image/*,video/*" onchange="handleMediaUpload(this)" />
+                            </div>
+
+                            <div id="mediaGallery" class="flex gap-4 overflow-x-auto pb-2">
+                                <div class="relative w-40 h-28 rounded-lg border border-slate-200 overflow-hidden group cursor-pointer shadow-sm flex-shrink-0">
+                                    <img src="https://images.unsplash.com/photo-1585909695284-32d2985ac9c0?auto=format&fit=crop&w=400&q=80" class="w-full h-full object-cover transition duration-300 transform group-hover:scale-105" alt="Evidence" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="content-messages" class="hidden flex-col h-[500px] animate-fade-in w-full">
+                        <div class="flex-grow p-6 overflow-y-auto chat-scroll bg-slate-50 space-y-6" id="chatContainer">
+                            </div>
+
+                        <div class="p-4 bg-white border-t border-slate-200">
+                            <form id="messageForm" class="flex gap-3 items-end">
+                                <div class="flex-grow relative">
+                                    <textarea id="chatInput" rows="2" class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none chat-scroll" placeholder="Type your message..." required></textarea>
+                                </div>
+                                <button type="submit" class="bg-slate-800 hover:bg-slate-900 text-white px-6 py-3 rounded-xl font-bold shadow-sm transition flex items-center gap-2 h-[52px]">
+                                    Send <i class="fas fa-paper-plane text-xs"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-6">
+
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
+                    <h3 class="text-sm font-extrabold text-slate-900 mb-5 pb-3 border-b border-slate-100">Ticket Details</h3>
+
+                    <div class="space-y-5">
+                        <div>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Logged By</p>
+                            <div class="flex items-center gap-3">
+                                <div id="loggedByInitials" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-xs"></div>
+                                <div>
+                                    <p id="loggedByName" class="text-sm font-bold text-slate-800"></p>
+                                    <p id="loggedByDate" class="text-xs text-slate-500"></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Category & Location</p>
+                            <p class="text-sm font-medium text-slate-800"><i class="fas fa-wrench w-4 text-slate-400 mr-1 text-center"></i> <span id="sideCategory"></span></p>
+                            <p class="text-sm font-medium text-slate-800 mt-1"><i class="fas fa-map-marker-alt w-4 text-slate-400 mr-1 text-center"></i> <span id="sideLocation"></span></p>
+                        </div>
+
+                        <div id="assignmentBlock" class="bg-indigo-50 border border-indigo-100 rounded-lg p-4">
+                            <p class="text-[10px] font-bold text-indigo-500 uppercase tracking-widest mb-2">Assigned To</p>
+                            <div class="flex items-center gap-3">
+                                <div id="assigneeInitials" class="w-8 h-8 rounded-md bg-white border border-indigo-200 text-indigo-700 flex items-center justify-center font-bold text-xs shadow-sm"></div>
+                                <div>
+                                    <p id="assigneeName" class="text-sm font-bold text-slate-900 leading-tight"></p>
+                                    <p class="text-[11px] font-medium text-indigo-600">Maintenance Staff</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
+                    <h3 class="text-sm font-extrabold text-slate-900 mb-5 pb-3 border-b border-slate-100">Activity Timeline</h3>
+                    <div id="timelineContainer" class="space-y-4">
+                        </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <div id="toast" class="fixed bottom-6 right-6 z-50 hidden flex items-center px-4 py-3 rounded-md shadow-lg border">
+        <i class="fas fa-info-circle mr-3 text-lg"></i>
+        <span id="toastMsg" class="font-medium text-sm"></span>
+    </div>
+
+    <script src="../js/store.js"></script>
+    <script src="../js/utils.js"></script>
+
+    <script>
+        let currentTicket = null;
+        let currentUser = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            currentUser = requireAuth();
+            if (!currentUser) return;
+
+            document.getElementById('headerName').textContent = currentUser.name;
+            document.getElementById('headerRole').textContent = currentUser.role + (currentUser.flat ? ` | ${currentUser.flat}` : '');
+            document.getElementById('headerAvatar').textContent = currentUser.name.charAt(0).toUpperCase();
+
+            const params = new URLSearchParams(window.location.search);
+            const ticketId = params.get('id');
+
+            if (!ticketId) {
+                showToast("No ticket ID provided.", "error");
+                setTimeout(goHome, 1000);
+                return;
+            }
+
+            currentTicket = store.complaints.find(c => c.id === ticketId);
+            if (!currentTicket) {
+                showToast("Ticket not found.", "error");
+                setTimeout(goHome, 1000);
+                return;
+            }
+
+            renderTicketData();
+            renderTimeline();
+            renderActionBar();
+
+            // Render Dynamic Chat (Demo + Actual Store)
+            renderStoredMessages();
+
+            switchTab('details');
+        });
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('border-indigo-600', 'text-indigo-700');
+                btn.classList.add('border-transparent', 'text-slate-500');
+            });
+
+            document.getElementById('content-details').style.display = 'none';
+            document.getElementById('content-messages').style.display = 'none';
+            document.getElementById('content-messages').classList.remove('flex');
+
+            const activeBtn = document.getElementById(`tab-${tabId}`);
+            activeBtn.classList.remove('border-transparent', 'text-slate-500');
+            activeBtn.classList.add('border-indigo-600', 'text-indigo-700');
+
+            const contentArea = document.getElementById(`content-${tabId}`);
+            if(tabId === 'messages') {
+                contentArea.style.display = 'flex';
+                const chatContainer = document.getElementById('chatContainer');
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            } else {
+                contentArea.style.display = 'block';
+            }
+        }
+
+        function renderTicketData() {
+            document.getElementById('ticketIdDisplay').textContent = currentTicket.id;
+            document.getElementById('ticketCategoryDisplay').textContent = currentTicket.subCategory;
+            document.getElementById('ticketDescriptionDisplay').textContent = currentTicket.description;
+
+            const statusPill = document.getElementById('statusPill');
+            statusPill.textContent = currentTicket.status;
+            if (['Closed', 'Resolved'].includes(currentTicket.status)) {
+                statusPill.className = "px-2.5 py-1 bg-emerald-100 text-emerald-800 border border-emerald-200 rounded text-[10px] font-bold uppercase tracking-widest";
+            } else if (currentTicket.status === 'Open' || currentTicket.status === 'Reopened') {
+                statusPill.className = "px-2.5 py-1 bg-sky-100 text-sky-800 border border-sky-200 rounded text-[10px] font-bold uppercase tracking-widest";
+            } else {
+                statusPill.className = "px-2.5 py-1 bg-amber-100 text-amber-800 border border-amber-200 rounded text-[10px] font-bold uppercase tracking-widest";
+            }
+
+            const prioPill = document.getElementById('priorityPill');
+            prioPill.textContent = currentTicket.priority + ' Priority';
+            if (currentTicket.priority === 'High') prioPill.className = "px-2.5 py-1 bg-rose-50 text-rose-700 border border-rose-200 rounded text-[10px] font-bold uppercase tracking-widest";
+            else if (currentTicket.priority === 'Medium') prioPill.className = "px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded text-[10px] font-bold uppercase tracking-widest";
+            else prioPill.className = "px-2.5 py-1 bg-slate-100 text-slate-700 border border-slate-200 rounded text-[10px] font-bold uppercase tracking-widest";
+
+            document.getElementById('loggedByName').textContent = currentTicket.resident;
+            document.getElementById('loggedByInitials').textContent = currentTicket.resident.split(' ')[0].charAt(0) + (currentTicket.resident.split(' ')[1]?.charAt(0) || '');
+            document.getElementById('loggedByDate').textContent = currentTicket.date;
+            document.getElementById('sideCategory').textContent = `${currentTicket.category} - ${currentTicket.subCategory}`;
+            document.getElementById('sideLocation').textContent = currentTicket.location;
+
+            const assignBlock = document.getElementById('assignmentBlock');
+            if (currentTicket.assignedTo) {
+                document.getElementById('assigneeName').textContent = currentTicket.assignedTo;
+                document.getElementById('assigneeInitials').textContent = currentTicket.assignedTo.split(' ').map(n=>n[0]).join('');
+                assignBlock.classList.remove('hidden');
+            } else {
+                assignBlock.classList.add('hidden');
+            }
+        }
+
+        function renderTimeline() {
+            const container = document.getElementById('timelineContainer');
+            container.innerHTML = '';
+            const history = [...currentTicket.history].reverse();
+
+            history.forEach((event, idx) => {
+                const isLatest = idx === 0;
+                const dotClass = isLatest ? 'bg-indigo-600 ring-4 ring-indigo-50' : 'bg-slate-300';
+                const html = `
+                    <div class="flex gap-4">
+                        <div class="flex flex-col items-center">
+                            <div class="w-3 h-3 rounded-full ${dotClass} flex-shrink-0 mt-1.5"></div>
+                            ${idx !== history.length - 1 ? '<div class="w-0.5 h-full bg-slate-200 my-1"></div>' : ''}
+                        </div>
+                        <div class="pb-4 flex-1">
+                            <p class="text-sm font-bold text-slate-900">${event.action}</p>
+                            <p class="text-xs text-slate-500 mt-0.5">${event.date}</p>
+                            ${event.remark ? `<p class="text-xs text-slate-600 mt-2 bg-slate-50 border border-slate-100 p-2 rounded">${event.remark}</p>` : ''}
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', html);
+            });
+        }
+
+        function renderActionBar() {
+            const actionBar = document.getElementById('actionBar');
+            let buttonsHTML = `<button onclick="window.print()" class="whitespace-nowrap px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 text-sm font-semibold shadow-sm transition flex items-center"><i class="fas fa-print mr-2 text-slate-400"></i> Print</button>`;
+
+            if (currentUser.role === 'Admin') {
+                buttonsHTML += `
+                    <button onclick="handleAdminAction('reassign')" class="whitespace-nowrap px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 text-sm font-semibold shadow-sm transition flex items-center"><i class="fas fa-exchange-alt mr-2 text-indigo-500"></i> Reassign</button>
+                    <button onclick="handleAdminAction('resolve')" class="whitespace-nowrap px-5 py-2.5 bg-indigo-600 border border-transparent text-white rounded-lg hover:bg-indigo-700 text-sm font-semibold shadow-sm transition flex items-center"><i class="fas fa-check-circle mr-2"></i> Close Ticket</button>
+                `;
+            }
+            else if (currentUser.role === 'Resident' && ['Open', 'Reopened'].includes(currentTicket.status)) {
+                buttonsHTML += `
+                    <button onclick="withdrawComplaint('${currentTicket.id}')" class="whitespace-nowrap px-5 py-2.5 bg-white border border-rose-200 text-rose-600 rounded-lg hover:bg-rose-50 text-sm font-semibold shadow-sm transition flex items-center"><i class="fas fa-times-circle mr-2"></i> Withdraw Request</button>
+                `;
+            }
+            else if (currentUser.role === 'Staff' && ['Assigned', 'In Progress'].includes(currentTicket.status)) {
+                buttonsHTML += `
+                    <button onclick="handleStaffAction('progress')" class="whitespace-nowrap px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 text-sm font-semibold shadow-sm transition flex items-center"><i class="fas fa-clipboard-list mr-2 text-amber-500"></i> Log Progress</button>
+                    <button onclick="handleStaffAction('complete')" class="whitespace-nowrap px-5 py-2.5 bg-emerald-600 border border-transparent text-white rounded-lg hover:bg-emerald-700 text-sm font-semibold shadow-sm transition flex items-center"><i class="fas fa-check mr-2"></i> Mark Complete</button>
+                `;
+            }
+            actionBar.innerHTML = buttonsHTML;
+        }
+
+        function handleAdminAction(action) {
+            if (action === 'reassign') {
+                const staff = prompt("Enter new staff member name:");
+                if (staff) {
+                    currentTicket.assignedTo = staff;
+                    currentTicket.history.push({ date: getFormattedDate(), action: 'Reassigned', remark: `Assigned to ${staff}` });
+                    showToast(`Ticket reassigned to ${staff}`);
+                    renderTicketData();
+                    renderTimeline();
+                }
+            } else if (action === 'resolve') {
+                if(confirm("Force close this ticket?")) {
+                    currentTicket.status = 'Closed';
+                    currentTicket.history.push({ date: getFormattedDate(), action: 'Ticket Closed by Admin' });
+                    showToast("Ticket closed.");
+                    renderTicketData();
+                    renderTimeline();
+                    renderActionBar();
+                }
+            }
+        }
+
+        function handleStaffAction(action) {
+            if (action === 'progress') {
+                const note = prompt("Enter progress notes:");
+                if(note) {
+                    currentTicket.history.push({ date: getFormattedDate(), action: 'Progress Logged', remark: note });
+                    showToast("Progress logged.");
+                    renderTimeline();
+                }
+            } else if (action === 'complete') {
+                if(confirm("Mark your work as complete?")) {
+                    currentTicket.status = 'Resolved';
+                    currentTicket.history.push({ date: getFormattedDate(), action: 'Work Completed by Staff' });
+                    showToast("Work marked complete.");
+                    renderTicketData();
+                    renderTimeline();
+                    renderActionBar();
+                }
+            }
+        }
+
+        function handleMediaUpload(input) {
+            if (input.files && input.files[0]) {
+                showToast("Uploading file...", "success");
+                setTimeout(() => {
+                    const gallery = document.getElementById('mediaGallery');
+                    const fileName = input.files[0].name;
+                    const newMediaHtml = `
+                        <div class="relative w-40 h-28 rounded-lg border border-slate-200 overflow-hidden group cursor-pointer shadow-sm bg-slate-100 flex items-center justify-center flex-shrink-0 animate-fade-in">
+                            <div class="text-center px-2">
+                                <i class="fas fa-file-image text-slate-400 text-3xl mb-2"></i>
+                                <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider truncate w-32">${fileName}</p>
+                            </div>
+                        </div>
+                    `;
+                    gallery.insertAdjacentHTML('beforeend', newMediaHtml);
+                    showToast("Media attached successfully!");
+                    input.value = "";
+                }, 800);
+            }
+        }
+
+        // --- Chat UI Engine ---
+
+        function renderStoredMessages() {
+            const chatContainer = document.getElementById('chatContainer');
+
+            // Initial Time Stamp Label
+            chatContainer.innerHTML = `
+                <div class="text-center my-4">
+                    <span class="bg-slate-200/60 text-slate-500 text-[10px] font-bold uppercase tracking-widest px-4 py-1.5 rounded-full">Ticket Logged - Oct 24</span>
+                </div>
+            `;
+
+            // 1. Array of Demo Messages
+            const demoMessages = [
+                { text: "Please send someone fast, the dripping is getting worse. I had to put a bucket underneath.", fromName: "John Doe", fromRole: "Resident", timeStr: "09:15 AM" },
+                { text: "Hi John, we have assigned Mike to this. He is currently checking flat 502 above you.", fromName: "Admin User", fromRole: "Admin", timeStr: "10:48 AM" },
+                { text: "Admin, the issue is indeed from 502. The washing machine pipe burst. I've turned off their water supply temporarily. Going down to 402 now to assess ceiling damage.", fromName: "Mike Smith", fromRole: "Staff", timeStr: "11:10 AM" }
+            ];
+
+            let count = 0;
+
+            // Render Demo Chat
+            demoMessages.forEach(msg => {
+                appendMessageHTML(msg.text, msg.fromName, msg.fromRole, msg.timeStr);
+                count++;
+            });
+
+            // 2. Add any messages from store.js backend
+            const storedMessages = store.getCaseMessages(currentTicket.id);
+            if(storedMessages.length > 0) {
+                storedMessages.forEach(msg => {
+                    const tStr = new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    appendMessageHTML(msg.text, msg.from, msg.fromRole, tStr);
+                    count++;
+                });
+            }
+
+            document.getElementById('msgCountBadge').textContent = count;
+        }
+
+        function appendMessageHTML(text, fromName, fromRole, timeStr) {
+            const chatContainer = document.getElementById('chatContainer');
+
+            // UNIVERSAL RULE: If the message matches my role/name, it goes on the RIGHT.
+            const isMe = (fromRole === currentUser.role) || (fromName === currentUser.name);
+
+            // Styling blocks
+            let bgClass, badgeClass, avatarClass;
+
+            if (isMe) {
+                // Formatting for MY messages (Right Side)
+                if(currentUser.role === 'Admin') { bgClass = 'bg-indigo-600 text-white border-transparent'; avatarClass = 'bg-indigo-700 text-white'; badgeClass='bg-indigo-500 text-white border-transparent';}
+                else if(currentUser.role === 'Staff') { bgClass = 'bg-amber-600 text-white border-transparent'; avatarClass = 'bg-amber-700 text-white'; badgeClass='bg-amber-500 text-white border-transparent';}
+                else { bgClass = 'bg-emerald-600 text-white border-transparent'; avatarClass = 'bg-emerald-700 text-white'; badgeClass='bg-emerald-500 text-white border-transparent';}
+            } else {
+                // Formatting for OTHER messages (Left Side)
+                bgClass = 'bg-white border-slate-200 text-slate-700';
+                if(fromRole === 'Admin') { avatarClass = 'bg-indigo-100 text-indigo-700'; badgeClass='bg-indigo-50 text-indigo-700 border-indigo-100'; }
+                else if(fromRole === 'Staff') { avatarClass = 'bg-amber-100 text-amber-700'; badgeClass='bg-amber-50 text-amber-700 border-amber-100'; }
+                else { avatarClass = 'bg-emerald-100 text-emerald-700'; badgeClass='bg-emerald-50 text-emerald-700 border-emerald-100'; }
+            }
+
+            const initials = fromName.split(' ').map(n=>n[0]).join('');
+
+            // Layout alignment based on `isMe` boolean
+            const layoutClass = isMe ? 'ml-auto flex-row-reverse' : '';
+            const headerReverse = isMe ? 'flex-row-reverse' : '';
+            const textAlignment = isMe ? 'items-end' : 'items-start';
+            const bubbleRadius = isMe ? 'rounded-tr-sm' : 'rounded-tl-sm';
+            const displayName = isMe ? 'You' : fromName;
+
+            const msgHtml = `
+                <div class="flex gap-4 max-w-2xl ${layoutClass} animate-fade-in mb-6">
+                    <div class="w-9 h-9 rounded-full ${avatarClass} flex items-center justify-center font-bold text-sm flex-shrink-0 shadow-sm">
+                        ${initials}
+                    </div>
+                    <div class="flex flex-col ${textAlignment}">
+                        <div class="flex items-baseline gap-2 mb-1.5 ${headerReverse}">
+                            <span class="text-sm font-bold text-slate-900">${displayName}</span>
+                            <span class="px-1.5 py-0.5 ${badgeClass} border rounded text-[9px] font-bold uppercase tracking-wider">${fromRole}</span>
+                            <span class="text-xs text-slate-400 mx-1">${timeStr}</span>
+                        </div>
+                        <div class="${bgClass} border p-4 rounded-2xl ${bubbleRadius} text-sm shadow-sm leading-relaxed text-left">
+                            ${text.replace(/\n/g, '<br>')}
+                        </div>
+                    </div>
+                </div>
+            `;
+            chatContainer.insertAdjacentHTML('beforeend', msgHtml);
+        }
+
+        // Submit form event
+        document.getElementById('messageForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if (text === '') return;
+
+            // 1. Save to store.js
+            store.addCaseMessage(currentTicket.id, currentUser.name, text, currentUser.role);
+
+            // 2. Append visually immediately
+            const tStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            appendMessageHTML(text, currentUser.name, currentUser.role, tStr);
+
+            input.value = '';
+
+            // Increment badge
+            const badge = document.getElementById('msgCountBadge');
+            badge.textContent = parseInt(badge.textContent) + 1;
+
+            // Scroll to bottom
+            const chatContainer = document.getElementById('chatContainer');
+            setTimeout(() => chatContainer.scrollTop = chatContainer.scrollHeight, 50);
+        });
+
+    </script>
+</body>
+</html>

@@ -1,6 +1,3 @@
-The repo returned a 404 — it may be **private**, which means I can't access it directly. No problem — I have everything I need to customize the guide for your team.
-
----
 
 ## Collaborative Git Development — Team Sputnik (MAY2026-Team-095)
 

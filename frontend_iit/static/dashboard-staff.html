@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Smart Society | Staff Workspace</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link rel="icon" type="image/svg+xml" href="../images/favicon.svg">
+</head>
+<body>
+    <div id="app" class="min-h-screen flex flex-col bg-slate-50">
+        <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex justify-between items-center">
+                <div class="flex items-center cursor-pointer" onclick="goHome()">
+                    <div class="mr-3"><img src="../images/logo.svg" alt="Smart Society Logo" class="w-8 h-8 rounded-md shadow-sm" /></div>
+                    <div><h1 class="font-extrabold text-lg text-slate-900 tracking-tight leading-none">Smart Society</h1><p class="text-[9px] text-indigo-600 font-bold uppercase tracking-widest mt-0.5">Complaint Resolution</p></div>
+                </div>
+                <div class="flex items-center space-x-4 relative">
+                    <button onclick="toggleNotifications()" class="relative flex items-center text-slate-500 hover:text-indigo-600 transition px-2 py-1.5 rounded-md hover:bg-slate-50">
+                        <div class="relative"><i class="fas fa-bell text-xl"></i><span id="unreadBadge" class="absolute -top-1 -right-1 flex h-3 w-3 hidden"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span><span class="relative inline-flex rounded-full h-3 w-3 bg-rose-500 border-2 border-white"></span></span></div>
+                        <span class="hidden sm:inline-block ml-2 font-bold text-sm">Alerts</span>
+                    </button>
+                    <div class="h-6 w-px bg-slate-200 hidden sm:block"></div>
+                    <div class="flex items-center gap-3 cursor-default">
+                        <div class="text-right hidden sm:block"><p class="text-sm font-bold text-slate-900 leading-tight" id="userName"></p><p class="text-[0.65rem] text-slate-500 font-bold uppercase tracking-wider mt-0.5" id="userRoleFlat"></p></div>
+                        <div class="w-8 h-8 rounded-md bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm border border-indigo-200" id="userAvatar">U</div>
+                    </div>
+                    <button onclick="logout()" class="text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition p-1.5 rounded-md ml-1" title="Sign Out"><i class="fas fa-sign-out-alt text-lg"></i></button>
+                </div>
+            </div>
+            
+            <nav class="bg-slate-50 border-t border-slate-200">
+                <!-- Dynamically injected navigation -->
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-6 overflow-x-auto" id="navTabs"></div>
+            </nav>
+        </header>
+        <main class="flex-grow p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full space-y-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div><h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Technician Workspace</h2><p class="text-sm text-slate-500 mt-1 font-medium" id="staffGreeting">Hello, . Manage your dispatched jobs.</p></div>
+            </div>
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div class="bg-white border border-slate-200 rounded-lg p-5 shadow-sm"><span class="text-[10px] text-amber-600 font-bold uppercase tracking-wider block mb-1">WIP</span><span class="text-3xl font-black text-amber-700" id="staffInProgress">0</span></div>
+                <div class="bg-white border border-slate-200 rounded-lg p-5 shadow-sm"><span class="text-[10px] text-emerald-600 font-bold uppercase tracking-wider block mb-1">Completed Jobs</span><span class="text-3xl font-black text-emerald-700" id="staffCompleted">0</span></div>
+            </div>
+            <div class="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+                <div class="px-5 py-4 border-b border-slate-200 bg-slate-50"><h3 class="font-bold text-sm text-slate-800 uppercase tracking-wide">My Active Queue</h3></div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-white border-b border-slate-200"><tr><th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Job ID</th><th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Location / Originator</th><th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Task Type</th><th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">SLA Priority</th><th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Current State</th><th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">Action</th></tr></thead>
+                        <tbody id="staffQueueBody" class="divide-y divide-slate-100 bg-white"></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+    <div id="toast" class="fixed bottom-6 right-6 z-50 hidden items-center px-4 py-3 rounded-md shadow-lg border bg-slate-900 border-slate-800 text-white">
+        <i class="fas fa-check-circle text-emerald-400 mr-3 text-lg"></i>
+        <span id="toastMsg" class="font-medium text-sm">Success</span>
+    </div>
+    
+    <script src="../js/store.js"></script>
+    <script src="../js/utils.js"></script>
+    <script>
+        (function() {
+            const user = requireAuth('Staff');
+            if (!user) return;
+            
+            document.getElementById('userName').textContent = user.name;
+            document.getElementById('userRoleFlat').textContent = user.role;
+            document.getElementById('userAvatar').textContent = user.name.charAt(0);
+            document.getElementById('staffGreeting').textContent = 'Hello, ' + user.name + '. Manage your dispatched jobs.';
+            
+            const staffName = user.name;
+            const myTasks = store.complaints.filter(c => c.assignedTo === staffName);
+            const active = myTasks.filter(c => ['Assigned','In Progress'].includes(c.status));
+            const completed = myTasks.filter(c => ['Resolved','Closed'].includes(c.status));
+            
+            document.getElementById('staffInProgress').textContent = active.filter(c => c.status === 'In Progress').length;
+            document.getElementById('staffCompleted').textContent = completed.length;
+            
+            const tbody = document.getElementById('staffQueueBody');
+            if (active.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="px-5 py-12 text-center text-slate-500 text-sm font-medium"><i class="fas fa-mug-hot text-3xl text-slate-300 mb-3 block"></i> No active jobs in queue.</td></tr>`;
+            } else {
+                active.forEach(c => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'hover:bg-slate-50 transition duration-150';
+                    tr.innerHTML = `
+                        <td class="px-5 py-4 whitespace-nowrap font-bold text-slate-800 text-sm">${c.id}</td>
+                        <td class="px-5 py-4"><span class="block text-sm font-bold text-slate-800">${c.location}</span><span class="text-[10px] text-slate-500 uppercase font-bold">${c.resident}</span></td>
+                        <td class="px-5 py-4 text-sm text-slate-700 font-medium">${c.category} - ${c.subCategory}</td>
+                        <td class="px-5 py-4 whitespace-nowrap"><span class="pri-${c.priority}">${c.priority}</span></td>
+                        <td class="px-5 py-4 whitespace-nowrap"><span class="status-pill status-${c.status.replace(' ','')}">${c.status}</span></td>
+                        <td class="px-5 py-4 whitespace-nowrap text-right">
+                            <!-- ROUTE UPDATED TO VIEWCOMPLAINT -->
+                            <button onclick="viewComplaint('${c.id}','dashboard-staff.html')" class="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 font-bold text-[10px] uppercase tracking-wide px-4 py-2 rounded-md transition shadow-sm">View & Log Work</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+            updateUnreadBadge();
+        })();
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            renderNav();
+        });
+    </script>
+</body>
+</html>

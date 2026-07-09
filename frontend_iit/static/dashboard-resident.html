@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Smart Society | Resident Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link rel="icon" type="image/svg+xml" href="../images/favicon.svg">
+</head>
+<body>
+    <div id="app" class="min-h-screen flex flex-col bg-slate-50">
+        <!-- Header -->
+        <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex justify-between items-center">
+            <div class="flex items-center cursor-pointer" onclick="goHome()">
+                <div class="mr-3"><img src="../images/logo.svg" alt="Smart Society Logo" class="w-8 h-8 rounded-md shadow-sm" /></div>
+                <div><h1 class="font-extrabold text-lg text-slate-900 tracking-tight leading-none">Smart Society</h1><p class="text-[9px] text-indigo-600 font-bold uppercase tracking-widest mt-0.5">Complaint Resolution</p></div>
+            </div>
+            <div class="flex items-center space-x-4 relative">
+                <button onclick="toggleNotifications()" class="relative flex items-center text-slate-500 hover:text-indigo-600 transition px-2 py-1.5 rounded-md hover:bg-slate-50">
+                    <div class="relative"><i class="fas fa-bell text-xl"></i><span id="unreadBadge" class="absolute -top-1 -right-1 flex h-3 w-3 hidden"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span><span class="relative inline-flex rounded-full h-3 w-3 bg-rose-500 border-2 border-white"></span></span></div>
+                    <span class="hidden sm:inline-block ml-2 font-bold text-sm">Alerts</span>
+                </button>
+                <div class="h-6 w-px bg-slate-200 hidden sm:block"></div>
+                <div class="flex items-center gap-3 cursor-default">
+                    <div class="text-right hidden sm:block"><p class="text-sm font-bold text-slate-900 leading-tight" id="userName"></p><p class="text-[0.65rem] text-slate-500 font-bold uppercase tracking-wider mt-0.5" id="userRoleFlat"></p></div>
+                    <div class="w-8 h-8 rounded-md bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm border border-indigo-200" id="userAvatar">U</div>
+                </div>
+                <button onclick="logout()" class="text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition p-1.5 rounded-md ml-1" title="Sign Out"><i class="fas fa-sign-out-alt text-lg"></i></button>
+            </div>
+        </div>
+        <nav class="bg-slate-50 border-t border-slate-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-6 overflow-x-auto" id="navTabs"><a href="dashboard-resident.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition"><i class="fas fa-home mr-1.5 text-base"></i> Portal</a><a href="support-contact.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition"><i class="fas fa-headset mr-1.5 text-base"></i> Support</a></div>
+        </nav>
+    </header>
+
+        <main class="flex-grow p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full space-y-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div><h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Resident Portal</h2><p class="text-sm text-slate-500 mt-1 font-medium">Track your service requests and facility updates.</p></div>
+                <button onclick="window.location.href='raise-complaint.html'" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold px-5 py-2.5 rounded-md shadow-sm transition flex items-center"><i class="fas fa-plus mr-2"></i> File New Request</button>
+            </div>
+
+            <!-- KPI -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6" id="residentStats">
+                <div class="bg-white border border-slate-200 rounded-lg p-5 shadow-sm"><h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Tickets Filed</h3><span class="text-3xl font-black text-slate-900" id="statTotal">0</span></div>
+                <div class="bg-white border border-slate-200 rounded-lg p-5 shadow-sm"><h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">In Progress</h3><span class="text-3xl font-black text-amber-600" id="statInProgress">0</span></div>
+                <div class="bg-white border border-slate-200 rounded-lg p-5 shadow-sm relative overflow-hidden" id="actionRequiredCard"><div id="actionRequiredBar" class="hidden absolute top-0 right-0 w-1.5 h-full bg-indigo-500"></div><h3 class="text-[10px] font-bold uppercase tracking-wider mb-2 text-slate-500" id="actionRequiredLabel">Action Required</h3><div class="flex items-end"><span class="text-3xl font-black text-slate-900" id="statActionRequired">0</span><span id="actionRequiredText" class="ml-2 text-xs text-indigo-600 font-bold mb-1 hidden">Verify Work</span></div></div>
+                <div class="bg-white border border-slate-200 rounded-lg p-5 shadow-sm"><h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Successfully Closed</h3><span class="text-3xl font-black text-emerald-600" id="statClosed">0</span></div>
+            </div>
+
+            <!-- Table -->
+            <div class="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+                <div class="px-5 py-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center"><h3 class="font-bold text-sm text-slate-800 uppercase tracking-wide">My Service Ledger</h3></div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-white border-b border-slate-200"><tr><th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider w-32">Ticket ID</th><th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Issue Details</th><th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Priority</th><th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Lifecycle Status</th><th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Date Logged</th><th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">Action</th></tr></thead>
+                        <tbody id="residentTableBody" class="divide-y divide-slate-100 bg-white"></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+    <div id="toast" class="fixed bottom-6 right-6 z-50 hidden items-center px-4 py-3 rounded-md shadow-lg border bg-slate-900 border-slate-800 text-white">
+        <i class="fas fa-check-circle text-emerald-400 mr-3 text-lg"></i>
+        <span id="toastMsg" class="font-medium text-sm">Success</span>
+    </div>
+    <script src="../js/store.js"></script>
+    <script src="../js/utils.js"></script>
+    <script>
+        (function() {
+            const user = requireAuth('Resident');
+            if (!user) return;
+            document.getElementById('userName').textContent = user.name;
+            document.getElementById('userRoleFlat').textContent = user.role + (user.flat ? ' | ' + user.flat : '');
+            document.getElementById('userAvatar').textContent = user.name.charAt(0);
+
+            // Compute resident's complaints (match by flat unit)
+            const flatCode = user.flat ? user.flat.split(' ')[1] : '';
+            const myComplaints = store.complaints.filter(c => c.resident.includes(flatCode) || c.resident.includes(user.name.split(' ')[0]));
+
+            // Stats
+            const total = myComplaints.length;
+            const inProgress = myComplaints.filter(c => ['In Progress','Assigned','Open','Reopened'].includes(c.status)).length;
+            const actionRequired = myComplaints.filter(c => c.status === 'Resolved').length;
+            const closed = myComplaints.filter(c => c.status === 'Closed').length;
+            document.getElementById('statTotal').textContent = total;
+            document.getElementById('statInProgress').textContent = inProgress;
+            document.getElementById('statActionRequired').textContent = actionRequired;
+            document.getElementById('statClosed').textContent = closed;
+            if (actionRequired > 0) {
+                document.getElementById('actionRequiredCard').classList.add('border-indigo-400', 'bg-indigo-50/30');
+                document.getElementById('actionRequiredLabel').classList.add('text-indigo-600');
+                document.getElementById('actionRequiredBar').classList.remove('hidden');
+                document.getElementById('actionRequiredText').classList.remove('hidden');
+                document.querySelector('#actionRequiredCard .text-3xl').classList.add('text-indigo-900');
+            }
+
+            // Table
+            const tbody = document.getElementById('residentTableBody');
+            if (myComplaints.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="px-5 py-12 text-center text-slate-500 text-sm font-medium"><i class="fas fa-folder-open text-3xl text-slate-300 mb-3 block"></i> No service requests found in your ledger.</td></tr>`;
+            } else {
+                myComplaints.forEach(c => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'hover:bg-slate-50 transition duration-150';
+                    const isResolved = c.status === 'Resolved';
+                    tr.innerHTML = `
+                        <td class="px-5 py-3 whitespace-nowrap font-bold text-slate-800 text-sm">${c.id}</td>
+                        <td class="px-5 py-3"><p class="text-sm font-bold text-slate-800">${c.category}</p><p class="text-xs text-slate-500 font-medium">${c.subCategory}</p></td>
+                        <td class="px-5 py-3 whitespace-nowrap"><span class="pri-${c.priority}">${c.priority}</span></td>
+                        <td class="px-5 py-3 whitespace-nowrap"><span class="status-pill status-${c.status.replace(' ','')}">${c.status}</span></td>
+                        <td class="px-5 py-3 whitespace-nowrap text-xs text-slate-600 font-medium">${c.date.split(' ')[0]}</td>
+                        <td class="px-5 py-3 whitespace-nowrap text-right">
+                            <button onclick="viewComplaint('${c.id}','dashboard-resident.html')" class="${isResolved ? 'text-indigo-600 bg-indigo-50 border border-indigo-200 hover:bg-indigo-600 hover:text-white' : 'text-slate-600 border border-slate-200 bg-white hover:bg-slate-50'} text-xs font-bold px-3 py-1.5 rounded-md transition shadow-sm">${isResolved ? 'Review Work' : 'View Details'}</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            // Update unread badge
+            updateUnreadBadge();
+        })();
+    </script>
+
+        <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const currentPath = window.location.pathname.split('/').pop();
+            document.querySelectorAll('.nav-link').forEach(link => {
+                if (link.getAttribute('href') === currentPath) {
+                    link.classList.add('border-indigo-600', 'text-indigo-700');
+                    link.classList.remove('border-transparent', 'text-slate-500');
+                }
+            });
+        });
+        </script>
+        </body>
+</html>

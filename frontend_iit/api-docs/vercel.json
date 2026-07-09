@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "headers": [
+    {
+      "source": "/openapi.yaml",
+      "headers": [
+        { "key": "Content-Type", "value": "text/yaml; charset=utf-8" },
+        { "key": "Access-Control-Allow-Origin", "value": "*" }
+      ]
+    }
+  ]
+}

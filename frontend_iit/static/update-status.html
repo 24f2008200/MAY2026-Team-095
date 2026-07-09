@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Smart Society | Update Job</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link rel="icon" type="image/svg+xml" href="../images/favicon.svg">
+</head>
+<body>
+    <div id="app" class="min-h-screen flex flex-col bg-slate-50">
+        <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex justify-between items-center">
+                <div class="flex items-center cursor-pointer" onclick="goHome()">
+                    <div class="mr-3"><img src="../images/logo.svg" alt="Smart Society Logo" class="w-8 h-8 rounded-md shadow-sm" /></div>
+                    <div><h1 class="font-extrabold text-lg text-slate-900 tracking-tight leading-none">Smart Society</h1><p class="text-[9px] text-indigo-600 font-bold uppercase tracking-widest mt-0.5">Complaint Resolution</p></div>
+                </div>
+                <div class="flex items-center space-x-4 relative">
+                    <button onclick="toggleNotifications()" class="relative flex items-center text-slate-500 hover:text-indigo-600 transition px-2 py-1.5 rounded-md hover:bg-slate-50">
+                        <div class="relative"><i class="fas fa-bell text-xl"></i><span id="unreadBadge" class="absolute -top-1 -right-1 flex h-3 w-3 hidden"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span><span class="relative inline-flex rounded-full h-3 w-3 bg-rose-500 border-2 border-white"></span></span></div>
+                        <span class="hidden sm:inline-block ml-2 font-bold text-sm">Alerts</span>
+                    </button>
+                    <div class="h-6 w-px bg-slate-200 hidden sm:block"></div>
+                    <div class="flex items-center gap-3 cursor-default">
+                        <div class="text-right hidden sm:block"><p class="text-sm font-bold text-slate-900 leading-tight" id="userName"></p><p class="text-[0.65rem] text-slate-500 font-bold uppercase tracking-wider mt-0.5" id="userRoleFlat"></p></div>
+                        <div class="w-8 h-8 rounded-md bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm border border-indigo-200" id="userAvatar">U</div>
+                    </div>
+                    <button onclick="logout()" class="text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition p-1.5 rounded-md ml-1" title="Sign Out"><i class="fas fa-sign-out-alt text-lg"></i></button>
+                </div>
+            </div>
+            
+            <nav class="bg-slate-50 border-t border-slate-200">
+                <!-- Replaced manual nav (which had "Logs" hardcoded) with dynamic rendering container -->
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-6 overflow-x-auto" id="navTabs"></div>
+            </nav>
+        </header>
+        
+        <main class="flex-grow p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full max-w-5xl space-y-6">
+            <div class="flex items-center space-x-4 mb-2">
+                <a href="dashboard-staff.html" class="w-8 h-8 rounded-md border border-slate-300 bg-white shadow-sm flex justify-center items-center text-slate-500 hover:text-slate-900 transition"><i class="fas fa-arrow-left text-sm"></i></a>
+                <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Execute Job</h2>
+            </div>
+            <div id="updateContent"></div>
+        </main>
+    </div>
+    
+    <div id="toast" class="fixed bottom-6 right-6 z-50 hidden items-center px-4 py-3 rounded-md shadow-lg border bg-slate-900 border-slate-800 text-white">
+        <i class="fas fa-check-circle text-emerald-400 mr-3 text-lg"></i>
+        <span id="toastMsg" class="font-medium text-sm">Success</span>
+    </div>
+
+    <script src="../js/store.js"></script>
+    <script src="../js/utils.js"></script>
+    <script>
+        (function() {
+            const user = requireAuth('Staff');
+            if (!user) return;
+            const params = new URLSearchParams(window.location.search);
+            const id = params.get('id');
+            
+            if (!id) { window.location.href = 'dashboard-staff.html'; return; }
+            
+            const comp = store.complaints.find(c => c.id === id);
+            if (!comp) { showToast('Ticket not found.', 'error'); setTimeout(() => window.history.back(), 1000); return; }
+            
+            const container = document.getElementById('updateContent');
+            container.innerHTML = `
+                <div class="flex flex-col lg:flex-row gap-6">
+                    <div class="lg:w-1/2 bg-white rounded-lg shadow-sm border border-slate-200 p-6 md:p-8">
+                        <h3 class="text-[10px] uppercase font-bold text-slate-400 mb-6 tracking-wider border-b border-slate-100 pb-3">Work Order Data</h3>
+                        <div class="grid grid-cols-[120px_1fr] gap-y-4 text-sm">
+                            <span class="font-bold text-slate-500">Task ID</span><span class="font-bold text-slate-900">${comp.id}</span>
+                            <span class="font-bold text-slate-500">Contact</span><span class="font-bold text-slate-700">${comp.resident}</span>
+                            <span class="font-bold text-slate-500">Trade Scope</span><span class="font-medium text-slate-700">${comp.category}</span>
+                            <span class="font-bold text-slate-500">Location</span><span class="font-bold text-slate-800">${comp.location}</span>
+                            <span class="font-bold text-slate-500 mt-2">Required Action</span>
+                            <div class="bg-slate-50 p-4 rounded-md border border-slate-200 text-slate-800 font-medium mt-1 leading-relaxed">${comp.description}</div>
+                        </div>
+                    </div>
+                    <div class="lg:w-1/2">
+                        <div class="bg-slate-50 rounded-lg shadow-inner border border-slate-200 p-6 md:p-8">
+                            <h3 class="font-bold text-sm text-slate-800 uppercase tracking-wide mb-5">Commit Progress</h3>
+                            <form id="updateForm">
+                                <div class="mb-5">
+                                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-2">State Transition <span class="text-rose-500">*</span></label>
+                                    <select id="statusSelect" class="form-select w-full border border-slate-300 p-2.5 rounded-md text-sm bg-white font-bold text-slate-800" required>
+                                        <option value="Assigned" disabled>Assigned (Awaiting Start)</option>
+                                        <option value="In Progress">Begin Work (In Progress)</option>
+                                        <option value="Resolved">Complete Task (Mark Resolved)</option>
+                                    </select>
+                                </div>
+                                <div class="mb-6">
+                                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-2">Completion Log <span class="text-rose-500">*</span></label>
+                                    <textarea id="remarkInput" rows="4" placeholder="Detail the actions taken..." class="form-textarea w-full border border-slate-300 p-3 rounded-md text-sm bg-white resize-none font-medium text-slate-700" required></textarea>
+                                </div>
+                                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-md shadow-sm transition text-sm">Commit State</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('updateForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const status = document.getElementById('statusSelect').value;
+                const remark = document.getElementById('remarkInput').value.trim();
+                
+                if (!remark) { showToast('Please enter a completion log.', 'error'); return; }
+                
+                comp.status = status;
+                const actionText = status === 'Resolved' ? 'Work Completed (Pending Sign-off)' : 'Status Update: In Progress';
+                comp.history.push({ date: getFormattedDate(), action: actionText, remark: remark });
+                
+                if (status === 'Resolved') {
+                    store.notifications.unshift({
+                        id: Date.now(),
+                        title: 'Ticket Resolved',
+                        text: comp.id + ' fixed. Awaiting resident verification.',
+                        time: 'Just now',
+                        read: false,
+                        type: 'ticket',
+                        icon: 'fas fa-ticket-alt text-indigo-500',
+                        ticketId: comp.id
+                    });
+                }
+                
+                showToast('Work order log updated.');
+                setTimeout(() => { window.location.href = 'dashboard-staff.html'; }, 800);
+            });
+        })();
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            renderNav();
+        });
+    </script>
+</body>
+</html>

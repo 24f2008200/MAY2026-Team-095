@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Smart Society | Login</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    
+    <link rel="stylesheet" href="assets/css/styles.css" />
+</head>
+<body>
+    <div id="app" class="min-h-screen flex flex-col bg-slate-50">
+        <main class="flex-grow w-full h-screen flex justify-center items-center">
+            <div class="bg-white shadow-xl rounded-none flex flex-col md:flex-row w-full h-full overflow-hidden border-0">
+                
+                <div class="w-full md:w-1/2 p-6 md:p-10 flex flex-col justify-center">
+                    <div class="mb-8">
+                        <h2 class="font-extrabold text-2xl text-slate-900 tracking-tight mb-1">Access Portal</h2>
+                        <p class="text-sm text-slate-500 font-medium">Sign in to the complaint resolution system.</p>
+                    </div>
+                    
+                    <form id="loginForm" class="space-y-5">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5">System ID / Username</label>
+                            <input id="loginUsername" type="text" placeholder="e.g., admin, resident" class="form-input w-full border border-slate-300 p-2.5 rounded-md text-sm text-slate-900 transition" required />
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-1.5">
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide">Password</label>
+                                <a href="static/forgot-password.html" id="recoverLink" class="text-xs text-indigo-600 hover:text-indigo-800 font-bold transition">Recover</a>
+                            </div>
+                            <input id="loginPassword" type="password" placeholder=" " class="form-input w-full border border-slate-300 p-2.5 rounded-md text-sm text-slate-900 transition" required />
+                        </div>
+                        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-md transition shadow-sm mt-2">Authenticate</button>
+                    </form>
+                    
+                    <div class="mt-8 text-center text-sm font-medium border-t border-slate-100 pt-6">
+                        <span class="text-slate-500">Unregistered resident?</span>
+                        <a href="static/register.html" class="text-indigo-600 font-bold hover:text-indigo-800 transition ml-1">Request Access</a>
+                    </div>
+                </div>
+                
+                <div class="w-full md:w-1/2 bg-slate-900 text-white p-8 md:p-12 relative overflow-hidden flex flex-col justify-between">
+                    <div class="absolute -right-20 -bottom-20 opacity-5 pointer-events-none">
+                        <i class="fas fa-city text-[300px]"></i>
+                    </div>
+                    
+                    <div class="relative z-10 mb-8">
+                        <div class="mb-6">
+                            <img src="images/logo.svg" alt="Smart Society Logo" class="w-12 h-12 rounded-lg shadow-md" />
+                        </div>
+                        <h3 class="font-extrabold text-2xl mb-3 leading-snug tracking-tight">Complaint Resolution System</h3>
+                        <p class="text-slate-400 text-sm leading-relaxed">A dedicated platform for residents and staff to seamlessly track, manage, and resolve all society maintenance issues.</p>
+                    </div>
+                    
+                    <div class="relative z-10 border-t border-slate-700 pt-6">
+                        <h4 class="text-[10px] uppercase tracking-widest text-slate-400 font-bold mb-4">Demo Access Credentials</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div class="bg-slate-800 p-3 rounded-md border border-slate-700">
+                                <span class="block text-[10px] text-blue-400 uppercase mb-1 font-bold">Administrator</span>
+                                <div class="text-xs font-mono text-slate-300">U: admin<br />P: admin123</div>
+                            </div>
+                            <div class="bg-slate-800 p-3 rounded-md border border-slate-700">
+                                <span class="block text-[10px] text-emerald-400 uppercase mb-1 font-bold">Resident</span>
+                                <div class="text-xs font-mono text-slate-300">U: resident<br />P: resident123</div>
+                            </div>
+                            <div class="bg-slate-800 p-3 rounded-md border border-slate-700 sm:col-span-2">
+                                <span class="block text-[10px] text-violet-400 uppercase mb-1 font-bold">Maintenance Staff</span>
+                                <div class="text-xs font-mono text-slate-300">U: maintenance<br />P: maintenance123</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="toast" class="fixed bottom-6 right-6 z-50 hidden items-center px-4 py-3 rounded-md shadow-lg border bg-slate-900 border-slate-800 text-white">
+        <i class="fas fa-check-circle text-emerald-400 mr-3 text-lg"></i>
+        <span id="toastMsg" class="font-medium text-sm">Success</span>
+    </div>
+
+    <script src="js/store.js"></script>
+    <script src="js/utils.js"></script>
+    
+    <script>
+        (function() {
+            if (typeof getCurrentUser === 'undefined') {
+                console.error("utils.js not loaded. Check file path (js/utils.js).");
+                return;
+            }
+
+            if (getCurrentUser()) {
+                const role = getCurrentUser().role;
+                if (role === 'Admin') window.location.href = 'static/dashboard-admin.html';
+                else if (role === 'Staff') window.location.href = 'static/dashboard-staff.html';
+                else window.location.href = 'static/dashboard-resident.html';
+                return;
+            }
+
+            const form = document.getElementById('loginForm');
+            const usernameInput = document.getElementById('loginUsername');
+            const passwordInput = document.getElementById('loginPassword');
+
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                // Adding .trim() directly limits spacing errors from user input
+                const u = usernameInput.value.toLowerCase().trim();
+                const p = passwordInput.value.trim();
+                let user = null;
+                
+                if (u === 'admin' && p === 'admin123') {
+                    user = { role: 'Admin', name: 'System Administrator' };
+                } 
+                else if (u === 'resident' && p === 'resident123') {
+                    user = { role: 'Resident', name: 'John Doe', flat: 'Unit B-101' };
+                } 
+                else if (u === 'maintenance' && p === 'maintenance123') {
+                    user = { role: 'Staff', name: 'Maintenance Team', trade: 'General Support' };
+                } 
+                else {
+                    // Added trailing trim to password field check so custom users work cleanly
+                    const foundStaff = store.staffList.find(staff => staff.username?.toLowerCase().trim() === u && staff.password?.trim() === p);
+                    if (foundStaff) {
+                        user = { role: 'Staff', name: foundStaff.name, trade: foundStaff.trade };
+                    }
+                }
+
+                if (user) {
+                    setCurrentUser(user);
+                    
+                    if (typeof showToast === 'function') {
+                        showToast('Authenticated successfully.');
+                    }
+                    
+                    setTimeout(() => {
+                        if (user.role === 'Admin') window.location.href = 'static/dashboard-admin.html';
+                        else if (user.role === 'Staff') window.location.href = 'static/dashboard-staff.html';
+                        else window.location.href = 'static/dashboard-resident.html';
+                    }, 300);
+                } else {
+                    if (typeof showToast === 'function') {
+                        showToast('Authentication failed. Verify credentials.', 'error');
+                    } else {
+                        alert('Authentication failed. Verify credentials.');
+                    }
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

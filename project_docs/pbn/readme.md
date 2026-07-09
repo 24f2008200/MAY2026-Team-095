@@ -228,6 +228,98 @@ git push origin feature/your-branch
 
 ---
 
+
+
+## One Jira Ticket = One Branch
+
+It means every branch you create should map to **exactly one Jira card (KAN-XX).**
+
+### Why this rule?
+
+If you work on multiple things in one branch, the PR becomes huge and hard to review. Keeping it one-to-one makes everything traceable.
+
+**✅ Correct approach:**
+```
+KAN-27 Implement and integrate the API
+  └── branch: feature/KAN-27-implement-api    ← only API integration code here
+
+KAN-28 Design extensive test cases
+  └── branch: feature/KAN-28-test-cases       ← only test code here
+```
+
+**❌ Wrong approach:**
+```
+branch: feature/pbn-stuff
+  └── API integration code +
+      test cases +
+      some UI fixes +
+      README updates       ← mixed work, messy PR, hard to review
+```
+
+### The flow looks like this:
+```
+Pick up KAN-27 in Jira (move to "In Progress")
+     ↓
+Create branch feature/KAN-27-implement-api
+     ↓
+Do the work, commit, push
+     ↓
+Raise PR mentioning KAN-27
+     ↓
+Merge → move KAN-27 to "Done" in Jira
+```
+
+---
+
+## Connecting Jira to GitHub
+
+**Yes — Jira and GitHub can be directly connected.** Once linked, commits and PRs automatically appear inside the Jira card.
+
+### How to connect:
+
+**On Jira side:**
+1. Go to **Jira → Project Settings → Toolchain** (or Apps)
+2. Search for **"GitHub for Jira"**
+3. Click **Connect GitHub**
+4. Authorize with your GitHub account
+5. Select the repo **MAY2026-Team-095**
+
+**On GitHub side:**
+1. Go to **https://github.com/24f2008200/MAY2026-Team-095**
+2. **Settings → Integrations → GitHub Apps**
+3. Approve the Jira connection request
+
+---
+
+### What happens after connecting:
+
+When anyone on the team writes a commit like:
+```bash
+git commit -m "feat: KAN-27 implement and integrate the API"
+```
+
+Inside **KAN-27 on Jira**, you'll automatically see:
+
+```
+🔗 Development
+   ✅ 1 commit       feat: KAN-27 implement and integrate the API
+   🔀 1 pull request  feature/KAN-27-implement-api → dev   (Open)
+   ✅ 1 branch        feature/KAN-27-implement-api
+```
+
+---
+
+### Benefits for Team Sputnik:
+
+| Benefit | What it means |
+|---------|--------------|
+| Commits visible in Jira | No need to manually update cards |
+| PR status shows in Jira | Everyone sees if code is under review |
+| Branch linked to ticket | Easy to trace who did what |
+| Automatic status updates | Some setups auto-move cards to "In Review" when a PR is raised |
+
+> The key is always **mentioning the KAN-XX number** in your commit messages and branch names — that's how Jira recognizes and links them automatically.
+
 > **Note on private repo:** If the repo is private and new members can't clone it, **pbn** (as the repo owner under `24f2008200`) needs to go to:
 > `GitHub → Settings → Collaborators → Add people`
 > and invite each member by their GitHub username.

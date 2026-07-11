@@ -1,37 +1,202 @@
+from marshmallow import ValidationError
 from flask import request
+from flask_jwt_extended import (
+    create_access_token,
+    get_jwt_identity,
+)
+from sqlalchemy.exc import IntegrityError
 from werkzeug.security import (
     generate_password_hash,
     check_password_hash,
 )
 
-# Later
-# from app.models import User
-# from app.extensions import db
-# from flask_jwt_extended import create_access_token
+from app.extensions import db
+from app.models.user import User, UserRole
+from app.schemas.auth_schema import (
+    RegisterSchema,
+    LoginSchema,
+)
+
+
+register_schema = RegisterSchema()
+login_schema = LoginSchema()
+
+
+def _user_response(user: User):
+    return {
+        "id": user.id,
+        "name": user.name,
+        "email": user.email,
+        "mobile_number": user.mobile_number,
+        "role": user.role.value,
+        "flat_number": user.flat_number,
+        "building": user.building,
+        "is_active": user.is_active,
+        "created_at": (
+            user.created_at.isoformat()
+            if user.created_at
+            else None
+        ),
+    }
 
 
 def register():
 
-    data = request.get_json()
+    json_data = request.get_json(silent=True)
+
+    if not json_data:
+        return {
+            "success": False,
+            "message": "Request body is required."
+        }, 400
+
+    try:
+        data = register_schema.load(json_data)
+
+    except ValidationError as err:
+        return {
+            "success": False,
+            "errors": err.messages
+        }, 400
+
+    existing_email = User.query.filter_by(
+        email=data["email"]
+    ).first()
+
+    if existing_email:
+        return {
+            "success": False,
+            "message": "Email already registered."
+        }, 409
+
+    existing_mobile = User.query.filter_by(
+        mobile_number=data["mobile_number"]
+    ).first()
+
+    if existing_mobile:
+        return {
+            "success": False,
+            "message": "Mobile number already registered."
+        }, 409
+
+    password_hash = generate_password_hash(
+        data["password"]
+    )
+
+    user = User(
+        name=data["name"].strip(),
+        email=data["email"].lower().strip(),
+        mobile_number=data["mobile_number"].strip(),
+        password_hash=password_hash,
+        role=UserRole.RESIDENT,
+        flat_number=data["flat_number"].strip(),
+        building=data["building"].strip(),
+        is_active=True,
+    )
+
+    try:
+
+        db.session.add(user)
+        db.session.commit()
+
+    except IntegrityError:
+
+        db.session.rollback()
+
+        return {
+            "success": False,
+            "message": "Unable to register user."
+        }, 500
+
+    access_token = create_access_token(
+        identity=str(user.id),
+        additional_claims={
+            "role": user.role.value,
+            "email": user.email,
+        },
+    )
 
     return {
-        "message": "Register API Ready",
-        "request": data
+        "success": True,
+        "message": "Registration successful.",
+        "access_token": access_token,
+        "user": _user_response(user),
     }, 201
 
 
 def login():
 
-    data = request.get_json()
+    json_data = request.get_json(silent=True)
+
+    if not json_data:
+        return {
+            "success": False,
+            "message": "Request body is required."
+        }, 400
+
+    try:
+        data = login_schema.load(json_data)
+
+    except ValidationError as err:
+        return {
+            "success": False,
+            "errors": err.messages
+        }, 400
+
+    user = User.query.filter_by(
+        email=data["email"].lower().strip()
+    ).first()
+
+    if not user:
+        return {
+            "success": False,
+            "message": "Invalid email or password."
+        }, 401
+
+    if not check_password_hash(
+        user.password_hash,
+        data["password"],
+    ):
+        return {
+            "success": False,
+            "message": "Invalid email or password."
+        }, 401
+
+    if not user.is_active:
+        return {
+            "success": False,
+            "message": "Account has been disabled."
+        }, 403
+
+    access_token = create_access_token(
+        identity=str(user.id),
+        additional_claims={
+            "role": user.role.value,
+            "email": user.email,
+        },
+    )
 
     return {
-        "message": "Login API Ready",
-        "request": data
+        "success": True,
+        "message": "Login successful.",
+        "access_token": access_token,
+        "user": _user_response(user),
     }, 200
 
 
 def profile():
 
+    user_id = get_jwt_identity()
+
+    user = User.query.get(user_id)
+
+    if not user:
+        return {
+            "success": False,
+            "message": "User not found."
+        }, 404
+
     return {
-        "message": "Profile API Ready"
+        "success": True,
+        "user": _user_response(user),
     }, 200

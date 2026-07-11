@@ -27,7 +27,15 @@ def create_app():
     app.config.from_object(Config)
 
     # Extensions
-    CORS(app)
+    # Extensions
+    CORS(
+    app,
+    resources={
+        r"/*": {
+            "origins": "*"
+        }
+    }
+)
 
     db.init_app(app)
     migrate.init_app(app, db)
@@ -35,12 +43,21 @@ def create_app():
 
     # Swagger
     api = Api(
-        app,
-        version="1.0",
-        title="Smart Society API",
-        description="Apartment Maintenance & Complaint Resolution System",
-        doc="/"
-    )
+    app,
+    version="1.0.0",
+    title="Smart Society API",
+    description="Apartment Maintenance & Complaint Resolution System",
+    doc="/",
+    authorizations={
+        "Bearer": {
+            "type": "apiKey",
+            "in": "header",
+            "name": "Authorization",
+            "description": "JWT Authorization Header. Example: Bearer <token>",
+        }
+    },
+    security="Bearer",
+)
 
     # Routes
     api.add_namespace(auth_ns, path="/auth")

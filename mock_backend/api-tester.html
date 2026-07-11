@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sputnik Smart Society — API Tester</title>
+<script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+<style>
+  :root{
+    --bg:#0f1420; --panel:#161d2e; --panel2:#1c2537; --border:#2a3550;
+    --text:#e7ecf5; --muted:#8b96ab; --accent:#5b8cff; --accent2:#3a6df0;
+    --ok:#3ecf8e; --err:#ff5d6c; --warn:#f5b942; --gold:#f5c451;
+    --mono:'SF Mono',Consolas,'Courier New',monospace;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:linear-gradient(180deg,#0b0f18,#0f1420 300px);
+    color:var(--text); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    min-height:100vh;
+  }
+  header{
+    padding:22px 28px; border-bottom:1px solid var(--border);
+    display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;
+  }
+  header h1{ font-size:19px; margin:0; font-weight:650; letter-spacing:.2px;}
+  header .sub{ color:var(--muted); font-size:13px;}
+  .layout{ display:grid; grid-template-columns:380px 1fr; gap:0; min-height:calc(100vh - 70px);}
+  @media (max-width:900px){ .layout{grid-template-columns:1fr;} }
+  .sidebar{
+    border-right:1px solid var(--border); padding:20px; display:flex; flex-direction:column; gap:16px;
+    background:rgba(255,255,255,0.01);
+  }
+  .field{ display:flex; flex-direction:column; gap:6px; }
+  label{ font-size:12px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:.4px;}
+  input[type=text], input[type=number], input[type=date], select, textarea{
+    background:var(--panel2); border:1px solid var(--border); color:var(--text);
+    padding:9px 10px; border-radius:8px; font-size:13.5px; font-family:inherit; width:100%;
+  }
+  textarea{ font-family:var(--mono); font-size:12.5px; resize:vertical; min-height:70px;}
+  input:focus, select:focus, textarea:focus{ outline:none; border-color:var(--accent); }
+  .row{ display:flex; gap:10px; }
+  .row > *{ flex:1; }
+  .endpoint-list{
+    flex:1; overflow-y:auto; border:1px solid var(--border); border-radius:10px; background:var(--panel);
+    max-height:calc(100vh - 420px); min-height:160px;
+  }
+  .group-label{
+    padding:8px 12px 4px; font-size:11px; color:var(--muted); text-transform:uppercase;
+    letter-spacing:.6px; font-weight:700; position:sticky; top:0; background:var(--panel);
+  }
+  .ep-item{
+    padding:9px 12px; cursor:pointer; display:flex; align-items:center; gap:8px;
+    border-left:2px solid transparent; font-size:13px;
+  }
+  .ep-item:hover{ background:var(--panel2); }
+  .ep-item.active{ background:#1e2a45; border-left-color:var(--accent); }
+  .method{
+    font-family:var(--mono); font-size:10.5px; font-weight:800; padding:2px 6px; border-radius:5px;
+    min-width:40px; text-align:center;
+  }
+  .m-GET{ background:#123a2c; color:#3ecf8e;}
+  .m-POST{ background:#123a55; color:#5b8cff;}
+  .m-PUT{ background:#4a3312; color:#f5b942;}
+  .m-DELETE{ background:#4a1620; color:#ff5d6c;}
+  .ep-path{ color:var(--text); opacity:.9; font-family:var(--mono); font-size:11.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .main{ padding:24px 28px; overflow-y:auto; }
+  .empty-state{ color:var(--muted); font-size:14px; padding-top:60px; text-align:center;}
+  .card{ background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:20px; margin-bottom:18px;}
+  .card h2{ margin:0 0 4px; font-size:16px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+  .card .path{ font-family:var(--mono); font-size:13px; color:var(--accent);}
+  .card p.desc{ color:var(--muted); font-size:13px; margin:6px 0 0;}
+  .section-title{ font-size:11.5px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); font-weight:700; margin:18px 0 10px;}
+  .fields-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px 16px;}
+  @media (max-width:640px){ .fields-grid{grid-template-columns:1fr;} }
+  .fields-grid .field.full{ grid-column:1 / -1; }
+  .checkbox-field{ display:flex; align-items:center; gap:8px; flex-direction:row !important; padding-top:18px;}
+  .checkbox-field input{ width:auto; }
+
+  /* --- primary / checksum-driving fields --- */
+  .field.primary label{ color:var(--gold); display:flex; align-items:center; gap:6px; }
+  .field.primary input[type=text], .field.primary input[type=number], .field.primary select{
+    border-color:var(--gold); background:#26200f;
+    box-shadow:0 0 0 1px rgba(245,185,66,0.25);
+  }
+  .field.primary input:focus, .field.primary select:focus{ border-color:var(--gold); box-shadow:0 0 0 2px rgba(245,185,66,0.35); }
+  .primary-badge{
+    font-size:9.5px; font-weight:800; letter-spacing:.3px; text-transform:none;
+    background:#3a2e0c; color:var(--gold); border:1px solid #5c4a15; border-radius:999px;
+    padding:1px 7px; white-space:nowrap;
+  }
+  .primary-hint{
+    font-size:11px; color:var(--gold); background:#20190a; border:1px solid #4a3a12;
+    border-radius:7px; padding:8px 10px; margin-top:-4px; line-height:1.5;
+  }
+  .primary-hint code{ background:#0a0d15; padding:1px 5px; border-radius:4px; color:#f5d98a; }
+  .override-card{
+    border:1px dashed #5c2b2b; background:#231213; border-radius:10px; padding:14px 16px; margin-top:16px;
+  }
+  .override-card .section-title{ margin-top:0; color:var(--err); }
+  .override-row{ display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; }
+  .override-row .field{ flex:1; min-width:160px; }
+  .override-row input{ border-color:#5c2b2b; }
+  .override-row input:focus{ border-color:var(--err); }
+  .btn{
+    background:var(--accent2); color:#fff; border:none; padding:10px 18px; border-radius:8px;
+    font-size:13.5px; font-weight:650; cursor:pointer; transition:background .15s;
+  }
+  .btn:hover{ background:var(--accent);}
+  .btn:disabled{ opacity:.5; cursor:not-allowed;}
+  .btn.secondary{ background:transparent; border:1px solid var(--border); color:var(--text);}
+  .btn.secondary:hover{ background:var(--panel2); }
+  .btn-row{ display:flex; gap:10px; margin-top:20px; align-items:center;}
+  .hint{ color:var(--muted); font-size:12px; }
+  .curl-box{
+    background:#0a0d15; border:1px solid var(--border); border-radius:8px; padding:12px;
+    font-family:var(--mono); font-size:12px; color:#a9c4ff; white-space:pre-wrap; word-break:break-all;
+    margin-top:8px;
+  }
+  .response-card{ border-color:#233; }
+  .status-badge{
+    font-family:var(--mono); font-weight:800; font-size:13px; padding:3px 10px; border-radius:6px;
+  }
+  .status-ok{ background:#123a2c; color:var(--ok);}
+  .status-err{ background:#3a1418; color:var(--err);}
+  .status-pending{ background:#2a2410; color:var(--warn);}
+  pre.response-body{
+    background:#0a0d15; border:1px solid var(--border); border-radius:8px; padding:14px;
+    font-family:var(--mono); font-size:12.5px; overflow-x:auto; max-height:480px; overflow-y:auto;
+    color:#d7e2f5; margin:10px 0 0;
+  }
+  .resp-meta{ display:flex; gap:16px; align-items:center; font-size:12.5px; color:var(--muted); flex-wrap:wrap;}
+  .resp-headers{ font-family:var(--mono); font-size:11.5px; color:var(--muted); margin-top:8px; line-height:1.6;}
+  .note{
+    font-size:12px; color:var(--warn); background:#241c0c; border:1px solid #4a3312; padding:10px 12px;
+    border-radius:8px; margin-top:14px;
+  }
+  ::-webkit-scrollbar{ width:9px; height:9px;}
+  ::-webkit-scrollbar-thumb{ background:#2a3550; border-radius:5px;}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>🛰 Sputnik Smart Society — API Tester</h1>
+    <span class="sub">Team-095 · MAY2026 · standalone Vue 2 test harness</span>
+  </header>
+
+  <div class="layout">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="field">
+        <label>Backend Base URL</label>
+        <input type="text" v-model="baseUrl" placeholder="http://localhost:8000/v1">
+      </div>
+      <div class="field">
+        <label>Bearer Token (optional)</label>
+        <input type="text" v-model="token" placeholder="paste JWT for authenticated calls">
+      </div>
+      <div class="field">
+        <label>Filter endpoints</label>
+        <input type="text" v-model="filterText" placeholder="search by path or summary">
+      </div>
+      <div class="endpoint-list">
+        <template v-for="tag in tags">
+          <div class="group-label" v-if="filteredByTag(tag).length">{{ tag }}</div>
+          <div
+            v-for="ep in filteredByTag(tag)"
+            :key="ep.id"
+            class="ep-item"
+            :class="{active: selected && selected.id === ep.id}"
+            @click="selectEndpoint(ep)">
+            <span class="method" :class="'m-' + ep.method">{{ ep.method }}</span>
+            <span class="ep-path">{{ ep.path }}</span>
+          </div>
+        </template>
+      </div>
+      <div class="hint">{{ endpoints.length }} endpoints loaded from the OpenAPI contract.</div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+      <div v-if="!selected" class="empty-state">
+        ← choose an endpoint on the left to build a request
+      </div>
+
+      <div v-else>
+        <div class="card">
+          <h2>
+            <span class="method" :class="'m-' + selected.method">{{ selected.method }}</span>
+            <span class="path">{{ selected.path }}</span>
+          </h2>
+          <p class="desc">{{ selected.summary }}</p>
+          <p class="desc" v-if="!selected.auth"><em>No auth required for this endpoint.</em></p>
+
+          <template v-if="selected.pathParams.length">
+            <div class="section-title">Path Parameters</div>
+            <div class="fields-grid">
+              <div
+                class="field"
+                :class="{primary: isPrimary(p.name)}"
+                v-for="p in selected.pathParams" :key="'path-'+p.name">
+                <label>{{ p.name }} <span class="primary-badge" v-if="isPrimary(p.name)">⚡ drives response</span></label>
+                <input type="text" v-model="form.path[p.name]">
+              </div>
+            </div>
+          </template>
+
+          <template v-if="selected.queryParams.length">
+            <div class="section-title">Query Parameters</div>
+            <div class="fields-grid">
+              <div class="field" v-for="q in selected.queryParams" :key="'q-'+q.name">
+                <label>{{ q.name }}</label>
+                <select v-if="q.type === 'select'" v-model="form.query[q.name]">
+                  <option value="">(none)</option>
+                  <option v-for="o in q.options" :key="o" :value="o">{{ o }}</option>
+                </select>
+                <input v-else type="text" v-model="form.query[q.name]">
+              </div>
+            </div>
+          </template>
+
+          <template v-if="selected.bodyFields.length">
+            <div class="section-title">{{ selected.contentType === 'multipart' ? 'Form Fields' : 'Request Body (JSON)' }}</div>
+            <div class="fields-grid">
+              <div
+                class="field"
+                :class="{full: f.type === 'textarea', 'checkbox-field': f.type === 'boolean', primary: isPrimary(f.name)}"
+                v-for="f in selected.bodyFields" :key="'b-'+f.name">
+                <template v-if="f.type === 'boolean'">
+                  <input type="checkbox" v-model="form.body[f.name]"> <label style="text-transform:none;font-weight:500;">{{ f.name }}</label>
+                </template>
+                <template v-else>
+                  <label>{{ f.name }} <span class="primary-badge" v-if="isPrimary(f.name)">⚡ drives response</span></label>
+                  <select v-if="f.type === 'select'" v-model="form.body[f.name]">
+                    <option v-for="o in f.options" :key="o" :value="o">{{ o }}</option>
+                  </select>
+                  <textarea v-else-if="f.type === 'textarea'" v-model="form.body[f.name]"></textarea>
+                  <input v-else :type="f.type === 'number' ? 'number' : (f.type === 'date' ? 'date' : 'text')" v-model="form.body[f.name]">
+                </template>
+              </div>
+            </div>
+          </template>
+
+          <div class="primary-hint" v-if="selected.primaryField" style="margin-bottom:4px;">
+            {{ primaryHintText }}
+          </div>
+
+          <template v-if="selected.fileFields.length">
+            <div class="section-title">File Fields (optional — dummy run skips these)</div>
+            <div class="fields-grid">
+              <div class="field" v-for="ff in selected.fileFields" :key="'file-'+ff.name">
+                <label>{{ ff.name }}{{ ff.multiple ? ' (multiple)' : '' }}</label>
+                <input type="file" :multiple="ff.multiple" @change="onFileChange($event, ff.name)">
+              </div>
+            </div>
+          </template>
+
+          <div class="override-card">
+            <div class="section-title">Force status override (bypasses checksum)</div>
+            <div class="override-row">
+              <div class="field">
+                <label>_status query param</label>
+                <input type="text" v-model="forceStatus" placeholder="e.g. 500, 403, 422">
+              </div>
+              <div class="hint" style="padding-bottom:9px;">
+                Works on <em>any</em> endpoint, even codes outside the spec — for negative-path testing of the frontend's error handling.
+              </div>
+            </div>
+          </div>
+
+          <div class="section-title">Preview curl</div>
+          <div class="curl-box">{{ curlPreview }}</div>
+          <div class="note">
+            Browser JS can't literally shell out to <code>curl</code> — clicking Send performs the equivalent
+            <code>fetch()</code> call from this page. Copy the curl text above if you want to run it from a terminal instead.
+          </div>
+
+          <div class="btn-row">
+            <button class="btn" :disabled="loading" @click="sendRequest">{{ loading ? 'Sending…' : 'Send Request' }}</button>
+            <button class="btn secondary" @click="resetForm">Reset dummy data</button>
+            <button class="btn secondary" @click="copyCurl">Copy curl</button>
+          </div>
+        </div>
+
+        <div class="card response-card" v-if="response || error || loading">
+          <h2>Response</h2>
+          <div v-if="loading" class="hint">Waiting for {{ baseUrl }}{{ resolvedPath }} …</div>
+          <div v-if="error" class="note" style="color:var(--err); border-color:#4a1420; background:#241012;">
+            {{ error }}
+          </div>
+          <div v-if="response">
+            <div class="resp-meta">
+              <span class="status-badge" :class="response.ok ? 'status-ok' : 'status-err'">
+                {{ response.status }} {{ response.statusText }}
+              </span>
+              <span>{{ response.timeMs }} ms</span>
+              <span>{{ response.url }}</span>
+            </div>
+            <div class="resp-headers" v-if="response.headers.length">
+              <div v-for="h in response.headers" :key="h[0]">{{ h[0] }}: {{ h[1] }}</div>
+            </div>
+            <pre class="response-body">{{ response.bodyPretty }}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---------------------------------------------------------------------------
+// Endpoint manifest — hand-derived from the Sputnik Smart Society OpenAPI spec
+// ---------------------------------------------------------------------------
+const STATUS_OPTS = ["Open","Assigned","In Progress","Resolved","Closed","Reopened"];
+const PRIORITY_OPTS = ["Low","Medium","High"];
+const ROLE_OPTS = ["Resident","Admin","MaintenanceStaff"];
+
+const ENDPOINTS = [
+  // ---- Auth ----
+  { id:'auth-register', tag:'Auth', method:'POST', path:'/auth/register', auth:false, contentType:'json',
+    primaryField:'email', documented:[201,409],
+    summary:'Register a new user (Resident, Admin, or Maintenance Staff)',
+    pathParams:[], queryParams:[], fileFields:[],
+    bodyFields:[
+      {name:'name', type:'text', default:'Mrs Pqrst'},
+      {name:'email', type:'text', default:'pqrst@example.com'},
+      {name:'mobileNumber', type:'text', default:'9876543210'},
+      {name:'password', type:'text', default:'Passw0rd!'},
+      {name:'role', type:'select', options:ROLE_OPTS, default:'Resident'},
+      {name:'flatNumber', type:'text', default:'B-101'},
+    ]},
+  { id:'auth-login', tag:'Auth', method:'POST', path:'/auth/login', auth:false, contentType:'json',
+    primaryField:'usernameOrEmail', documented:[200,401],
+    summary:'Login with username/email and password',
+    pathParams:[], queryParams:[], fileFields:[],
+    bodyFields:[
+      {name:'usernameOrEmail', type:'text', default:'pqrst@example.com'},
+      {name:'password', type:'text', default:'Passw0rd!'},
+    ]},
+  { id:'auth-forgot', tag:'Auth', method:'POST', path:'/auth/forgot-password', auth:false, contentType:'json',
+    summary:'Trigger a password reset email',
+    pathParams:[], queryParams:[], fileFields:[],
+    bodyFields:[ {name:'email', type:'text', default:'pqrst@example.com'} ]},
+
+  // ---- Users ----
+  { id:'users-me', tag:'Users', method:'GET', path:'/users/me', auth:true, contentType:'none',
+    summary:"Get the current logged-in user's profile",
+    pathParams:[], queryParams:[], bodyFields:[], fileFields:[] },
+
+  // ---- Categories ----
+  { id:'categories-list', tag:'Categories', method:'GET', path:'/categories', auth:true, contentType:'none',
+    summary:'Get complaint category/sub-category options',
+    pathParams:[], queryParams:[], bodyFields:[], fileFields:[] },
+
+  // ---- Resident Complaints ----
+  { id:'complaints-create', tag:'Resident Complaints', method:'POST', path:'/complaints', auth:true, contentType:'multipart',
+    primaryField:'description', documented:[201],
+    summary:'Raise a new complaint',
+    pathParams:[], queryParams:[],
+    bodyFields:[
+      {name:'category', type:'text', default:'Water Leakage'},
+      {name:'subCategory', type:'text', default:'Tap Leakage'},
+      {name:'priority', type:'select', options:PRIORITY_OPTS, default:'Medium'},
+      {name:'location', type:'text', default:'Bathroom / Lobby'},
+      {name:'description', type:'textarea', default:'Tap in the common bathroom is leaking continuously.'},
+    ],
+    fileFields:[ {name:'photos', multiple:true} ] },
+  { id:'complaints-list', tag:'Resident Complaints', method:'GET', path:'/complaints', auth:true, contentType:'none',
+    summary:"List complaints raised by the logged-in resident",
+    pathParams:[],
+    queryParams:[
+      {name:'status', type:'select', options:STATUS_OPTS, default:''},
+      {name:'category', type:'text', default:''},
+    ],
+    bodyFields:[], fileFields:[] },
+  { id:'complaints-get', tag:'Resident Complaints', method:'GET', path:'/complaints/{complaintId}', auth:true, contentType:'none',
+    primaryField:'complaintId', documented:[200,404],
+    summary:'Get complaint detail',
+    pathParams:[ {name:'complaintId', default:'C-1001'} ],
+    queryParams:[], bodyFields:[], fileFields:[] },
+  { id:'complaints-timeline', tag:'Resident Complaints', method:'GET', path:'/complaints/{complaintId}/timeline', auth:true, contentType:'none',
+    summary:'Get updates/comments timeline for a complaint',
+    pathParams:[ {name:'complaintId', default:'C-1001'} ],
+    queryParams:[], bodyFields:[], fileFields:[] },
+  { id:'complaints-attachments', tag:'Resident Complaints', method:'POST', path:'/complaints/{complaintId}/attachments', auth:true, contentType:'multipart',
+    summary:'Upload additional evidence photos/videos to an existing complaint',
+    pathParams:[ {name:'complaintId', default:'C-1001'} ],
+    queryParams:[], bodyFields:[],
+    fileFields:[ {name:'files', multiple:true} ] },
+  { id:'complaints-feedback', tag:'Resident Complaints', method:'POST', path:'/complaints/{complaintId}/feedback', auth:true, contentType:'json',
+    primaryField:'rating', documented:[200],
+    summary:'Confirm resolution and submit a star rating + feedback comment',
+    pathParams:[ {name:'complaintId', default:'C-1001'} ],
+    queryParams:[],
+    bodyFields:[
+      {name:'rating', type:'number', default:5},
+      {name:'comment', type:'textarea', default:'Fixed quickly, thank you!'},
+    ], fileFields:[] },
+
+  // ---- Admin ----
+  { id:'admin-summary', tag:'Admin Complaints', method:'GET', path:'/admin/dashboard/summary', auth:true, contentType:'none',
+    summary:'Admin dashboard counters', pathParams:[], queryParams:[], bodyFields:[], fileFields:[] },
+  { id:'admin-complaints-list', tag:'Admin Complaints', method:'GET', path:'/admin/complaints', auth:true, contentType:'none',
+    summary:'All Complaints table with filters', pathParams:[],
+    queryParams:[
+      {name:'status', type:'select', options:STATUS_OPTS, default:''},
+      {name:'category', type:'text', default:''},
+      {name:'priority', type:'select', options:PRIORITY_OPTS, default:''},
+      {name:'search', type:'text', default:''},
+    ], bodyFields:[], fileFields:[] },
+  { id:'admin-assign', tag:'Admin Complaints', method:'PUT', path:'/admin/complaints/{complaintId}/assign', auth:true, contentType:'json',
+    primaryField:'staffId', documented:[200],
+    summary:'Assign a complaint to a staff member',
+    pathParams:[ {name:'complaintId', default:'C-1001'} ], queryParams:[],
+    bodyFields:[
+      {name:'staffId', type:'text', default:'STF-01'},
+      {name:'status', type:'select', options:STATUS_OPTS, default:'Assigned'},
+      {name:'remarks', type:'textarea', default:'Assigning to plumbing team.'},
+    ], fileFields:[] },
+  { id:'admin-report', tag:'Admin Complaints', method:'GET', path:'/admin/complaints/report', auth:true, contentType:'none',
+    summary:'Generate/export All Complaints Report', pathParams:[],
+    queryParams:[
+      {name:'fromDate', type:'text', default:'2026-06-01'},
+      {name:'toDate', type:'text', default:'2026-07-11'},
+      {name:'status', type:'select', options:STATUS_OPTS, default:''},
+      {name:'format', type:'select', options:['json','csv','pdf'], default:'json'},
+    ], bodyFields:[], fileFields:[] },
+
+  // ---- Maintenance Staff ----
+  { id:'staff-summary', tag:'Staff Complaints', method:'GET', path:'/staff/dashboard/summary', auth:true, contentType:'none',
+    summary:'Staff dashboard counters', pathParams:[], queryParams:[], bodyFields:[], fileFields:[] },
+  { id:'staff-complaints-list', tag:'Staff Complaints', method:'GET', path:'/staff/complaints', auth:true, contentType:'none',
+    summary:'My Assigned Complaints list', pathParams:[],
+    queryParams:[ {name:'status', type:'select', options:STATUS_OPTS, default:''} ],
+    bodyFields:[], fileFields:[] },
+  { id:'staff-update-status', tag:'Staff Complaints', method:'PUT', path:'/staff/complaints/{complaintId}/status', auth:true, contentType:'multipart',
+    primaryField:'status', documented:[200],
+    summary:'Update complaint status with comment/photo evidence',
+    pathParams:[ {name:'complaintId', default:'C-1001'} ], queryParams:[],
+    bodyFields:[
+      {name:'status', type:'select', options:STATUS_OPTS, default:'In Progress'},
+      {name:'comment', type:'textarea', default:'Reached the site, checking the pipeline.'},
+    ],
+    fileFields:[ {name:'photos', multiple:true} ] },
+  { id:'staff-history', tag:'Staff Complaints', method:'GET', path:'/staff/complaints/history', auth:true, contentType:'none',
+    summary:'My Work History (completed complaints)', pathParams:[], queryParams:[], bodyFields:[], fileFields:[] },
+  { id:'staff-notif-prefs-get', tag:'Staff Complaints', method:'GET', path:'/staff/notification-preferences', auth:true, contentType:'none',
+    summary:'Get Staff Notification Preferences', pathParams:[], queryParams:[], bodyFields:[], fileFields:[] },
+  { id:'staff-notif-prefs-put', tag:'Staff Complaints', method:'PUT', path:'/staff/notification-preferences', auth:true, contentType:'json',
+    summary:'Update Staff Notification Preferences', pathParams:[], queryParams:[],
+    bodyFields:[
+      {name:'receiveViaEmail', type:'boolean', default:true},
+      {name:'receiveViaSms', type:'boolean', default:true},
+      {name:'receiveViaInApp', type:'boolean', default:true},
+      {name:'quietHoursFrom', type:'text', default:'11:00 PM'},
+      {name:'quietHoursTo', type:'text', default:'07:00 AM'},
+    ], fileFields:[] },
+
+  // ---- Notifications ----
+  { id:'notif-list', tag:'Notifications', method:'GET', path:'/notifications', auth:true, contentType:'none',
+    summary:'Notification Center feed for the logged-in user', pathParams:[],
+    queryParams:[ {name:'channel', type:'select', options:['All','Email','SMS','InApp'], default:'All'} ],
+    bodyFields:[], fileFields:[] },
+  { id:'notif-read-one', tag:'Notifications', method:'PUT', path:'/notifications/{notificationId}/read', auth:true, contentType:'none',
+    summary:'Mark a single notification as read',
+    pathParams:[ {name:'notificationId', default:'N-0001'} ], queryParams:[], bodyFields:[], fileFields:[] },
+  { id:'notif-read-all', tag:'Notifications', method:'PUT', path:'/notifications/read-all', auth:true, contentType:'none',
+    summary:'Mark all as read', pathParams:[], queryParams:[], bodyFields:[], fileFields:[] },
+  { id:'notif-settings-get', tag:'Notifications', method:'GET', path:'/notifications/settings', auth:true, contentType:'none',
+    summary:'Get Notification Settings', pathParams:[], queryParams:[], bodyFields:[], fileFields:[] },
+  { id:'notif-settings-put', tag:'Notifications', method:'PUT', path:'/notifications/settings', auth:true, contentType:'json',
+    summary:'Save Notification Settings', pathParams:[], queryParams:[],
+    bodyFields:[
+      {name:'emailAlerts', type:'boolean', default:true},
+      {name:'smsAlerts', type:'boolean', default:true},
+      {name:'inAppAlerts', type:'boolean', default:true},
+      {name:'complaintStatusUpdates', type:'select', options:['All','Important Only','None'], default:'All'},
+      {name:'newAssignmentAlerts', type:'select', options:['All','Important Only','None'], default:'All'},
+      {name:'marketingOptIn', type:'boolean', default:false},
+    ], fileFields:[] },
+];
+
+const TAG_ORDER = ['Auth','Users','Categories','Resident Complaints','Admin Complaints','Staff Complaints','Notifications'];
+
+new Vue({
+  el: '#app',
+  data: {
+    baseUrl: 'http://localhost:8000/v1',
+    token: '',
+    filterText: '',
+    endpoints: ENDPOINTS,
+    tags: TAG_ORDER,
+    selected: null,
+    form: { path:{}, query:{}, body:{}, files:{} },
+    forceStatus: '',
+    loading: false,
+    response: null,
+    error: null,
+  },
+  computed: {
+    resolvedPath(){
+      if(!this.selected) return '';
+      let p = this.selected.path;
+      this.selected.pathParams.forEach(pp => {
+        p = p.replace('{'+pp.name+'}', encodeURIComponent(this.form.path[pp.name] || ''));
+      });
+      return p;
+    },
+    queryString(){
+      if(!this.selected) return '';
+      const parts = [];
+      this.selected.queryParams.forEach(q => {
+        const v = this.form.query[q.name];
+        if(v !== '' && v !== undefined && v !== null){
+          parts.push(encodeURIComponent(q.name) + '=' + encodeURIComponent(v));
+        }
+      });
+      if(this.forceStatus !== ''){
+        parts.push('_status=' + encodeURIComponent(this.forceStatus));
+      }
+      return parts.length ? '?' + parts.join('&') : '';
+    },
+    primaryHintText(){
+      if(!this.selected || !this.selected.primaryField) return '';
+      const docs = (this.selected.documented || []).join(', ');
+      return `⚡ "${this.selected.primaryField}" drives the checksum that picks a response (documented: ${docs}). `
+        + `Append #0, #1, … to that value to force documented[index] deterministically, e.g. "value#1".`;
+    },
+    fullUrl(){
+      return (this.baseUrl || '').replace(/\/$/, '') + this.resolvedPath + this.queryString;
+    },
+    curlPreview(){
+      if(!this.selected) return '';
+      let cmd = `curl -X ${this.selected.method} '${this.fullUrl}'`;
+      if(this.selected.auth && this.token){
+        cmd += ` \\\n  -H 'Authorization: Bearer ${this.token}'`;
+      }
+      if(this.selected.contentType === 'json' && this.selected.bodyFields.length){
+        cmd += ` \\\n  -H 'Content-Type: application/json'`;
+        cmd += ` \\\n  -d '${JSON.stringify(this.form.body)}'`;
+      } else if(this.selected.contentType === 'multipart'){
+        this.selected.bodyFields.forEach(f => {
+          cmd += ` \\\n  -F '${f.name}=${this.form.body[f.name]}'`;
+        });
+        this.selected.fileFields.forEach(ff => {
+          cmd += ` \\\n  -F '${ff.name}=@/path/to/file'`;
+        });
+      }
+      return cmd;
+    }
+  },
+  methods: {
+    filteredByTag(tag){
+      const f = this.filterText.trim().toLowerCase();
+      return this.endpoints.filter(e => e.tag === tag &&
+        (!f || e.path.toLowerCase().includes(f) || e.summary.toLowerCase().includes(f)));
+    },
+    selectEndpoint(ep){
+      this.selected = ep;
+      this.response = null;
+      this.error = null;
+      this.forceStatus = '';
+      this.buildDummyForm();
+    },
+    isPrimary(fieldName){
+      return !!this.selected && this.selected.primaryField === fieldName;
+    },
+    buildDummyForm(){
+      const path = {}, query = {}, body = {}, files = {};
+      this.selected.pathParams.forEach(p => path[p.name] = p.default);
+      this.selected.queryParams.forEach(q => query[q.name] = q.default);
+      this.selected.bodyFields.forEach(b => body[b.name] = b.default);
+      this.form = { path, query, body, files };
+    },
+    resetForm(){ this.forceStatus = ''; this.buildDummyForm(); },
+    onFileChange(evt, fieldName){
+      this.form.files[fieldName] = Array.from(evt.target.files || []);
+    },
+    copyCurl(){
+      navigator.clipboard && navigator.clipboard.writeText(this.curlPreview);
+    },
+    async sendRequest(){
+      if(!this.selected) return;
+      this.loading = true;
+      this.response = null;
+      this.error = null;
+      const started = performance.now();
+      try {
+        const headers = {};
+        if(this.selected.auth && this.token){
+          headers['Authorization'] = 'Bearer ' + this.token;
+        }
+        let body;
+        if(this.selected.contentType === 'json' && this.selected.bodyFields.length){
+          headers['Content-Type'] = 'application/json';
+          body = JSON.stringify(this.form.body);
+        } else if(this.selected.contentType === 'multipart'){
+          const fd = new FormData();
+          this.selected.bodyFields.forEach(f => fd.append(f.name, this.form.body[f.name]));
+          this.selected.fileFields.forEach(ff => {
+            const list = this.form.files[ff.name] || [];
+            list.forEach(file => fd.append(ff.name, file));
+          });
+          body = fd; // browser sets multipart boundary automatically
+        }
+
+        const res = await fetch(this.fullUrl, {
+          method: this.selected.method,
+          headers,
+          body: (this.selected.method === 'GET') ? undefined : body,
+        });
+
+        const elapsed = Math.round(performance.now() - started);
+        const text = await res.text();
+        let pretty = text;
+        try { pretty = JSON.stringify(JSON.parse(text), null, 2); } catch(e) { /* not json, leave as text */ }
+
+        this.response = {
+          ok: res.ok,
+          status: res.status,
+          statusText: res.statusText,
+          url: res.url,
+          timeMs: elapsed,
+          headers: Array.from(res.headers.entries()),
+          bodyPretty: pretty || '(empty body)',
+        };
+      } catch(e) {
+        this.error = 'Request failed: ' + e.message + '. If the backend is running on a different origin, make sure it has CORS enabled for this page.';
+      } finally {
+        this.loading = false;
+      }
+    }
+  }
+});
+</script>
+</body>
+</html>

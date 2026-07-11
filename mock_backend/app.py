@@ -39,7 +39,30 @@ import fake_data as fd
 from checksum import resolve_status, error_body
 
 app = Flask(__name__)
-CORS(app)
+
+# ----------------------------------------------------------------------
+# CORS
+# ----------------------------------------------------------------------
+# The API tester is a standalone HTML file opened directly from disk
+# (file:///.../api-tester.html), so the browser sends `Origin: null` on
+# every request instead of a normal http(s) origin. It's also sometimes
+# opened via a LAN IP (e.g. http://192.168.1.65:5500) if served through
+# VS Code Live Server or similar. `origins="*"` covers all of these
+# (including "null") since we don't use cookies/credentials here.
+#
+# supports_credentials stays False on purpose: you can't combine
+# Access-Control-Allow-Origin: * with Access-Control-Allow-Credentials:
+# true, and this API takes its bearer token as an Authorization header,
+# not a cookie, so credentialed CORS isn't needed.
+CORS(
+    app,
+    resources={r"/v1/*": {"origins": "*"}},
+    supports_credentials=False,
+    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
+    expose_headers=["Content-Type"],
+    max_age=86400,
+)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
 logger = logging.getLogger("mock_backend")

@@ -1,3 +1,5 @@
+import os
+
 from flask import Flask
 from flask_cors import CORS
 from flask_restx import Api
@@ -18,6 +20,11 @@ from app.models import (
 
 # Routes
 from app.routes.auth_routes import auth_ns
+from app.routes.complaint_routes import complaint_ns
+from app.routes.category_routes import category_ns
+from app.routes.admin_routes import admin_ns
+from app.routes.staff_routes import staff_ns
+from app.routes.notification_routes import notification_ns
 
 
 def create_app():
@@ -61,5 +68,12 @@ def create_app():
 
     # Routes
     api.add_namespace(auth_ns, path="/auth")
+    api.add_namespace(complaint_ns, path="/complaints")
+    api.add_namespace(category_ns, path="/categories")
+    api.add_namespace(admin_ns, path="/admin")
+    api.add_namespace(staff_ns, path="/staff")
+    api.add_namespace(notification_ns, path="/notifications")
+
+    os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
     return app

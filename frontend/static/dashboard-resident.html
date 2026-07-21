@@ -4,14 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Smart Society | Resident Portal</title>
-    <script src="https://cdn.tailwindcss.com"></script>    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <script src="https://cdn.tailwindcss.com"></script>    
+    <link rel="stylesheet" href="../assets/css/styles.css" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <link rel="icon" type="image/svg+xml" href="../images/favicon.svg">
 </head>
 <body>
     <div id="app" class="min-h-screen flex flex-col bg-slate-50">
-        <!-- Header -->
         <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex justify-between items-center">
             <div class="flex items-center cursor-pointer" onclick="goHome()">
@@ -42,17 +42,36 @@
                 <button onclick="window.location.href='raise-complaint.html'" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold px-5 py-2.5 rounded-md shadow-sm transition flex items-center"><i class="fas fa-plus mr-2"></i> File New Request</button>
             </div>
 
-            <!-- KPI -->
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6" id="residentStats">
-                <div class="bg-white border border-slate-200 rounded-lg p-5 shadow-sm"><h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Tickets Filed</h3><span class="text-3xl font-black text-slate-900" id="statTotal">0</span></div>
-                <div class="bg-white border border-slate-200 rounded-lg p-5 shadow-sm"><h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">In Progress</h3><span class="text-3xl font-black text-amber-600" id="statInProgress">0</span></div>
-                <div class="bg-white border border-slate-200 rounded-lg p-5 shadow-sm relative overflow-hidden" id="actionRequiredCard"><div id="actionRequiredBar" class="hidden absolute top-0 right-0 w-1.5 h-full bg-indigo-500"></div><h3 class="text-[10px] font-bold uppercase tracking-wider mb-2 text-slate-500" id="actionRequiredLabel">Action Required</h3><div class="flex items-end"><span class="text-3xl font-black text-slate-900" id="statActionRequired">0</span><span id="actionRequiredText" class="ml-2 text-xs text-indigo-600 font-bold mb-1 hidden">Verify Work</span></div></div>
-                <div class="bg-white border border-slate-200 rounded-lg p-5 shadow-sm"><h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Successfully Closed</h3><span class="text-3xl font-black text-emerald-600" id="statClosed">0</span></div>
+            <!-- KPIs -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                <div class="bg-white border border-slate-200 rounded-lg p-5 shadow-sm"><h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Total Filed</h3><span class="text-3xl font-black text-slate-900" id="statTotal">0</span></div>
+                <div class="bg-white border border-slate-200 rounded-lg p-5 shadow-sm"><h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Active Work</h3><span class="text-3xl font-black text-amber-600" id="statInProgress">0</span></div>
+                <div class="bg-white border border-slate-200 rounded-lg p-5 shadow-sm relative overflow-hidden" id="actionRequiredCard"><div id="actionRequiredBar" class="hidden absolute top-0 right-0 w-1.5 h-full bg-indigo-500"></div><h3 class="text-[10px] font-bold uppercase tracking-wider mb-2 text-slate-500" id="actionRequiredLabel">Needs Review</h3><div class="flex items-end"><span class="text-3xl font-black text-slate-900" id="statActionRequired">0</span><span id="actionRequiredText" class="ml-2 text-xs text-indigo-600 font-bold mb-1 hidden">Resolved</span></div></div>
+                <div class="bg-white border border-slate-200 rounded-lg p-5 shadow-sm"><h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Completed</h3><span class="text-3xl font-black text-emerald-600" id="statClosed">0</span></div>
             </div>
 
-            <!-- Table -->
             <div class="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
-                <div class="px-5 py-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center"><h3 class="font-bold text-sm text-slate-800 uppercase tracking-wide">My Service Ledger</h3></div>
+                <div class="px-5 py-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+                    <h3 class="font-bold text-sm text-slate-800 uppercase tracking-wide">My Service Ledger</h3>
+                </div>
+                
+                <!-- Themed Filters -->
+                <div class="px-5 py-3 border-b border-slate-200 bg-white flex gap-3 items-center">
+                    <select id="statusFilter" onchange="renderDashboard()" class="bg-slate-50 border border-slate-300 text-slate-700 text-xs font-bold rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+                        <option value="All">All Statuses</option>
+                        <option value="Active">Active (Open/In Progress)</option>
+                        <option value="Resolved">Resolved (Needs Review)</option>
+                        <option value="Closed">Closed (Completed)</option>
+                    </select>
+                    <select id="dateFilter" onchange="renderDashboard()" class="bg-slate-50 border border-slate-300 text-slate-700 text-xs font-bold rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+                        <option value="All">All Time</option>
+                        <option value="07/2026">July 2026</option>
+                        <option value="06/2026">June 2026</option>
+                        <option value="05/2026">May 2026</option>
+                    </select>
+                    <button onclick="clearFilters()" class="text-xs text-slate-500 hover:text-indigo-600 font-bold transition ml-auto">Clear Filters</button>
+                </div>
+
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
                         <thead class="bg-white border-b border-slate-200"><tr><th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider w-32">Ticket ID</th><th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Issue Details</th><th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Priority</th><th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Lifecycle Status</th><th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Date Logged</th><th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">Action</th></tr></thead>
@@ -62,79 +81,175 @@
             </div>
         </main>
     </div>
-    <div id="toast" class="fixed bottom-6 right-6 z-50 hidden items-center px-4 py-3 rounded-md shadow-lg border bg-slate-900 border-slate-800 text-white">
-        <i class="fas fa-check-circle text-emerald-400 mr-3 text-lg"></i>
-        <span id="toastMsg" class="font-medium text-sm">Success</span>
+
+    <!-- Review Modal -->
+    <div id="reviewModal" class="fixed inset-0 bg-slate-900/50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden flex flex-col">
+            <div class="px-5 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                <h3 class="font-bold text-lg text-slate-800" id="modalTitle">Ticket Review</h3>
+                <button onclick="closeReviewModal()" class="text-slate-400 hover:text-rose-500 transition"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <div class="p-5" id="modalContent"></div>
+        </div>
     </div>
+
+    <div id="toast" class="fixed bottom-6 right-6 z-50 hidden items-center px-4 py-3 rounded-md shadow-lg border bg-slate-900 border-slate-800 text-white"><i class="fas fa-check-circle text-emerald-400 mr-3 text-lg"></i><span id="toastMsg" class="font-medium text-sm">Success</span></div>
+
     <script src="../js/store.js"></script>
     <script src="../js/utils.js"></script>
     <script>
-        (function() {
+        let currentUser = null;
+        
+        function clearFilters() {
+            document.getElementById('statusFilter').value = 'All';
+            document.getElementById('dateFilter').value = 'All';
+            renderDashboard();
+        }
+
+        function renderDashboard() {
             const user = requireAuth('Resident');
             if (!user) return;
+            currentUser = user;
+
             document.getElementById('userName').textContent = user.name;
             document.getElementById('userRoleFlat').textContent = user.role + (user.flat ? ' | ' + user.flat : '');
             document.getElementById('userAvatar').textContent = user.name.charAt(0);
 
-            // Compute resident's complaints (match by flat unit)
             const flatCode = user.flat ? user.flat.split(' ')[1] : '';
-            const myComplaints = store.complaints.filter(c => c.resident.includes(flatCode) || c.resident.includes(user.name.split(' ')[0]));
+            let myComplaints = store.complaints.filter(c => c.resident.includes(flatCode) || c.resident.includes(user.name.split(' ')[0]));
 
-            // Stats
+            // Update KPIs 
             const total = myComplaints.length;
             const inProgress = myComplaints.filter(c => ['In Progress','Assigned','Open','Reopened'].includes(c.status)).length;
-            const actionRequired = myComplaints.filter(c => c.status === 'Resolved').length;
-            const closed = myComplaints.filter(c => c.status === 'Closed').length;
+            const actionRequired = myComplaints.filter(c => c.status === 'Resolved' && !c.feedback).length;
+            const closed = myComplaints.filter(c => c.status === 'Closed' || (c.status === 'Resolved' && c.feedback)).length;
+            
             document.getElementById('statTotal').textContent = total;
             document.getElementById('statInProgress').textContent = inProgress;
             document.getElementById('statActionRequired').textContent = actionRequired;
             document.getElementById('statClosed').textContent = closed;
+
             if (actionRequired > 0) {
                 document.getElementById('actionRequiredCard').classList.add('border-indigo-400', 'bg-indigo-50/30');
                 document.getElementById('actionRequiredLabel').classList.add('text-indigo-600');
                 document.getElementById('actionRequiredBar').classList.remove('hidden');
                 document.getElementById('actionRequiredText').classList.remove('hidden');
                 document.querySelector('#actionRequiredCard .text-3xl').classList.add('text-indigo-900');
+            } else {
+                document.getElementById('actionRequiredCard').classList.remove('border-indigo-400', 'bg-indigo-50/30');
+                document.getElementById('actionRequiredLabel').classList.remove('text-indigo-600');
+                document.getElementById('actionRequiredBar').classList.add('hidden');
+                document.getElementById('actionRequiredText').classList.add('hidden');
+                document.querySelector('#actionRequiredCard .text-3xl').classList.remove('text-indigo-900');
             }
 
-            // Table
+            // Apply Filters 
+            const statusFilter = document.getElementById('statusFilter').value;
+            const dateFilter = document.getElementById('dateFilter').value; 
+
+            if (statusFilter !== 'All') {
+                if (statusFilter === 'Active') {
+                    myComplaints = myComplaints.filter(c => ['Open', 'Reopened', 'Assigned', 'In Progress'].includes(c.status));
+                } else {
+                    myComplaints = myComplaints.filter(c => c.status === statusFilter);
+                }
+            }
+
+            if (dateFilter !== 'All') {
+                myComplaints = myComplaints.filter(c => {
+                    const dateParts = c.date.split(' ')[0].split('/');
+                    return `${dateParts[1]}/${dateParts[2]}` === dateFilter;
+                });
+            }
+
             const tbody = document.getElementById('residentTableBody');
             if (myComplaints.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="px-5 py-12 text-center text-slate-500 text-sm font-medium"><i class="fas fa-folder-open text-3xl text-slate-300 mb-3 block"></i> No service requests found in your ledger.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="px-5 py-12 text-center text-slate-500 text-sm font-medium"><i class="fas fa-filter text-3xl text-slate-300 mb-3 block"></i> No requests match your current filters.</td></tr>`;
             } else {
+                tbody.innerHTML = '';
                 myComplaints.forEach(c => {
                     const tr = document.createElement('tr');
                     tr.className = 'hover:bg-slate-50 transition duration-150';
-                    const isResolved = c.status === 'Resolved';
+                    const canReview = (c.status === 'Resolved' || c.status === 'Closed');
+                    
                     tr.innerHTML = `
                         <td class="px-5 py-3 whitespace-nowrap font-bold text-slate-800 text-sm">${c.id}</td>
                         <td class="px-5 py-3"><p class="text-sm font-bold text-slate-800">${c.category}</p><p class="text-xs text-slate-500 font-medium">${c.subCategory}</p></td>
                         <td class="px-5 py-3 whitespace-nowrap"><span class="pri-${c.priority}">${c.priority}</span></td>
                         <td class="px-5 py-3 whitespace-nowrap"><span class="status-pill status-${c.status.replace(' ','')}">${c.status}</span></td>
                         <td class="px-5 py-3 whitespace-nowrap text-xs text-slate-600 font-medium">${c.date.split(' ')[0]}</td>
-                        <td class="px-5 py-3 whitespace-nowrap text-right">
-                            <button onclick="viewComplaint('${c.id}','dashboard-resident.html')" class="${isResolved ? 'text-indigo-600 bg-indigo-50 border border-indigo-200 hover:bg-indigo-600 hover:text-white' : 'text-slate-600 border border-slate-200 bg-white hover:bg-slate-50'} text-xs font-bold px-3 py-1.5 rounded-md transition shadow-sm">${isResolved ? 'Review Work' : 'View Details'}</button>
+                        <td class="px-5 py-3 whitespace-nowrap text-right flex justify-end gap-2">
+                            <button onclick="viewComplaint('${c.id}','dashboard-resident.html')" class="text-slate-600 border border-slate-200 bg-white hover:bg-slate-50 text-xs font-bold px-3 py-1.5 rounded-md transition shadow-sm">Details</button>
+                            ${canReview ? `
+                                <button onclick="openReviewModal('${c.id}')" class="${c.feedback ? 'text-slate-600 bg-slate-100 border-slate-200 hover:bg-slate-200' : 'text-indigo-600 bg-indigo-50 border-indigo-200 hover:bg-indigo-600 hover:text-white'} border text-xs font-bold px-3 py-1.5 rounded-md transition shadow-sm">
+                                    ${c.feedback ? 'View Review' : 'Add Review'}
+                                </button>
+                            ` : ''}
                         </td>
                     `;
                     tbody.appendChild(tr);
                 });
             }
-
-            // Update unread badge
             updateUnreadBadge();
-        })();
-    </script>
+        }
 
-        <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const currentPath = window.location.pathname.split('/').pop();
-            document.querySelectorAll('.nav-link').forEach(link => {
-                if (link.getAttribute('href') === currentPath) {
-                    link.classList.add('border-indigo-600', 'text-indigo-700');
-                    link.classList.remove('border-transparent', 'text-slate-500');
+        window.currentTicketId = null;
+        window.currentRating = 0;
+
+        window.openReviewModal = function(id) {
+            window.currentTicketId = id;
+            const complaint = store.complaints.find(c => c.id === id);
+            const content = document.getElementById('modalContent');
+            document.getElementById('modalTitle').textContent = `Review Ticket ${id}`;
+
+            if (complaint.feedback) {
+                let starsHtml = '';
+                for(let i = 1; i <= 5; i++) {
+                    starsHtml += i <= parseInt(complaint.feedback.rating) ? '<i class="fas fa-star text-amber-400 text-xl"></i>' : '<i class="far fa-star text-slate-200 text-xl"></i>';
                 }
-            });
-        });
-        </script>
-        </body>
+                content.innerHTML = `
+                    <div class="mb-4"><label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Service Description</label><p class="text-sm text-slate-700 bg-slate-50 p-3 rounded-md border border-slate-200">${complaint.description}</p></div>
+                    <div class="mb-4"><label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Your Rating</label><div class="flex gap-1 mt-1">${starsHtml}</div></div>
+                    <div><label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Your Comment</label><p class="text-sm text-slate-700 italic bg-slate-50 p-3 rounded-md border border-slate-200">"${complaint.feedback.comment}"</p></div>
+                `;
+            } else {
+                window.currentRating = 0;
+                content.innerHTML = `
+                    <div class="mb-4"><label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Service Description</label><p class="text-sm text-slate-700 bg-slate-50 p-3 rounded-md border border-slate-200">${complaint.description}</p></div>
+                    <div class="mb-5"><label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Rate the Service</label><div class="flex gap-2" id="starContainer">${[1, 2, 3, 4, 5].map(i => `<i class="far fa-star text-2xl text-slate-300 cursor-pointer hover:text-amber-400 transition" onclick="setRating(${i})" id="star-${i}"></i>`).join('')}</div></div>
+                    <div class="mb-5"><label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Add a Comment</label><textarea id="reviewComment" class="w-full border border-slate-300 rounded-md p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" rows="3" placeholder="Tell us how the maintenance team did..."></textarea></div>
+                    <button onclick="submitReview()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-md transition shadow-sm">Submit Review</button>
+                `;
+            }
+            document.getElementById('reviewModal').classList.remove('hidden');
+        };
+
+        window.setRating = function(rating) {
+            window.currentRating = rating;
+            for(let i = 1; i <= 5; i++) {
+                const star = document.getElementById(`star-${i}`);
+                if(i <= rating) { star.classList.replace('far', 'fas'); star.classList.replace('text-slate-300', 'text-amber-400'); } 
+                else { star.classList.replace('fas', 'far'); star.classList.replace('text-amber-400', 'text-slate-300'); }
+            }
+        };
+
+        window.submitReview = function() {
+            if(window.currentRating === 0) { showToast('Please select a star rating.', 'error'); return; }
+            const complaint = store.complaints.find(c => c.id === window.currentTicketId);
+            if(complaint) {
+                complaint.feedback = { rating: window.currentRating.toString(), comment: document.getElementById('reviewComment').value };
+                complaint.status = 'Closed'; 
+                showToast('Review submitted successfully!');
+                closeReviewModal();
+                renderDashboard();
+            }
+        };
+
+        window.closeReviewModal = function() {
+            document.getElementById('reviewModal').classList.add('hidden');
+        };
+
+        renderDashboard();
+    </script>
+</body>
 </html>

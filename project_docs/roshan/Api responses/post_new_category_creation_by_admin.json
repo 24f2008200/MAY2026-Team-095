@@ -1,0 +1,12 @@
+{
+  "success": true,
+  "message": "Category created successfully.",
+  "category": {
+    "id": 8,
+    "name": "Fire Safety",
+    "description": "Fire Related Issues",
+    "is_active": true,
+    "created_at": "2026-07-26T13:04:40.758367",
+    "updated_at": "2026-07-26T13:04:40.758367"
+  }
+}

@@ -1,0 +1,89 @@
+{
+  "success": true,
+  "complaint": {
+    "id": 3,
+    "complaint_code": "COMP-1003",
+    "title": "Complaint 3",
+    "description": "This is a sample complaint number 3.",
+    "location": "Main Gate",
+    "priority": "HIGH",
+    "status": "ASSIGNED",
+    "resident_id": 8,
+    "assigned_staff_id": 3,
+    "category_id": 7,
+    "created_at": "2026-07-26T09:13:42.334919",
+    "updated_at": "2026-07-26T09:13:42.334919",
+    "resolved_at": null,
+    "category": {
+      "id": 7,
+      "name": "Lift/Elevator",
+      "description": "Lift and elevator maintenance",
+      "is_active": true,
+      "created_at": "2026-07-26T09:11:39.285241",
+      "updated_at": "2026-07-26T09:11:39.285241"
+    },
+    "resident": {
+      "id": 8,
+      "name": "Priya Sharma",
+      "email": "priya@example.com",
+      "role": "RESIDENT",
+      "flat_number": "B-201",
+      "building": "B Wing"
+    },
+    "assigned_staff": {
+      "id": 3,
+      "name": "Plumber",
+      "email": "plumber@example.com",
+      "role": "STAFF",
+      "flat_number": "S-102",
+      "building": "Staff Quarters"
+    },
+    "attachments": [
+      {
+        "id": 3,
+        "complaint_id": 3,
+        "uploaded_by": 8,
+        "file_name": "complaint_COMP-1003.jpg",
+        "file_path": "uploads/complaint_COMP-1003.jpg",
+        "file_type": "image/jpeg",
+        "file_size": 102400,
+        "created_at": "2026-07-26T09:19:52.718602"
+      }
+    ],
+    "feedback": null,
+    "timeline": [
+      {
+        "id": 8,
+        "complaint_id": 3,
+        "updated_by": 3,
+        "status": "ASSIGNED",
+        "comment": "Complaint assigned to maintenance staff.",
+        "created_at": "2026-07-26T09:15:20.169563",
+        "updated_by_user": {
+          "id": 3,
+          "name": "Plumber",
+          "email": "plumber@example.com",
+          "role": "STAFF",
+          "flat_number": "S-102",
+          "building": "Staff Quarters"
+        }
+      },
+      {
+        "id": 7,
+        "complaint_id": 3,
+        "updated_by": 8,
+        "status": "OPEN",
+        "comment": "Complaint registered successfully.",
+        "created_at": "2026-07-26T09:15:20.169563",
+        "updated_by_user": {
+          "id": 8,
+          "name": "Priya Sharma",
+          "email": "priya@example.com",
+          "role": "RESIDENT",
+          "flat_number": "B-201",
+          "building": "B Wing"
+        }
+      }
+    ]
+  }
+}

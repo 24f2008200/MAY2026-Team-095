@@ -1,0 +1,61 @@
+{
+  "success": true,
+  "categories": [
+    {
+      "id": 4,
+      "name": "Cleanliness",
+      "description": "Cleaning and housekeeping complaints",
+      "is_active": true,
+      "created_at": "2026-07-26T09:11:39.285241",
+      "updated_at": "2026-07-26T09:11:39.285241"
+    },
+    {
+      "id": 2,
+      "name": "Electrical",
+      "description": "Electrical faults and power issues",
+      "is_active": true,
+      "created_at": "2026-07-26T09:11:39.285241",
+      "updated_at": "2026-07-26T09:11:39.285241"
+    },
+    {
+      "id": 7,
+      "name": "Lift/Elevator",
+      "description": "Lift and elevator maintenance",
+      "is_active": true,
+      "created_at": "2026-07-26T09:11:39.285241",
+      "updated_at": "2026-07-26T09:11:39.285241"
+    },
+    {
+      "id": 6,
+      "name": "Parking",
+      "description": "Parking related complaints",
+      "is_active": true,
+      "created_at": "2026-07-26T09:11:39.285241",
+      "updated_at": "2026-07-26T09:11:39.285241"
+    },
+    {
+      "id": 3,
+      "name": "Plumbing",
+      "description": "Plumbing and drainage issues",
+      "is_active": true,
+      "created_at": "2026-07-26T09:11:39.285241",
+      "updated_at": "2026-07-26T09:11:39.285241"
+    },
+    {
+      "id": 5,
+      "name": "Security",
+      "description": "Security related complaints",
+      "is_active": true,
+      "created_at": "2026-07-26T09:11:39.285241",
+      "updated_at": "2026-07-26T09:11:39.285241"
+    },
+    {
+      "id": 1,
+      "name": "Water Leakage",
+      "description": "Water leakage and pipe related issues",
+      "is_active": true,
+      "created_at": "2026-07-26T09:11:39.285241",
+      "updated_at": "2026-07-26T09:11:39.285241"
+    }
+  ]
+}

@@ -1,0 +1,71 @@
+{
+  "success": true,
+  "complaint": {
+    "id": 11,
+    "complaint_code": "CMP-2026-000001",
+    "title": "Severe Water Leakage in Kitchen",
+    "description": "Water Leakage and Sink related issues",
+    "location": "Flat A202",
+    "priority": "HIGH",
+    "status": "OPEN",
+    "resident_id": 10,
+    "assigned_staff_id": null,
+    "category_id": 1,
+    "created_at": "2026-07-26T11:40:58.014154",
+    "updated_at": "2026-07-26T11:49:56.365879",
+    "resolved_at": null,
+    "category": {
+      "id": 1,
+      "name": "Water Leakage",
+      "description": "Water leakage and pipe related issues",
+      "is_active": true,
+      "created_at": "2026-07-26T09:11:39.285241",
+      "updated_at": "2026-07-26T09:11:39.285241"
+    },
+    "resident": {
+      "id": 10,
+      "name": "Sonu Kumar",
+      "email": "sonu@example.com",
+      "role": "RESIDENT",
+      "flat_number": "A202",
+      "building": "Block A"
+    },
+    "assigned_staff": null,
+    "attachments": [],
+    "feedback": null,
+    "timeline": [
+      {
+        "id": 25,
+        "complaint_id": 11,
+        "updated_by": 10,
+        "status": "OPEN",
+        "comment": "Complaint created.",
+        "created_at": "2026-07-26T11:40:58.014154",
+        "updated_by_user": {
+          "id": 10,
+          "name": "Sonu Kumar",
+          "email": "sonu@example.com",
+          "role": "RESIDENT",
+          "flat_number": "A202",
+          "building": "Block A"
+        }
+      },
+      {
+        "id": 26,
+        "complaint_id": 11,
+        "updated_by": 10,
+        "status": "OPEN",
+        "comment": "Complaint details updated by resident.",
+        "created_at": "2026-07-26T11:49:56.365879",
+        "updated_by_user": {
+          "id": 10,
+          "name": "Sonu Kumar",
+          "email": "sonu@example.com",
+          "role": "RESIDENT",
+          "flat_number": "A202",
+          "building": "Block A"
+        }
+      }
+    ]
+  }
+}

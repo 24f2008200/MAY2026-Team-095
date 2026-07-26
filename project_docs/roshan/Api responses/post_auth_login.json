@@ -1,0 +1,16 @@
+{
+  "success": true,
+  "message": "Login successful.",
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTc4NTA0ODU3OSwianRpIjoiNjhjMGZhM2QtMzc4MC00OGYwLTg1MDEtYzBkMjdmM2RiYjY1IiwidHlwZSI6ImFjY2VzcyIsInN1YiI6IjIiLCJuYmYiOjE3ODUwNDg1NzksImNzcmYiOiJkZjBmMmNiNy05NDk2LTQxNDMtYTA0Zi1hMmVhZWUyNGMwZGUiLCJleHAiOjE3ODUxMzQ5NzksInJvbGUiOiJSRVNJREVOVCIsImVtYWlsIjoicm9zaGFuQGV4YW1wbGUuY29tIn0.URbTGxGaXTWbiztCKTlBS_FGxYsvNiK21o-vy6zxkh4",
+  "user": {
+    "id": 2,
+    "name": "Roshan Singh",
+    "email": "roshan@example.com",
+    "mobile_number": "9004183973",
+    "role": "RESIDENT",
+    "flat_number": "A103",
+    "building": "Block A",
+    "is_active": true,
+    "created_at": "2026-07-26T12:09:27.870227"
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "success": true,
+  "reports": {
+    "complaints_by_category": [
+      {
+        "category": "Lift/Elevator",
+        "count": 3
+      },
+      {
+        "category": "Security",
+        "count": 3
+      },
+      {
+        "category": "Electrical",
+        "count": 2
+      },
+      {
+        "category": "Cleanliness",
+        "count": 1
+      },
+      {
+        "category": "Plumbing",
+        "count": 1
+      },
+      {
+        "category": "Water Leakage",
+        "count": 1
+      },
+      {
+        "category": "Fire Safety",
+        "count": 0
+      },
+      {
+        "category": "Parking",
+        "count": 0
+      }
+    ],
+    "average_resolution_hours": 0,
+    "feedback_summary": {
+      "total_feedback": 3,
+      "average_rating": 5
+    },
+    "status_overview": {
+      "OPEN": 2,
+      "ASSIGNED": 5,
+      "IN_PROGRESS": 1,
+      "RESOLVED": 1,
+      "CLOSED": 2,
+      "REOPENED": 0
+    }
+  }
+}

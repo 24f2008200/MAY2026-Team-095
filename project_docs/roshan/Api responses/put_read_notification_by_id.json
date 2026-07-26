@@ -1,0 +1,15 @@
+{
+  "success": true,
+  "message": "Notification marked as read.",
+  "notification": {
+    "id": 8,
+    "user_id": 3,
+    "complaint_id": 3,
+    "title": "New Complaint Assigned",
+    "message": "You have been assigned complaint COMP-1003.",
+    "type": "COMPLAINT_ASSIGNED",
+    "channel": "IN_APP",
+    "is_read": true,
+    "created_at": "2026-07-26T09:23:09.496256"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "success": true,
+  "message": "Timeline update added successfully.",
+  "update": {
+    "id": 28,
+    "complaint_id": 3,
+    "updated_by": 3,
+    "status": "IN_PROGRESS",
+    "comment": "Inspected the area and ordered replacement parts.",
+    "created_at": "2026-07-26T12:49:39.791990",
+    "updated_by_user": {
+      "id": 3,
+      "name": "Plumber",
+      "email": "plumber@example.com",
+      "role": "STAFF",
+      "flat_number": "S-102",
+      "building": "Staff Quarters"
+    }
+  }
+}

@@ -1,0 +1,281 @@
+{
+  "success": true,
+  "dashboard": {
+    "total_complaints": 11,
+    "status_counts": {
+      "OPEN": 2,
+      "ASSIGNED": 5,
+      "IN_PROGRESS": 1,
+      "RESOLVED": 1,
+      "CLOSED": 2,
+      "REOPENED": 0
+    },
+    "priority_counts": {
+      "LOW": 3,
+      "MEDIUM": 2,
+      "HIGH": 4,
+      "URGENT": 2
+    },
+    "total_residents": 5,
+    "total_staff": 4,
+    "average_feedback_rating": 5,
+    "recent_complaints": [
+      {
+        "id": 11,
+        "complaint_code": "CMP-2026-000001",
+        "title": "Severe Water Leakage in Kitchen",
+        "description": "Water Leakage and Sink related issues",
+        "location": "Flat A202",
+        "priority": "HIGH",
+        "status": "ASSIGNED",
+        "resident_id": 10,
+        "assigned_staff_id": 3,
+        "category_id": 1,
+        "created_at": "2026-07-26T11:40:58.014154",
+        "updated_at": "2026-07-26T13:10:00.057578",
+        "resolved_at": null,
+        "category": {
+          "id": 1,
+          "name": "Water Leakage",
+          "description": "Water leakage and pipe related issues",
+          "is_active": true,
+          "created_at": "2026-07-26T09:11:39.285241",
+          "updated_at": "2026-07-26T09:11:39.285241"
+        },
+        "resident": {
+          "id": 10,
+          "name": "Sonu Kumar",
+          "email": "sonu@example.com",
+          "role": "RESIDENT",
+          "flat_number": "A202",
+          "building": "Block A"
+        },
+        "assigned_staff": {
+          "id": 3,
+          "name": "Plumber",
+          "email": "plumber@example.com",
+          "role": "STAFF",
+          "flat_number": "S-102",
+          "building": "Staff Quarters"
+        },
+        "attachments": [],
+        "feedback": null
+      },
+      {
+        "id": 4,
+        "complaint_code": "COMP-1004",
+        "title": "Complaint 4",
+        "description": "This is a sample complaint number 4.",
+        "location": "Club House",
+        "priority": "MEDIUM",
+        "status": "OPEN",
+        "resident_id": 7,
+        "assigned_staff_id": null,
+        "category_id": 7,
+        "created_at": "2026-07-26T09:13:42.334919",
+        "updated_at": "2026-07-26T09:13:42.334919",
+        "resolved_at": null,
+        "category": {
+          "id": 7,
+          "name": "Lift/Elevator",
+          "description": "Lift and elevator maintenance",
+          "is_active": true,
+          "created_at": "2026-07-26T09:11:39.285241",
+          "updated_at": "2026-07-26T09:11:39.285241"
+        },
+        "resident": {
+          "id": 7,
+          "name": "Amit Kumar",
+          "email": "amit@example.com",
+          "role": "RESIDENT",
+          "flat_number": "A-102",
+          "building": "A Wing"
+        },
+        "assigned_staff": null,
+        "attachments": [
+          {
+            "id": 4,
+            "complaint_id": 4,
+            "uploaded_by": 7,
+            "file_name": "complaint_COMP-1004.jpg",
+            "file_path": "uploads/complaint_COMP-1004.jpg",
+            "file_type": "image/jpeg",
+            "file_size": 102400,
+            "created_at": "2026-07-26T09:19:52.718602"
+          }
+        ],
+        "feedback": null
+      },
+      {
+        "id": 5,
+        "complaint_code": "COMP-1005",
+        "title": "Complaint 5",
+        "description": "This is a sample complaint number 5.",
+        "location": "Gym",
+        "priority": "URGENT",
+        "status": "ASSIGNED",
+        "resident_id": 8,
+        "assigned_staff_id": 4,
+        "category_id": 5,
+        "created_at": "2026-07-26T09:13:42.334919",
+        "updated_at": "2026-07-26T09:13:42.334919",
+        "resolved_at": null,
+        "category": {
+          "id": 5,
+          "name": "Security",
+          "description": "Security related complaints",
+          "is_active": true,
+          "created_at": "2026-07-26T09:11:39.285241",
+          "updated_at": "2026-07-26T09:11:39.285241"
+        },
+        "resident": {
+          "id": 8,
+          "name": "Priya Sharma",
+          "email": "priya@example.com",
+          "role": "RESIDENT",
+          "flat_number": "B-201",
+          "building": "B Wing"
+        },
+        "assigned_staff": {
+          "id": 4,
+          "name": "Security",
+          "email": "security@example.com",
+          "role": "STAFF",
+          "flat_number": "Gate",
+          "building": "Security Cabin"
+        },
+        "attachments": [
+          {
+            "id": 5,
+            "complaint_id": 5,
+            "uploaded_by": 8,
+            "file_name": "complaint_COMP-1005.jpg",
+            "file_path": "uploads/complaint_COMP-1005.jpg",
+            "file_type": "image/jpeg",
+            "file_size": 102400,
+            "created_at": "2026-07-26T09:19:52.718602"
+          }
+        ],
+        "feedback": null
+      },
+      {
+        "id": 6,
+        "complaint_code": "COMP-1006",
+        "title": "Complaint 6",
+        "description": "This is a sample complaint number 6.",
+        "location": "Gym",
+        "priority": "LOW",
+        "status": "CLOSED",
+        "resident_id": 8,
+        "assigned_staff_id": 5,
+        "category_id": 4,
+        "created_at": "2026-07-26T09:13:42.334919",
+        "updated_at": "2026-07-26T09:13:42.334919",
+        "resolved_at": "2026-07-26T09:13:43.027443",
+        "category": {
+          "id": 4,
+          "name": "Cleanliness",
+          "description": "Cleaning and housekeeping complaints",
+          "is_active": true,
+          "created_at": "2026-07-26T09:11:39.285241",
+          "updated_at": "2026-07-26T09:11:39.285241"
+        },
+        "resident": {
+          "id": 8,
+          "name": "Priya Sharma",
+          "email": "priya@example.com",
+          "role": "RESIDENT",
+          "flat_number": "B-201",
+          "building": "B Wing"
+        },
+        "assigned_staff": {
+          "id": 5,
+          "name": "Housekeeping",
+          "email": "housekeeping@example.com",
+          "role": "STAFF",
+          "flat_number": "S-103",
+          "building": "Staff Quarters"
+        },
+        "attachments": [
+          {
+            "id": 6,
+            "complaint_id": 6,
+            "uploaded_by": 8,
+            "file_name": "complaint_COMP-1006.jpg",
+            "file_path": "uploads/complaint_COMP-1006.jpg",
+            "file_type": "image/jpeg",
+            "file_size": 102400,
+            "created_at": "2026-07-26T09:19:52.718602"
+          }
+        ],
+        "feedback": {
+          "id": 3,
+          "complaint_id": 6,
+          "resident_id": 8,
+          "rating": 5,
+          "comment": "Very satisfied with the maintenance staff.",
+          "created_at": "2026-07-26T09:24:13.001719"
+        }
+      },
+      {
+        "id": 2,
+        "complaint_code": "COMP-1002",
+        "title": "Complaint 2",
+        "description": "This is a sample complaint number 2.",
+        "location": "Garden",
+        "priority": "LOW",
+        "status": "CLOSED",
+        "resident_id": 6,
+        "assigned_staff_id": 2,
+        "category_id": 3,
+        "created_at": "2026-07-26T09:13:42.334919",
+        "updated_at": "2026-07-26T09:13:42.334919",
+        "resolved_at": "2026-07-26T09:13:43.027193",
+        "category": {
+          "id": 3,
+          "name": "Plumbing",
+          "description": "Plumbing and drainage issues",
+          "is_active": true,
+          "created_at": "2026-07-26T09:11:39.285241",
+          "updated_at": "2026-07-26T09:11:39.285241"
+        },
+        "resident": {
+          "id": 6,
+          "name": "Roshan Singh",
+          "email": "roshan@example.com",
+          "role": "RESIDENT",
+          "flat_number": "A-101",
+          "building": "A Wing"
+        },
+        "assigned_staff": {
+          "id": 2,
+          "name": "Electrician",
+          "email": "electrician@example.com",
+          "role": "STAFF",
+          "flat_number": "S-101",
+          "building": "Staff Quarters"
+        },
+        "attachments": [
+          {
+            "id": 2,
+            "complaint_id": 2,
+            "uploaded_by": 6,
+            "file_name": "complaint_COMP-1002.jpg",
+            "file_path": "uploads/complaint_COMP-1002.jpg",
+            "file_type": "image/jpeg",
+            "file_size": 102400,
+            "created_at": "2026-07-26T09:19:52.718602"
+          }
+        ],
+        "feedback": {
+          "id": 2,
+          "complaint_id": 2,
+          "resident_id": 6,
+          "rating": 5,
+          "comment": "Happy with the overall support.",
+          "created_at": "2026-07-26T09:24:13.001719"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "success": true,
+  "staff": [
+    {
+      "id": 2,
+      "name": "Electrician",
+      "email": "electrician@example.com",
+      "mobile_number": "9000000002",
+      "assigned_complaints_count": 1
+    },
+    {
+      "id": 5,
+      "name": "Housekeeping",
+      "email": "housekeeping@example.com",
+      "mobile_number": "9000000005",
+      "assigned_complaints_count": 1
+    },
+    {
+      "id": 3,
+      "name": "Plumber",
+      "email": "plumber@example.com",
+      "mobile_number": "9000000003",
+      "assigned_complaints_count": 3
+    },
+    {
+      "id": 4,
+      "name": "Security",
+      "email": "security@example.com",
+      "mobile_number": "9000000004",
+      "assigned_complaints_count": 1
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "success": true,
+  "complaints": [
+    {
+      "id": 11,
+      "complaint_code": "CMP-2026-000001",
+      "title": "Water leakage in kitchen",
+      "description": "There is continuous water leakage under the kitchen sink.",
+      "location": "Flat A202, Kitchen",
+      "priority": "MEDIUM",
+      "status": "OPEN",
+      "resident_id": 10,
+      "assigned_staff_id": null,
+      "category_id": 1,
+      "created_at": "2026-07-26T11:40:58.014154",
+      "updated_at": "2026-07-26T11:40:58.014154",
+      "resolved_at": null,
+      "category": {
+        "id": 1,
+        "name": "Water Leakage",
+        "description": "Water leakage and pipe related issues",
+        "is_active": true,
+        "created_at": "2026-07-26T09:11:39.285241",
+        "updated_at": "2026-07-26T09:11:39.285241"
+      },
+      "resident": {
+        "id": 10,
+        "name": "Sonu Kumar",
+        "email": "sonu@example.com",
+        "role": "RESIDENT",
+        "flat_number": "A202",
+        "building": "Block A"
+      },
+      "assigned_staff": null,
+      "attachments": [],
+      "feedback": null
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "per_page": 10,
+    "total": 1,
+    "pages": 1
+  }
+}

@@ -61,7 +61,13 @@ async function apiCall(endpoint, options = {}) {
         if (response.status === 204) return null;
         return await response.json();
     } catch (err) {
-        showToast(err.message, 'error');
+        let message = err.message;
+        if (message === 'Failed to fetch') {
+            message = 'Unable to connect to the server. Please check your connection.';
+        } else if (err instanceof TypeError || message.includes('NetworkError') || message.includes('network')) {
+            message = 'Network error. Please check your connection and try again.';
+        }
+        showToast(message, 'error');
         throw err;
     }
 }

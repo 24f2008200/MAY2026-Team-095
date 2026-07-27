@@ -177,7 +177,9 @@
                         }
                        const response = await apiCall(endpoint);
                        complaints.value = response.complaints || response || [];
-                   } catch (err) {}
+                   } catch (err) {
+                       showToast('Failed to load complaints.', 'error');
+                   }
                 };
 
                 onMounted(() => {

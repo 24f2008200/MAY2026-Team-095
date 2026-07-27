@@ -8,6 +8,8 @@ from app.services.complaint_service import (
     submit_feedback,
     update_complaint,
     upload_attachment,
+    close_complaint,
+    reopen_complaint,
 )
 
 

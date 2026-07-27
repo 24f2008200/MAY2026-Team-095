@@ -113,6 +113,7 @@
                         staffList.value = response.staff || [];
                     } catch (err) {
                         staffList.value = [];
+                        showToast('Failed to load staff list.', 'error');
                     }
                 };
 

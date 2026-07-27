@@ -66,12 +66,12 @@
                         <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Lifecycle Status</label>
                         <select v-model="statusFilter" class="form-select w-full border border-slate-300 p-2 rounded-md text-sm min-w-[140px] bg-white font-medium text-slate-700">
                             <option value="">All States</option>
-                            <option value="Open">Open</option>
-                            <option value="Reopened">Reopened</option>
-                            <option value="Assigned">Assigned</option>
-                            <option value="In Progress">In Progress</option>
-                            <option value="Resolved">Resolved</option>
-                            <option value="Closed">Closed</option>
+                            <option value="OPEN">Open</option>
+                            <option value="REOPENED">Reopened</option>
+                            <option value="ASSIGNED">Assigned</option>
+                            <option value="IN_PROGRESS">In Progress</option>
+                            <option value="RESOLVED">Resolved</option>
+                            <option value="CLOSED">Closed</option>
                         </select>
                     </div>
                     <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 text-sm font-bold rounded-md transition shadow-sm">Apply</button>
@@ -100,7 +100,7 @@
                                 <td class="px-5 py-3 text-xs font-medium text-slate-600 whitespace-nowrap">{{ new Date(c.created_at).toLocaleDateString() }}</td>
                                 <td class="px-5 py-3 text-sm font-semibold text-slate-700">{{ c.resident?.name || 'N/A' }}</td>
                                 <td class="px-5 py-3 text-sm font-medium text-slate-600">{{ c.category }}</td>
-                                <td class="px-5 py-3 text-sm font-bold" :class="c.assignedStaffName ? 'text-indigo-700' : 'text-slate-400 italic'">{{ c.assignedStaffName || '--' }}</td>
+                                <td class="px-5 py-3 text-sm font-bold" :class="c.assigned_staff?.name ? 'text-indigo-700' : 'text-slate-400 italic'">{{ c.assigned_staff?.name || '--' }}</td>
                                 <td class="px-5 py-3 whitespace-nowrap"><span :class="'status-pill text-[9px] status-' + c.status.replace(' ','')">{{ c.status }}</span></td>
                                 <td class="px-5 py-3 text-right whitespace-nowrap"><button @click="navigate('complaint-details.html?id=' + c.id)" class="text-indigo-600 hover:text-indigo-900 text-[10px] uppercase tracking-wide font-bold">Open Record</button></td>
                             </tr>

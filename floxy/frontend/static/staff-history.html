@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Smart Society | Staff History</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <link rel="icon" type="image/svg+xml" href="../images/favicon.svg">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+<body>
+    <div id="app" class="min-h-screen flex flex-col bg-slate-50">
+        <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex justify-between items-center">
+                <div class="flex items-center cursor-pointer" @click="goHome()">
+                    <div class="mr-3"><img src="../images/logo.svg" alt="Smart Society Logo" class="w-8 h-8 rounded-md shadow-sm" /></div>
+                    <div><h1 class="font-extrabold text-lg text-slate-900 tracking-tight leading-none">Smart Society</h1><p class="text-[9px] text-indigo-600 font-bold uppercase tracking-widest mt-0.5">Complaint Resolution</p></div>
+                </div>
+                <div class="flex items-center space-x-4 relative">
+                    <div class="h-6 w-px bg-slate-200 hidden sm:block"></div>
+                    <div class="flex items-center gap-3 cursor-default">
+                        <div class="text-right hidden sm:block">
+                            <p class="text-sm font-bold text-slate-900 leading-tight">{{ user?.name }}</p>
+                            <p class="text-[0.65rem] text-slate-500 font-bold uppercase tracking-wider mt-0.5">{{ user?.role }}</p>
+                        </div>
+                        <div class="w-8 h-8 rounded-md bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm border border-indigo-200">{{ user?.name ? user.name.charAt(0) : 'U' }}</div>
+                    </div>
+                    <button @click="logout()" class="text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition p-1.5 rounded-md ml-1" title="Sign Out"><i class="fas fa-sign-out-alt text-lg"></i></button>
+                </div>
+            </div>
+            <nav class="bg-slate-50 border-t border-slate-200">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-6 overflow-x-auto">
+                    <a href="dashboard-staff.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition"><i class="fas fa-clipboard-list mr-1.5 text-base"></i> My Queue</a>
+                    <a href="staff-history.html" class="nav-link border-indigo-600 text-indigo-700 py-2 px-3 text-xs font-bold border-b-2 flex items-center transition"><i class="fas fa-check-double mr-1.5 text-base"></i> History</a>
+                </div>
+            </nav>
+        </header>
+        <main class="flex-grow p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full space-y-6">
+            <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+                <div class="px-6 py-5 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-xl font-extrabold text-slate-900 tracking-tight">Resolution Archive</h2>
+                        <p class="text-xs text-slate-500 mt-1 font-medium">Review completed jobs and resident feedback.</p>
+                    </div>
+                </div>
+
+                <div class="px-5 py-3 border-b border-slate-200 bg-white flex flex-col sm:flex-row gap-3 items-center">
+                    <select v-model="statusFilter" class="bg-slate-50 border border-slate-300 text-slate-700 text-xs font-bold rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none w-full sm:w-auto">
+                        <option value="">All Completed</option>
+                        <option value="RESOLVED">Resolved (Needs Review)</option>
+                        <option value="CLOSED">Closed</option>
+                    </select>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-slate-50/50 border-b border-slate-200">
+                            <tr>
+                                <th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Ref ID</th>
+                                <th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Trade</th>
+                                <th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Closure Date</th>
+                                <th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Status</th>
+                                <th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Resident Review</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 bg-white">
+                            <tr v-if="filteredHistory.length === 0">
+                                <td colspan="5" class="px-5 py-12 text-center text-slate-500 text-sm font-medium"><i class="fas fa-filter text-2xl text-slate-300 mb-2 block"></i> No records found for these filters.</td>
+                            </tr>
+                            <tr v-for="c in filteredHistory" :key="c.id" class="hover:bg-slate-50 transition duration-150">
+                                <td class="px-5 py-4 font-bold text-slate-800 text-sm">{{ c.id }}</td>
+                                <td class="px-5 py-4 text-sm text-slate-700 font-medium">{{ c.category }}</td>
+                                <td class="px-5 py-4 text-xs font-medium text-slate-500">{{ c.resolved_at && !isNaN(new Date(c.resolved_at).getTime()) ? new Date(c.resolved_at).toLocaleDateString() : '--' }}</td>
+                                <td class="px-5 py-4"><span :class="'status-pill status-' + c.status.replace(' ','')">{{ c.status }}</span></td>
+                                <td class="px-5 py-4">
+                                    <div v-if="c.rating">
+                                        <div class="flex gap-0.5 text-[12px] mb-1">
+                                            <i v-for="i in 5" :key="i" :class="i <= parseInt(c.rating) ? 'fas fa-star text-amber-400' : 'far fa-star text-slate-200'"></i>
+                                        </div>
+                                        <p class="text-xs text-slate-600 font-medium">"{{ c.feedbackComment }}"</p>
+                                    </div>
+                                    <span v-else class="text-slate-400 text-[10px] italic">Pending Review</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/utils.js"></script>
+    <script>
+        const { createApp, ref, computed, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const user = ref(null);
+                const historyData = ref([]);
+                const statusFilter = ref('');
+
+                const fetchHistory = async () => {
+                    try {
+                        const response = await apiCall('/staff/complaints/history');
+                        historyData.value = response.history || response.complaints || response || [];
+                    } catch (err) {
+                        historyData.value = [];
+                    }
+                };
+
+                onMounted(() => {
+                    user.value = requireAuth('STAFF');
+                    if (user.value) fetchHistory();
+                });
+
+                const filteredHistory = computed(() => {
+                    if (statusFilter.value) {
+                        return historyData.value.filter(c => c.status === statusFilter.value);
+                    }
+                    return historyData.value;
+                });
+
+                return { user, historyData, statusFilter, filteredHistory, logout, goHome };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

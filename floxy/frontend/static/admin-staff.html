@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Smart Society | Staff Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link rel="icon" type="image/svg+xml" href="../images/favicon.svg">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+<body class="min-h-screen flex flex-col bg-slate-50 text-slate-800 font-sans">
+    <div id="app" class="min-h-screen flex flex-col">
+        <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex justify-between items-center">
+                <div class="flex items-center cursor-pointer" @click="goHome()">
+                    <div class="mr-3"><img src="../images/logo.svg" alt="Smart Society Logo" class="w-8 h-8 rounded-md shadow-sm" /></div>
+                    <div><h1 class="font-extrabold text-lg text-slate-900 tracking-tight leading-none">Smart Society</h1><p class="text-[9px] text-indigo-600 font-bold uppercase tracking-widest mt-0.5">Complaint Resolution</p></div>
+                </div>
+                <div class="flex items-center space-x-4 relative">
+                    <div class="h-6 w-px bg-slate-200 hidden sm:block"></div>
+                    <div class="flex items-center gap-3 cursor-default">
+                        <div class="text-right hidden sm:block">
+                            <p class="text-sm font-bold text-slate-900 leading-tight">{{ user?.name }}</p>
+                            <p class="text-[0.65rem] text-slate-500 font-bold uppercase tracking-wider mt-0.5">{{ user?.role }}</p>
+                        </div>
+                        <div class="w-8 h-8 rounded-md bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm border border-indigo-200">{{ user?.name ? user.name.charAt(0) : 'U' }}</div>
+                    </div>
+                    <button @click="logout()" class="text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition p-1.5 rounded-md ml-1" title="Sign Out"><i class="fas fa-sign-out-alt text-lg"></i></button>
+                </div>
+            </div>
+            <nav class="bg-slate-50 border-t border-slate-200">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-6 overflow-x-auto">
+                    <a href="dashboard-admin.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition"><i class="fas fa-chart-pie mr-1.5 text-base"></i> Portal</a>
+                    <a href="admin-staff.html" class="nav-link border-indigo-600 text-indigo-700 py-2 px-3 text-xs font-bold border-b-2 flex items-center transition"><i class="fas fa-users mr-1.5 text-base"></i> Staff</a>
+                    <a href="admin-reports.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition"><i class="fas fa-search mr-1.5 text-base"></i> Records</a>
+                </div>
+            </nav>
+        </header>
+
+        <main class="flex-grow p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full space-y-6">
+            <div class="flex items-center justify-between mb-2">
+                <div>
+                    <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Staff Directory & Security</h2>
+                    <p class="text-sm text-slate-500 mt-1 font-medium">Manage maintenance personnel and system credentials.</p>
+                </div>
+            </div>
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                <form @submit.prevent="handleAddStaff" class="p-5 border-b border-slate-200 bg-slate-50">
+                    <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">Provision New Account</h3>
+                    <div class="flex flex-col sm:flex-row gap-3 items-end">
+                        <div class="w-full sm:w-1/4">
+                            <label class="block text-[10px] font-bold text-slate-700 mb-1">Full Name</label>
+                            <input v-model="newStaff.name" type="text" placeholder="e.g. Sarah Connor" class="w-full border border-slate-300 p-2 rounded-md text-sm" required>
+                        </div>
+                        <div class="w-full sm:w-1/4">
+                            <label class="block text-[10px] font-bold text-slate-700 mb-1">Trade/Role</label>
+                            <select v-model="newStaff.trade" class="w-full border border-slate-300 p-2 rounded-md text-sm" required>
+                                <option disabled value="">Select Trade...</option>
+                                <option value="Plumber">Plumber</option><option value="Electrician">Electrician</option><option value="Carpenter">Carpenter</option><option value="Janitorial">Janitorial</option><option value="Security">Security</option>
+                            </select>
+                        </div>
+                        <div class="w-full sm:w-1/4">
+                            <label class="block text-[10px] font-bold text-slate-700 mb-1">Email / Username</label>
+                            <input v-model="newStaff.email" type="email" placeholder="staff@smartsociety.com" class="w-full border border-slate-300 p-2 rounded-md text-sm" required>
+                        </div>
+                        <div class="w-full sm:w-1/4">
+                            <label class="block text-[10px] font-bold text-slate-700 mb-1">Password</label>
+                            <input v-model="newStaff.password" type="password" placeholder="password" class="w-full border border-slate-300 p-2 rounded-md text-sm" required minlength="6">
+                        </div>
+                        <button type="submit" :disabled="isLoading" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-2.5 rounded-md text-sm shadow-sm transition h-[38px] w-full sm:w-auto disabled:opacity-50">
+                            {{ isLoading ? '...' : 'Add' }}
+                        </button>
+                    </div>
+                </form>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-white border-b border-slate-200">
+                            <tr>
+                                <th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Personnel</th>
+                                <th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Trade</th>
+                                <th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Username / Email</th>
+                                <th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 bg-white">
+                            <tr v-if="staffList.length === 0">
+                                <td colspan="4" class="px-5 py-8 text-center text-slate-500 text-sm">No maintenance staff found.</td>
+                            </tr>
+                            <tr v-for="s in staffList" :key="s.id" class="hover:bg-slate-50 transition">
+                                <td class="px-5 py-4 text-sm font-bold text-slate-800">{{ s.name }}</td>
+                                <td class="px-5 py-4 text-sm font-medium text-slate-600"><span class="bg-slate-100 px-2 py-1 rounded text-xs border border-slate-200">{{ s.trade || 'General' }}</span></td>
+                                <td class="px-5 py-4 text-sm font-mono text-slate-600">{{ s.username || s.email || '--' }}</td>
+                                <td class="px-5 py-4 text-right">
+                                    <button @click="removeStaff(s.id)" class="text-rose-600 hover:text-rose-800 text-xs font-bold uppercase tracking-wide bg-rose-50 px-3 py-1.5 rounded border border-rose-100 transition">Remove</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="toast" class="fixed bottom-6 right-6 z-50 hidden items-center px-4 py-3 rounded-md shadow-lg border bg-slate-900 border-slate-800 text-white">
+        <i class="fas fa-check-circle text-emerald-400 mr-3 text-lg"></i>
+        <span id="toastMsg" class="font-medium text-sm">Success</span>
+    </div>
+
+    <script src="../js/utils.js"></script>
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const user = ref(null);
+                const staffList = ref([]);
+                const isLoading = ref(false);
+                const newStaff = ref({ name: '', trade: '', email: '', password: '', mobileNumber: '', flatNumber: '' });
+
+                const fetchStaffList = async () => {
+                    try {
+                        const response = await apiCall('/admin/staff');
+                        staffList.value = response.staff || [];
+                    } catch (err) {
+                        staffList.value = [];
+                    }
+                };
+
+                onMounted(() => {
+                    user.value = requireAuth('Admin');
+                    if (user.value) fetchStaffList();
+                });
+
+                const handleAddStaff = async () => {
+                    isLoading.value = true;
+                    const payload = {
+                        name: newStaff.value.name.trim(),
+                        email: newStaff.value.email.trim(),
+                        flat_number: newStaff.value.flatNumber || '',
+                        building: newStaff.value.trade || '',
+                        password: newStaff.value.password.trim(),
+                        trade: newStaff.value.trade,
+                    };
+
+                    try {
+                        await apiCall('/admin/staff', { method: 'POST', body: payload });
+                        showToast('Staff account provisioned.', 'success');
+                        newStaff.value = { name: '', trade: '', email: '', password: '', mobileNumber: '', flatNumber: '' };
+                        fetchStaffList();
+                    } catch (err) {
+                    } finally {
+                        isLoading.value = false;
+                    }
+                };
+
+                const removeStaff = async (id) => {
+                    if (!confirm('Are you sure you want to delete this staff member? This will revoke their system access.')) return;
+                    try {
+                        await apiCall(`/admin/staff/${id}`, { method: 'DELETE' });
+                        showToast('Staff member removed.', 'success');
+                        fetchStaffList();
+                    } catch (err) {}
+                };
+
+                return { user, staffList, isLoading, newStaff, handleAddStaff, removeStaff, logout, goHome };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

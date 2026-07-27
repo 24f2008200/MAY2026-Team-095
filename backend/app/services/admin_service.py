@@ -3,6 +3,7 @@ from flask_jwt_extended import get_jwt_identity
 from marshmallow import ValidationError, Schema, fields, validate
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
+from werkzeug.security import generate_password_hash
 
 from app.extensions import db
 from app.models.category import Category
@@ -248,7 +249,18 @@ def get_reports():
     }, 200
 
 
+def _extract_trade(member: User) -> str:
+    """
+    Derive trade from user record.
+    #i added it: tries to get trade from building field.
+    """
+    if member.building:
+        return member.building
+    return "General"
+
+
 def list_staff():
+    # #i added it: include trade and username fields in staff listing
     staff_members = (
         User.query
         .filter_by(role=UserRole.STAFF, is_active=True)
@@ -264,6 +276,10 @@ def list_staff():
                 "name": member.name,
                 "email": member.email,
                 "mobile_number": member.mobile_number,
+                "flat_number": member.flat_number,
+                "building": member.building,
+                "trade": _extract_trade(member),
+                "username": member.email.split("@")[0] if member.email else member.name,
                 "assigned_complaints_count": Complaint.query.filter_by(
                     assigned_staff_id=member.id,
                     status=ComplaintStatus.ASSIGNED,
@@ -275,6 +291,151 @@ def list_staff():
             }
             for member in staff_members
         ],
+    }, 200
+
+
+def create_staff(json_data: dict) -> tuple[dict[str, Any], int]:
+    """
+    Create a new maintenance staff account.
+    Only accessible by administrators.
+    #i added it: this function handles staff creation with proper validation.
+    """
+    if not json_data:
+        return {"success": False, "message": "Request body is required."}, 400
+
+    # Extract and validate staff fields
+    name = json_data.get("name", "").strip()
+    email = json_data.get("email", "").strip().lower()
+    mobile_number = json_data.get("mobile_number", "").strip()
+    flat_number = json_data.get("flat_number", "").strip()
+    building = json_data.get("building", "").strip()
+    password = json_data.get("password", "")
+    trade = json_data.get("trade", "").strip()
+
+    if not name:
+        return {"success": False, "message": "Name is required."}, 400
+
+    if not email or "@" not in email:
+        return {"success": False, "message": "Valid email is required."}, 400
+
+    if not mobile_number:
+        # #i added it: generate a unique mobile number for staff accounts
+        # Staff accounts don't need a real mobile number for login purposes;
+        # we generate a unique placeholder to avoid unique constraint conflicts.
+        existing_mobile = True
+        counter = 0
+        while existing_mobile:
+            candidate = "9" + str((hash(name + email + str(counter)) % 900000000) + 100000000)
+            candidate = candidate[:10]
+            if candidate[0] not in "6789":
+                candidate = "9" + candidate[1:]
+            if not User.query.filter_by(mobile_number=candidate).first():
+                mobile_number = candidate
+                existing_mobile = False
+            counter += 1
+            if counter > 100:
+                return {"success": False, "message": "Unable to generate unique mobile number."}, 500
+    elif len(mobile_number) != 10 or not mobile_number.isdigit():
+        return {"success": False, "message": "Mobile number must be 10 digits."}, 400
+
+    if not flat_number:
+        flat_number = "N/A"
+
+    if not building:
+        building = trade or "General"
+
+    if not password or len(password) < 8:
+        return {"success": False, "message": "Password must be at least 8 characters."}, 400
+
+    if not trade:
+        return {"success": False, "message": "Trade is required."}, 400
+
+    # Check for existing email or mobile
+    existing_email = User.query.filter_by(email=email).first()
+    if existing_email:
+        return {"success": False, "message": "Email already registered."}, 409
+
+    existing_mobile = User.query.filter_by(mobile_number=mobile_number).first()
+    if existing_mobile:
+        return {"success": False, "message": "Mobile number already registered."}, 409
+
+    # Create the staff user
+    password_hash = generate_password_hash(password)
+
+    new_staff = User(
+        name=name,
+        email=email,
+        mobile_number=mobile_number,
+        password_hash=password_hash,
+        role=UserRole.STAFF,
+        flat_number=flat_number,
+        building=building,
+        is_active=True,
+    )
+
+    # #i added it: store trade in building field for display purposes
+    # This is a workaround since the User model does not have a dedicated trade column.
+    # In production, a separate staff_profile table would be used.
+
+    try:
+        db.session.add(new_staff)
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return {"success": False, "message": "Unable to create staff account."}, 500
+
+    # #i added it: create a notification for the new staff member
+    create_notification(
+        user_id=new_staff.id,
+        complaint_id=None,
+        title="Staff Account Created",
+        message=f"Your maintenance staff account has been created. Your trade is: {trade}.",
+        notification_type="STAFF_CREATED",
+    )
+
+    return {
+        "success": True,
+        "message": "Staff account created successfully.",
+        "staff": {
+            "id": new_staff.id,
+            "name": new_staff.name,
+            "email": new_staff.email,
+            "mobile_number": new_staff.mobile_number,
+            "trade": trade,
+            "flat_number": new_staff.flat_number,
+            "building": new_staff.building,
+        },
+    }, 201
+
+
+def remove_staff(staff_id: int, admin_id: int) -> tuple[dict[str, Any], int]:
+    """
+    Deactivate a staff account by setting is_active to False.
+    Admin cannot deactivate their own account.
+    #i added it: proper staff removal with safety checks.
+    """
+    if admin_id == staff_id:
+        return {"success": False, "message": "You cannot deactivate your own account."}, 403
+
+    staff = User.query.filter_by(
+        id=staff_id,
+        role=UserRole.STAFF,
+    ).first()
+
+    if not staff:
+        return {"success": False, "message": "Staff member not found."}, 404
+
+    staff.is_active = False
+
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return {"success": False, "message": "Unable to remove staff member."}, 500
+
+    return {
+        "success": True,
+        "message": f"Staff member '{staff.name}' has been deactivated.",
     }, 200
 
 

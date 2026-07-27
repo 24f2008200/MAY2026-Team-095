@@ -25,12 +25,14 @@ from app.routes.category_routes import category_ns
 from app.routes.admin_routes import admin_ns
 from app.routes.staff_routes import staff_ns
 from app.routes.notification_routes import notification_ns
-
+from flask_cors import CORS  # 1. Import it here
 
 def create_app():
     app = Flask(__name__)
+    CORS(app)  # 2. Add this right here after app is initialized
 
     # Configuration
+    
     app.config.from_object(Config)
 
     # Extensions

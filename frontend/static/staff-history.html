@@ -7,35 +7,33 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="../assets/css/styles.css" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <link rel="icon" type="image/svg+xml" href="../images/favicon.svg">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 </head>
 <body>
     <div id="app" class="min-h-screen flex flex-col bg-slate-50">
         <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex justify-between items-center">
-                <div class="flex items-center cursor-pointer" onclick="goHome()">
+                <div class="flex items-center cursor-pointer" @click="goHome()">
                     <div class="mr-3"><img src="../images/logo.svg" alt="Smart Society Logo" class="w-8 h-8 rounded-md shadow-sm" /></div>
                     <div><h1 class="font-extrabold text-lg text-slate-900 tracking-tight leading-none">Smart Society</h1><p class="text-[9px] text-indigo-600 font-bold uppercase tracking-widest mt-0.5">Complaint Resolution</p></div>
                 </div>
                 <div class="flex items-center space-x-4 relative">
-                    <button onclick="toggleNotifications()" class="relative flex items-center text-slate-500 hover:text-indigo-600 transition px-2 py-1.5 rounded-md hover:bg-slate-50">
-                        <div class="relative"><i class="fas fa-bell text-xl"></i><span id="unreadBadge" class="absolute -top-1 -right-1 flex h-3 w-3 hidden"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span><span class="relative inline-flex rounded-full h-3 w-3 bg-rose-500 border-2 border-white"></span></span></div>
-                        <span class="hidden sm:inline-block ml-2 font-bold text-sm">Alerts</span>
-                    </button>
                     <div class="h-6 w-px bg-slate-200 hidden sm:block"></div>
                     <div class="flex items-center gap-3 cursor-default">
-                        <div class="text-right hidden sm:block"><p class="text-sm font-bold text-slate-900 leading-tight" id="userName"></p><p class="text-[0.65rem] text-slate-500 font-bold uppercase tracking-wider mt-0.5" id="userRoleFlat"></p></div>
-                        <div class="w-8 h-8 rounded-md bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm border border-indigo-200" id="userAvatar">U</div>
+                        <div class="text-right hidden sm:block">
+                            <p class="text-sm font-bold text-slate-900 leading-tight">{{ user?.name }}</p>
+                            <p class="text-[0.65rem] text-slate-500 font-bold uppercase tracking-wider mt-0.5">{{ user?.role }}</p>
+                        </div>
+                        <div class="w-8 h-8 rounded-md bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm border border-indigo-200">{{ user?.name ? user.name.charAt(0) : 'U' }}</div>
                     </div>
-                    <button onclick="logout()" class="text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition p-1.5 rounded-md ml-1" title="Sign Out"><i class="fas fa-sign-out-alt text-lg"></i></button>
+                    <button @click="logout()" class="text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition p-1.5 rounded-md ml-1" title="Sign Out"><i class="fas fa-sign-out-alt text-lg"></i></button>
                 </div>
             </div>
             <nav class="bg-slate-50 border-t border-slate-200">
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-6 overflow-x-auto" id="navTabs">
-                    <a href="dashboard-staff.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition"><i class="fas fa-clipboard-list mr-1.5 text-base"></i> Portal</a>
-                    <a href="staff-history.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition"><i class="fas fa-check-double mr-1.5 text-base"></i> Past Jobs</a>
-                    <a href="support-contact.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition"><i class="fas fa-headset mr-1.5 text-base"></i> Support</a>
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-6 overflow-x-auto">
+                    <a href="dashboard-staff.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition"><i class="fas fa-clipboard-list mr-1.5 text-base"></i> My Queue</a>
+                    <a href="staff-history.html" class="nav-link border-indigo-600 text-indigo-700 py-2 px-3 text-xs font-bold border-b-2 flex items-center transition"><i class="fas fa-check-double mr-1.5 text-base"></i> History</a>
                 </div>
             </nav>
         </header>
@@ -49,16 +47,10 @@
                 </div>
 
                 <div class="px-5 py-3 border-b border-slate-200 bg-white flex flex-col sm:flex-row gap-3 items-center">
-                    <select id="staffStatusFilter" onchange="renderStaffHistory()" class="bg-slate-50 border border-slate-300 text-slate-700 text-xs font-bold rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none w-full sm:w-auto">
-                        <option value="All">All Completed</option>
+                    <select v-model="statusFilter" class="bg-slate-50 border border-slate-300 text-slate-700 text-xs font-bold rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none w-full sm:w-auto">
+                        <option value="">All Completed</option>
                         <option value="Resolved">Resolved (Needs Review)</option>
-                        <option value="Closed">Closed (Completed)</option>
-                    </select>
-                    <select id="staffDateFilter" onchange="renderStaffHistory()" class="bg-slate-50 border border-slate-300 text-slate-700 text-xs font-bold rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none w-full sm:w-auto">
-                        <option value="All">All Time</option>
-                        <option value="07/2026">July 2026</option>
-                        <option value="06/2026">June 2026</option>
-                        <option value="05/2026">May 2026</option>
+                        <option value="Closed">Closed</option>
                     </select>
                 </div>
 
@@ -73,74 +65,66 @@
                                 <th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Resident Review</th>
                             </tr>
                         </thead>
-                        <tbody id="historyBody" class="divide-y divide-slate-100 bg-white"></tbody>
+                        <tbody class="divide-y divide-slate-100 bg-white">
+                            <tr v-if="filteredHistory.length === 0">
+                                <td colspan="5" class="px-5 py-12 text-center text-slate-500 text-sm font-medium"><i class="fas fa-filter text-2xl text-slate-300 mb-2 block"></i> No records found for these filters.</td>
+                            </tr>
+                            <tr v-for="c in filteredHistory" :key="c.id" class="hover:bg-slate-50 transition duration-150">
+                                <td class="px-5 py-4 font-bold text-slate-800 text-sm">{{ c.id }}</td>
+                                <td class="px-5 py-4 text-sm text-slate-700 font-medium">{{ c.category }}</td>
+                                <td class="px-5 py-4 text-xs font-medium text-slate-500">{{ c.dateResolved ? new Date(c.dateResolved).toLocaleDateString() : '--' }}</td>
+                                <td class="px-5 py-4"><span :class="'status-pill status-' + c.status.replace(' ','')">{{ c.status }}</span></td>
+                                <td class="px-5 py-4">
+                                    <div v-if="c.rating">
+                                        <div class="flex gap-0.5 text-[12px] mb-1">
+                                            <i v-for="i in 5" :key="i" :class="i <= parseInt(c.rating) ? 'fas fa-star text-amber-400' : 'far fa-star text-slate-200'"></i>
+                                        </div>
+                                        <p class="text-xs text-slate-600 font-medium">"{{ c.feedbackComment }}"</p>
+                                    </div>
+                                    <span v-else class="text-slate-400 text-[10px] italic">Pending Review</span>
+                                </td>
+                            </tr>
+                        </tbody>
                     </table>
                 </div>
             </div>
         </main>
     </div>
 
-    <script src="../js/store.js"></script>
     <script src="../js/utils.js"></script>
     <script>
-        function renderStaffHistory() {
-            const user = requireAuth('Staff');
-            if (!user) return;
-            
-            document.getElementById('userName').textContent = user.name;
-            document.getElementById('userRoleFlat').textContent = user.role;
-            document.getElementById('userAvatar').textContent = user.name.charAt(0);
-            
-            const staffName = user.name;
-            let completed = store.complaints.filter(c => c.assignedTo === staffName && ['Resolved','Closed'].includes(c.status));
-            
-            // Filters
-            const statusFilter = document.getElementById('staffStatusFilter').value;
-            const dateFilter = document.getElementById('staffDateFilter').value;
+        const { createApp, ref, computed, onMounted } = Vue;
 
-            if (statusFilter !== 'All') completed = completed.filter(c => c.status === statusFilter);
-            if (dateFilter !== 'All') {
-                completed = completed.filter(c => {
-                    const dateParts = c.date.split(' ')[0].split('/');
-                    return `${dateParts[1]}/${dateParts[2]}` === dateFilter;
-                });
-            }
+        createApp({
+            setup() {
+                const user = ref(null);
+                const historyData = ref([]);
+                const statusFilter = ref('');
 
-            const tbody = document.getElementById('historyBody');
-            if (completed.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="px-5 py-12 text-center text-slate-500 text-sm font-medium"><i class="fas fa-filter text-2xl text-slate-300 mb-2 block"></i> No records found for these filters.</td></tr>`;
-            } else {
-                tbody.innerHTML = '';
-                completed.forEach(c => {
-                    const tr = document.createElement('tr');
-                    tr.className = 'hover:bg-slate-50 transition duration-150';
-                    const lastAction = c.history[c.history.length - 1];
-                    const closureDate = lastAction ? lastAction.date : c.date;
-                    
-                    let starsHtml = '';
-                    const rating = parseInt(c.feedback?.rating || 0);
-                    if(c.feedback) {
-                        for(let i = 1; i <= 5; i++) starsHtml += i <= rating ? '<i class="fas fa-star text-amber-400"></i>' : '<i class="far fa-star text-slate-200"></i>';
+                const fetchHistory = async () => {
+                    try {
+                        const response = await apiCall('/staff/complaints/history');
+                        historyData.value = response.history || response.complaints || response || [];
+                    } catch (err) {
+                        historyData.value = [];
                     }
-                    
-                    const reviewHtml = c.feedback
-                        ? `<div class="flex gap-0.5 text-[12px] mb-1">${starsHtml}</div><p class="text-xs text-slate-600 font-medium">"${c.feedback.comment}"</p>`
-                        : `<span class="text-slate-400 text-[10px] italic">Pending</span>`;
-                        
-                    tr.innerHTML = `
-                        <td class="px-5 py-4 font-bold text-slate-800 text-sm">${c.id}</td>
-                        <td class="px-5 py-4 text-sm text-slate-700 font-medium">${c.category}</td>
-                        <td class="px-5 py-4 text-xs font-medium text-slate-500">${closureDate}</td>
-                        <td class="px-5 py-4"><span class="status-pill status-${c.status.replace(' ','')}">${c.status}</span></td>
-                        <td class="px-5 py-4">${reviewHtml}</td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-            }
-            updateUnreadBadge();
-        }
+                };
 
-        renderStaffHistory();
+                onMounted(() => {
+                    user.value = requireAuth('STAFF');
+                    if (user.value) fetchHistory();
+                });
+
+                const filteredHistory = computed(() => {
+                    if (statusFilter.value) {
+                        return historyData.value.filter(c => c.status === statusFilter.value);
+                    }
+                    return historyData.value;
+                });
+
+                return { user, historyData, statusFilter, filteredHistory, logout, goHome };
+            }
+        }).mount('#app');
     </script>
 </body>
 </html>

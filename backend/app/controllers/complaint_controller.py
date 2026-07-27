@@ -37,3 +37,11 @@ def upload_attachment_handler(complaint_id: int) -> tuple[dict[str, Any], int]:
 
 def submit_feedback_handler(complaint_id: int) -> tuple[dict[str, Any], int]:
     return submit_feedback(complaint_id)
+
+
+def close_complaint_handler(complaint_id: int) -> tuple[dict[str, Any], int]:
+    return close_complaint(complaint_id)
+
+
+def reopen_complaint_handler(complaint_id: int) -> tuple[dict[str, Any], int]:
+    return reopen_complaint(complaint_id)

@@ -7,193 +7,222 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="../assets/css/styles.css" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <link rel="icon" type="image/svg+xml" href="../images/favicon.svg">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 </head>
 <body>
     <div id="app" class="min-h-screen flex flex-col bg-slate-50">
         <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex justify-between items-center">
-            <div class="flex items-center cursor-pointer" onclick="goHome()">
-                <div class="mr-3"><img src="../images/logo.svg" alt="Smart Society Logo" class="w-8 h-8 rounded-md shadow-sm" /></div>
-                <div><h1 class="font-extrabold text-lg text-slate-900 tracking-tight leading-none">Smart Society</h1><p class="text-[9px] text-indigo-600 font-bold uppercase tracking-widest mt-0.5">Complaint Resolution</p></div>
-            </div>
-            <div class="flex items-center space-x-4 relative">
-                <button onclick="toggleNotifications()" class="relative flex items-center text-slate-500 hover:text-indigo-600 transition px-2 py-1.5 rounded-md hover:bg-slate-50">
-                    <div class="relative"><i class="fas fa-bell text-xl"></i><span id="unreadBadge" class="absolute -top-1 -right-1 flex h-3 w-3 hidden"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span><span class="relative inline-flex rounded-full h-3 w-3 bg-rose-50 border-2 border-white"></span></span></div>
-                    <span class="hidden sm:inline-block ml-2 font-bold text-sm">Alerts</span>
-                </button>
-                <div class="h-6 w-px bg-slate-200 hidden sm:block"></div>
-                <div class="flex items-center gap-3 cursor-default">
-                    <div class="text-right hidden sm:block"><p class="text-sm font-bold text-slate-900 leading-tight" id="userName"></p><p class="text-[0.65rem] text-slate-500 font-bold uppercase tracking-wider mt-0.5" id="userRoleFlat"></p></div>
-                    <div class="w-8 h-8 rounded-md bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm border border-indigo-200" id="userAvatar">U</div>
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex justify-between items-center">
+                <div class="flex items-center cursor-pointer" @click="goHome()">
+                    <div class="mr-3"><img src="../images/logo.svg" alt="Smart Society Logo" class="w-8 h-8 rounded-md shadow-sm" /></div>
+                    <div><h1 class="font-extrabold text-lg text-slate-900 tracking-tight leading-none">Smart Society</h1><p class="text-[9px] text-indigo-600 font-bold uppercase tracking-widest mt-0.5">Complaint Resolution</p></div>
                 </div>
-                <button onclick="logout()" class="text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition p-1.5 rounded-md ml-1" title="Sign Out"><i class="fas fa-sign-out-alt text-lg"></i></button>
+                <div class="flex items-center space-x-4 relative">
+                    <div class="h-6 w-px bg-slate-200 hidden sm:block"></div>
+                    <div class="flex items-center gap-3 cursor-default">
+                        <div class="text-right hidden sm:block">
+                            <p class="text-sm font-bold text-slate-900 leading-tight">{{ user?.name }}</p>
+                            <p class="text-[0.65rem] text-slate-500 font-bold uppercase tracking-wider mt-0.5">{{ user?.role }}</p>
+                        </div>
+                        <div class="w-8 h-8 rounded-md bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm border border-indigo-200">{{ user?.name ? user.name.charAt(0) : 'U' }}</div>
+                    </div>
+                    <button @click="logout()" class="text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition p-1.5 rounded-md ml-1" title="Sign Out"><i class="fas fa-sign-out-alt text-lg"></i></button>
+                </div>
             </div>
-        </div>
-        <nav class="bg-slate-50 border-t border-slate-200">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-6 overflow-x-auto" id="navTabs"><a href="dashboard-admin.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition"><i class="fas fa-chart-pie mr-1.5 text-base"></i> Portal</a><a href="admin-staff.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition"><i class="fas fa-users mr-1.5 text-base"></i> Staff</a><a href="messages.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition"><i class="fas fa-comments mr-1.5 text-base"></i> Messages</a></div>
-        </nav>
-    </header>
+            <nav class="bg-slate-50 border-t border-slate-200">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-6 overflow-x-auto">
+                    <a href="dashboard-admin.html" class="nav-link border-indigo-600 text-indigo-700 py-2 px-3 text-xs font-bold hover:text-slate-900 border-b-2 flex items-center transition"><i class="fas fa-chart-pie mr-1.5 text-base"></i> Portal</a>
+                    <a href="admin-staff.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition"><i class="fas fa-users mr-1.5 text-base"></i> Staff</a>
+                    <a href="admin-reports.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition"><i class="fas fa-search mr-1.5 text-base"></i> Records</a>
+                </div>
+            </nav>
+        </header>
 
         <main class="flex-grow p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full space-y-6">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div><h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Facility Operations Console</h2><p class="text-sm text-slate-500 mt-1 font-medium">Monitor facility health and dispatch active incidents.</p></div>
             </div>
 
-            <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4" id="adminStats">
-                <div class="bg-white border border-slate-200 rounded-lg p-4 shadow-sm flex flex-col items-center justify-center"><span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Total Volume</span><span class="text-3xl font-black text-slate-900" id="admTotal">0</span></div>
-                <div class="bg-white border-2 border-rose-300 rounded-lg p-4 shadow-sm flex flex-col items-center justify-center relative bg-rose-50/20" id="admAttentionCard"><div id="admAttentionDot" class="hidden absolute top-3 right-3 w-2.5 h-2.5 bg-rose-500 rounded-full animate-pulse border-2 border-white"></div><span class="text-[10px] font-bold text-rose-700 uppercase tracking-wider mb-1 text-center">Unassigned<br><span class="text-[8px] opacity-75">(Open/Reopened)</span></span><span class="text-3xl font-black text-rose-700" id="admAttention">0</span></div>
-                <div class="bg-white border border-slate-200 rounded-lg p-4 shadow-sm flex flex-col items-center justify-center"><span class="text-[10px] font-bold text-indigo-600 uppercase tracking-wider mb-1">Dispatched</span><span class="text-3xl font-black text-indigo-700" id="admAssigned">0</span></div>
-                <div class="bg-white border border-slate-200 rounded-lg p-4 shadow-sm flex flex-col items-center justify-center"><span class="text-[10px] font-bold text-amber-600 uppercase tracking-wider mb-1">In Progress</span><span class="text-3xl font-black text-amber-700" id="admInProgress">0</span></div>
-                <div class="bg-white border border-slate-200 rounded-lg p-4 shadow-sm flex flex-col items-center justify-center"><span class="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-1">Completed</span><span class="text-3xl font-black text-emerald-700" id="admResolved">0</span></div>
+            <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
+                <div class="bg-white border border-slate-200 rounded-lg p-4 shadow-sm flex flex-col items-center justify-center">
+                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Total Volume</span>
+                    <span class="text-3xl font-black text-slate-900">{{ stats.total }}</span>
+                </div>
+                <div class="bg-white rounded-lg p-4 shadow-sm flex flex-col items-center justify-center relative" :class="stats.open > 0 ? 'border-2 border-rose-300 bg-rose-50/20' : 'border border-slate-200'">
+                    <div v-if="stats.open > 0" class="absolute top-3 right-3 w-2.5 h-2.5 bg-rose-500 rounded-full animate-pulse border-2 border-white"></div>
+                    <span class="text-[10px] font-bold uppercase tracking-wider mb-1 text-center" :class="stats.open > 0 ? 'text-rose-700' : 'text-slate-500'">Unassigned<br><span class="text-[8px] opacity-75">(Open/Reopened)</span></span>
+                    <span class="text-3xl font-black" :class="stats.open > 0 ? 'text-rose-700' : 'text-slate-900'">{{ stats.open }}</span>
+                </div>
+                <div class="bg-white border border-slate-200 rounded-lg p-4 shadow-sm flex flex-col items-center justify-center">
+                    <span class="text-[10px] font-bold text-indigo-600 uppercase tracking-wider mb-1">Dispatched</span>
+                    <span class="text-3xl font-black text-indigo-700">{{ stats.assigned }}</span>
+                </div>
+                <div class="bg-white border border-slate-200 rounded-lg p-4 shadow-sm flex flex-col items-center justify-center">
+                    <span class="text-[10px] font-bold text-amber-600 uppercase tracking-wider mb-1">In Progress</span>
+                    <span class="text-3xl font-black text-amber-700">{{ stats.inProgress }}</span>
+                </div>
+                <div class="bg-white border border-slate-200 rounded-lg p-4 shadow-sm flex flex-col items-center justify-center">
+                    <span class="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-1">Completed</span>
+                    <span class="text-3xl font-black text-emerald-700">{{ stats.resolved + stats.closed }}</span>
+                </div>
             </div>
 
             <div class="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
-                <div class="px-5 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50"><h3 class="font-bold text-sm text-slate-800 uppercase tracking-wide">Master Dispatch Queue</h3></div>
-                
+                <div class="px-5 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                    <h3 class="font-bold text-sm text-slate-800 uppercase tracking-wide">Master Dispatch Queue</h3>
+                </div>
+
                 <div class="px-5 py-3 border-b border-slate-200 bg-white flex flex-col sm:flex-row gap-3 justify-between items-center">
                     <div class="flex gap-3 w-full sm:w-auto">
-                        <select id="admStatusFilter" onchange="renderAdminDashboard()" class="bg-slate-50 border border-slate-300 text-slate-700 text-xs font-bold rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none w-full sm:w-auto">
-                            <option value="All">All Statuses</option>
-                            <option value="Open">Open</option>
-                            <option value="Assigned">Assigned</option>
-                            <option value="In Progress">In Progress</option>
-                            <option value="Resolved">Resolved (Pending Review)</option>
-                            <option value="Closed">Closed (Completed)</option>
-                            <option value="Reopened">Reopened</option>
-                        </select>
-                        <select id="admDateFilter" onchange="renderAdminDashboard()" class="bg-slate-50 border border-slate-300 text-slate-700 text-xs font-bold rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none w-full sm:w-auto">
-                            <option value="All">All Time</option>
-                            <option value="07/2026">July 2026</option>
-                            <option value="06/2026">June 2026</option>
-                            <option value="05/2026">May 2026</option>
+                        <select v-model="statusFilter" @change="fetchTableData" class="bg-slate-50 border border-slate-300 text-slate-700 text-xs font-bold rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none w-full sm:w-auto">
+                            <option value="">All Statuses</option>
+                            <option value="OPEN">Open</option>
+                            <option value="ASSIGNED">Assigned</option>
+                            <option value="IN_PROGRESS">In Progress</option>
+                            <option value="RESOLVED">Resolved (Pending Review)</option>
+                            <option value="CLOSED">Closed (Completed)</option>
+                            <option value="REOPENED">Reopened</option>
                         </select>
                     </div>
                     <div class="relative w-full sm:w-64">
                         <i class="fas fa-search absolute left-3 top-2.5 text-slate-400 text-xs"></i>
-                        <input type="text" id="admSearch" oninput="renderAdminDashboard()" placeholder="Search Resident or ID..." class="w-full bg-slate-50 border border-slate-300 text-slate-700 text-xs rounded-md pl-8 pr-3 py-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+                        <input v-model="searchQuery" @keyup.enter="fetchTableData" type="text" placeholder="Search (Press Enter)..." class="w-full bg-slate-50 border border-slate-300 text-slate-700 text-xs rounded-md pl-8 pr-3 py-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
                     </div>
                 </div>
 
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
-                        <thead class="bg-white border-b border-slate-200"><tr><th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">ID</th><th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Resident Details</th><th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Trade</th><th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Lifecycle State</th><th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">Admin Action</th></tr></thead>
-                        <tbody id="adminQueueBody" class="divide-y divide-slate-100 bg-white"></tbody>
+                        <thead class="bg-white border-b border-slate-200">
+                            <tr>
+                                <th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">ID</th>
+                                <th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Resident Details</th>
+                                <th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Trade</th>
+                                <th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Lifecycle State</th>
+                                <th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">Admin Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 bg-white">
+                            <tr v-if="complaints.length === 0">
+                                <td colspan="5" class="px-5 py-10 text-center text-slate-500 text-sm font-medium"><i class="fas fa-search text-2xl text-slate-300 mb-2 block"></i> No records found matching the criteria.</td>
+                            </tr>
+                            <tr v-for="c in complaints" :key="c.id" class="hover:bg-slate-50 transition duration-150">
+                                <td class="px-5 py-3 whitespace-nowrap font-bold text-slate-800 text-sm">{{ c.id }}</td>
+                                <td class="px-5 py-3 text-sm text-slate-700 font-medium">{{ c.resident?.name || 'N/A' }}</td>
+                                <td class="px-5 py-3 text-sm text-slate-700 font-medium">{{ c.category?.name || 'N/A' }}</td>
+                                <td class="px-5 py-3 whitespace-nowrap"><span :class="'status-pill status-' + c.status.replace(' ','')">{{ c.status.replace('_',' ') }}</span></td>
+                                <td class="px-5 py-3 whitespace-nowrap text-right flex justify-end gap-2">
+                                    <button v-if="['OPEN', 'REOPENED'].includes(c.status)" @click="navigate('assign-complaint.html?id=' + c.id)" class="bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-600 hover:text-white font-bold text-[10px] uppercase tracking-wide px-3 py-1.5 rounded-md transition shadow-sm">Assign Resource</button>
+                                    <button v-else @click="navigate('complaint-details.html?id=' + c.id)" class="bg-white border border-slate-300 text-slate-600 hover:bg-slate-50 font-bold text-[10px] uppercase tracking-wide px-3 py-1.5 rounded-md transition shadow-sm">Monitor</button>
+
+                                    <button v-if="['OPEN','ASSIGNED','IN_PROGRESS'].includes(c.status)" @click="closeTicket(c.id)" class="bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 font-bold text-[10px] uppercase tracking-wide px-3 py-1.5 rounded-md transition shadow-sm">Close</button>
+
+                                    <button v-if="c.rating" @click="openModal(c)" class="bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-500 hover:text-white font-bold text-[10px] uppercase tracking-wide px-3 py-1.5 rounded-md transition shadow-sm"><i class="fas fa-star mr-1"></i> Review</button>
+                                </td>
+                            </tr>
+                        </tbody>
                     </table>
                 </div>
             </div>
         </main>
-    </div>
 
-    <!-- Admin Review Modal -->
-    <div id="adminReviewModal" class="fixed inset-0 bg-slate-900/50 hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden flex flex-col border-t-4 border-t-amber-400">
-            <div class="px-5 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-                <h3 class="font-bold text-lg text-slate-800" id="adminModalTitle">Resident Review</h3>
-                <button onclick="closeAdminReviewModal()" class="text-slate-400 hover:text-rose-500 transition"><i class="fas fa-times text-xl"></i></button>
+        <!-- Admin Review Modal -->
+        <div v-if="showModal" class="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden flex flex-col border-t-4 border-t-amber-400">
+                <div class="px-5 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                    <h3 class="font-bold text-lg text-slate-800">Review: {{ currentTicket.id }}</h3>
+                    <button @click="closeModal" class="text-slate-400 hover:text-rose-500 transition"><i class="fas fa-times text-xl"></i></button>
+                </div>
+                <div class="p-5">
+                    <div class="mb-4"><label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Resident</label><p class="text-sm font-bold text-slate-800">{{ currentTicket.resident?.name || '...' }}</p></div>
+                    <div class="mb-4">
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Rating</label>
+                        <div class="flex gap-1 mt-1">
+                            <i v-for="i in 5" :key="i" :class="i <= currentTicket.rating ? 'fas fa-star text-amber-400 text-2xl' : 'far fa-star text-slate-200 text-2xl'"></i>
+                        </div>
+                    </div>
+                    <div class="mb-4"><label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Comment</label><div class="text-sm text-slate-700 italic bg-amber-50/50 p-4 rounded-md border border-amber-100">"{{ currentTicket.feedback?.comment || currentTicket.feedbackComment || '...' }}"</div></div>
+                    <div class="text-right"><button @click="closeModal" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2 px-4 rounded-md transition text-sm">Close</button></div>
+                </div>
             </div>
-            <div class="p-5" id="adminModalContent"></div>
         </div>
     </div>
 
-    <div id="toast" class="fixed bottom-6 right-6 z-50 hidden items-center px-4 py-3 rounded-md shadow-lg border bg-slate-900 border-slate-800 text-white">
-        <i class="fas fa-check-circle text-emerald-400 mr-3 text-lg"></i>
-        <span id="toastMsg" class="font-medium text-sm">Success</span>
-    </div>
-
-    <script src="../js/store.js"></script>
     <script src="../js/utils.js"></script>
     <script>
-        function renderAdminDashboard() {
-            const user = requireAuth('Admin');
-            if (!user) return;
-            document.getElementById('userName').textContent = user.name;
-            document.getElementById('userRoleFlat').textContent = user.role;
-            document.getElementById('userAvatar').textContent = user.name.charAt(0);
+        const { createApp, ref, onMounted } = Vue;
 
-            const all = store.complaints;
-            
-            // KPIs
-            const attention = all.filter(c => ['Open','Reopened'].includes(c.status)).length;
-            document.getElementById('admTotal').textContent = all.length;
-            document.getElementById('admAttention').textContent = attention;
-            document.getElementById('admAssigned').textContent = all.filter(c => c.status === 'Assigned').length;
-            document.getElementById('admInProgress').textContent = all.filter(c => c.status === 'In Progress').length;
-            document.getElementById('admResolved').textContent = all.filter(c => ['Resolved','Closed'].includes(c.status)).length;
-            
-            if (attention > 0) {
-                document.getElementById('admAttentionDot').classList.remove('hidden');
-                document.getElementById('admAttentionCard').classList.add('border-rose-400');
-            } else {
-                document.getElementById('admAttentionDot').classList.add('hidden');
-                document.getElementById('admAttentionCard').classList.remove('border-rose-400');
-            }
+        createApp({
+            setup() {
+                const user = ref(null);
+                const stats = ref({ total: 0, open: 0, assigned: 0, inProgress: 0, resolved: 0, closed: 0 });
+                const complaints = ref([]);
+                const statusFilter = ref('');
+                const searchQuery = ref('');
+                const showModal = ref(false);
+                const currentTicket = ref(null);
 
-            // Filters
-            const statusFilter = document.getElementById('admStatusFilter').value;
-            const dateFilter = document.getElementById('admDateFilter').value;
-            const search = document.getElementById('admSearch').value.toLowerCase();
+                const fetchDashboardStats = async () => {
+                    try {
+                        const response = await apiCall('/admin/dashboard');
+                        const data = response.dashboard || response;
+                        stats.value = {
+                            total: data.total_complaints || 0,
+                            open: data.status_counts?.OPEN || 0,
+                            assigned: data.status_counts?.ASSIGNED || 0,
+                            inProgress: data.status_counts?.IN_PROGRESS || 0,
+                            resolved: data.status_counts?.RESOLVED || 0,
+                            closed: data.status_counts?.CLOSED || 0,
+                        };
+                    } catch (err) {}
+                };
 
-            let queue = [...all].sort((a,b) => new Date(b.date) - new Date(a.date));
+                const fetchTableData = async () => {
+                    let queryParams = [];
+                    if (statusFilter.value) queryParams.push(`status=${encodeURIComponent(statusFilter.value)}`);
+                    if (searchQuery.value) queryParams.push(`search=${encodeURIComponent(searchQuery.value)}`);
+                    const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
 
-            if (statusFilter !== 'All') queue = queue.filter(c => c.status === statusFilter);
-            if (dateFilter !== 'All') {
-                queue = queue.filter(c => {
-                    const dateParts = c.date.split(' ')[0].split('/');
-                    return `${dateParts[1]}/${dateParts[2]}` === dateFilter;
+                    try {
+                        const response = await apiCall(`/admin/complaints${queryString}`);
+                        complaints.value = response.complaints || response || [];
+                    } catch (err) {}
+                };
+
+                onMounted(() => {
+                    user.value = requireAuth('Admin');
+                    if (user.value) {
+                        fetchDashboardStats();
+                        fetchTableData();
+                    }
                 });
+
+                const openModal = (ticket) => {
+                    currentTicket.value = ticket;
+                    showModal.value = true;
+                };
+
+                const closeModal = () => {
+                    showModal.value = false;
+                    currentTicket.value = null;
+                };
+
+                const navigate = (url) => {
+                    window.location.href = url;
+                };
+
+                const closeTicket = async (id) => {
+                    if (!confirm('Are you sure you want to close this ticket?')) return;
+                    try {
+                        await apiCall(`/complaints/${id}/close`, { method: 'PUT' });
+                        showToast('Ticket closed successfully.', 'success');
+                        fetchTableData();
+                    } catch (err) {}
+                };
+
+                return { user, stats, complaints, statusFilter, searchQuery, showModal, currentTicket, fetchTableData, fetchDashboardStats, openModal, closeModal, navigate, closeTicket, logout, goHome };
             }
-            if (search) {
-                queue = queue.filter(c => c.resident.toLowerCase().includes(search) || c.id.toLowerCase().includes(search));
-            }
-
-            const tbody = document.getElementById('adminQueueBody');
-            if (queue.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="px-5 py-10 text-center text-slate-500 text-sm font-medium"><i class="fas fa-search text-2xl text-slate-300 mb-2 block"></i> No records found matching the criteria.</td></tr>`;
-            } else {
-                tbody.innerHTML = '';
-                queue.forEach(c => {
-                    const tr = document.createElement('tr');
-                    tr.className = 'hover:bg-slate-50 transition duration-150';
-                    const isAssignable = ['Open','Reopened'].includes(c.status);
-                    
-                    tr.innerHTML = `
-                        <td class="px-5 py-3 whitespace-nowrap font-bold text-slate-800 text-sm">${c.id}</td>
-                        <td class="px-5 py-3 text-sm text-slate-700 font-medium">${c.resident}</td>
-                        <td class="px-5 py-3 text-sm text-slate-700 font-medium">${c.category}</td>
-                        <td class="px-5 py-3 whitespace-nowrap"><span class="status-pill status-${c.status.replace(' ','')}">${c.status}</span></td>
-                        <td class="px-5 py-3 whitespace-nowrap text-right flex justify-end gap-2">
-                            <button onclick="${isAssignable ? `window.location.href='assign-complaint.html?id=${c.id}'` : `viewComplaint('${c.id}','dashboard-admin.html')`}" class="${isAssignable ? 'bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-600 hover:text-white' : 'bg-white border border-slate-300 text-slate-600 hover:bg-slate-50'} font-bold text-[10px] uppercase tracking-wide px-3 py-1.5 rounded-md transition shadow-sm">${isAssignable ? 'Assign Resource' : 'Monitor'}</button>
-                            ${c.feedback ? `<button onclick="openAdminReviewModal('${c.id}')" class="bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-500 hover:text-white font-bold text-[10px] uppercase tracking-wide px-3 py-1.5 rounded-md transition shadow-sm"><i class="fas fa-star mr-1"></i> Review</button>` : ''}
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-            }
-            updateUnreadBadge();
-        }
-
-        window.openAdminReviewModal = function(id) {
-            const complaint = store.complaints.find(c => c.id === id);
-            const content = document.getElementById('adminModalContent');
-            document.getElementById('adminModalTitle').textContent = `Review: ${id}`;
-
-            let starsHtml = '';
-            for(let i = 1; i <= 5; i++) { starsHtml += i <= parseInt(complaint.feedback.rating) ? '<i class="fas fa-star text-amber-400 text-2xl"></i>' : '<i class="far fa-star text-slate-200 text-2xl"></i>'; }
-
-            content.innerHTML = `
-                <div class="mb-4"><label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Resident</label><p class="text-sm font-bold text-slate-800">${complaint.resident}</p></div>
-                <div class="mb-4"><label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Rating</label><div class="flex gap-1 mt-1">${starsHtml}</div></div>
-                <div class="mb-4"><label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Comment</label><div class="text-sm text-slate-700 italic bg-amber-50/50 p-4 rounded-md border border-amber-100">"${complaint.feedback.comment}"</div></div>
-                <div class="text-right"><button onclick="closeAdminReviewModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2 px-4 rounded-md transition text-sm">Close</button></div>
-            `;
-            document.getElementById('adminReviewModal').classList.remove('hidden');
-        };
-
-        window.closeAdminReviewModal = function() { document.getElementById('adminReviewModal').classList.add('hidden'); };
-
-        renderAdminDashboard();
+        }).mount('#app');
     </script>
 </body>
 </html>

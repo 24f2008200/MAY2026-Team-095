@@ -740,3 +740,115 @@ def submit_feedback(complaint_id: int):
         "feedback": _feedback_response(feedback),
         "complaint": _complaint_response(complaint),
     }, 201
+
+
+def close_complaint(complaint_id: int):
+    """
+    Close a complaint (RESOLVED → CLOSED).
+    Admin or resident can close an open/in-progress complaint.
+    #i added it: allows admin and resident to close tickets.
+    """
+    user = _get_user(_current_user_id())
+
+    if not user:
+        return {"success": False, "message": "User not found."}, 404
+
+    complaint = Complaint.query.get(complaint_id)
+
+    if not complaint:
+        return {"success": False, "message": "Complaint not found."}, 404
+
+    if complaint.status not in {ComplaintStatus.OPEN, ComplaintStatus.ASSIGNED, ComplaintStatus.IN_PROGRESS}:
+        return {
+            "success": False,
+            "message": "Only OPEN, ASSIGNED, or IN_PROGRESS complaints can be closed.",
+        }, 400
+
+    complaint.status = ComplaintStatus.CLOSED
+    complaint.resolved_at = datetime.now(timezone.utc)
+
+    try:
+        _add_timeline_entry(
+            complaint=complaint,
+            user_id=user.id,
+            status=ComplaintStatus.CLOSED.value,
+            comment=f"Ticket closed by {user.name}.",
+        )
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return {"success": False, "message": "Unable to close complaint."}, 500
+
+    return {
+        "success": True,
+        "message": "Complaint closed successfully.",
+        "complaint": _complaint_response(complaint),
+    }, 200
+
+
+def reopen_complaint(complaint_id: int):
+    """
+    Reopen a closed complaint (CLOSED → OPEN) within 7 days.
+    Only the resident who created the complaint can reopen.
+    #i added it: allows residents to reopen tickets closed within 7 days.
+    """
+    user = _get_user(_current_user_id())
+
+    if not user:
+        return {"success": False, "message": "User not found."}, 404
+
+    complaint = Complaint.query.get(complaint_id)
+
+    if not complaint:
+        return {"success": False, "message": "Complaint not found."}, 404
+
+    if user.role != UserRole.RESIDENT:
+        return {
+            "success": False,
+            "message": "Only the resident who created this complaint can reopen it.",
+        }, 403
+
+    if complaint.resident_id != user.id:
+        return {
+            "success": False,
+            "message": "You can only reopen your own complaints.",
+        }, 403
+
+    if complaint.status not in {ComplaintStatus.CLOSED, ComplaintStatus.RESOLVED}:
+        return {
+            "success": False,
+            "message": "Only CLOSED or RESOLVED complaints can be reopened.",
+        }, 400
+
+    if complaint.resolved_at is None:
+        return {
+            "success": False,
+            "message": "Cannot reopen: no closure record found.",
+        }, 400
+
+    if (datetime.now(timezone.utc) - complaint.resolved_at).days > 7:
+        return {
+            "success": False,
+            "message": "Complaint can only be reopened within 7 days of closure.",
+        }, 400
+
+    complaint.status = ComplaintStatus.REOPENED
+    complaint.resolved_at = None
+
+    try:
+        _add_timeline_entry(
+            complaint=complaint,
+            user_id=user.id,
+            status=ComplaintStatus.REOPENED.value,
+            comment=f"Ticket reopened by {user.name}.",
+        )
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return {"success": False, "message": "Unable to reopen complaint."}, 500
+
+    return {
+        "success": True,
+        "message": "Complaint reopened successfully.",
+        "complaint": _complaint_response(complaint),
+    }, 200

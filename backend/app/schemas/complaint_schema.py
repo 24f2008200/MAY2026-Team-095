@@ -23,6 +23,7 @@ class CreateComplaintSchema(Schema):
         validate=validate.Length(
             min=5,
             max=150,
+            error="Title must be between 5 and 150 characters.",
         ),
     )
 
@@ -31,6 +32,7 @@ class CreateComplaintSchema(Schema):
         validate=validate.Length(
             min=10,
             max=5000,
+            error="Description must be between 10 and 5000 characters.",
         ),
     )
 

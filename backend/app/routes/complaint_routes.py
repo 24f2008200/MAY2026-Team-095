@@ -8,6 +8,8 @@ from app.controllers.complaint_controller import (
     submit_feedback_handler,
     update_complaint_handler,
     upload_attachment_handler,
+    close_complaint_handler,
+    reopen_complaint_handler,
 )
 from app.middleware.auth import (
     authenticated_required,
@@ -171,3 +173,37 @@ class ComplaintFeedbackResource(Resource):
     @complaint_ns.response(409, "Already submitted")
     def post(self, complaint_id):
         return submit_feedback_handler(complaint_id)
+
+
+@complaint_ns.route("/<int:complaint_id>/close")
+class ComplaintCloseResource(Resource):
+
+    @authenticated_required
+    @complaint_ns.doc(
+        security="Bearer",
+        summary="Close a complaint",
+        description="Admin or resident can close an open or in-progress complaint.",
+    )
+    @complaint_ns.response(200, "Complaint closed")
+    @complaint_ns.response(400, "Validation error")
+    @complaint_ns.response(403, "Forbidden")
+    @complaint_ns.response(404, "Not found")
+    def put(self, complaint_id):
+        return close_complaint_handler(complaint_id)
+
+
+@complaint_ns.route("/<int:complaint_id>/reopen")
+class ComplaintReopenResource(Resource):
+
+    @authenticated_required
+    @complaint_ns.doc(
+        security="Bearer",
+        summary="Reopen a closed complaint",
+        description="Resident can reopen a ticket closed within the last 7 days.",
+    )
+    @complaint_ns.response(200, "Complaint reopened")
+    @complaint_ns.response(400, "Validation error")
+    @complaint_ns.response(403, "Forbidden")
+    @complaint_ns.response(404, "Not found")
+    def put(self, complaint_id):
+        return reopen_complaint_handler(complaint_id)

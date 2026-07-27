@@ -690,10 +690,29 @@ def submit_feedback(complaint_id: int):
         }, 400
 
     if complaint.feedback:
-        return {
-            "success": False,
-            "message": "Feedback already submitted for this complaint.",
-        }, 409
+        # Allow updating existing feedback for the same resident
+        if complaint.feedback.resident_id != user_id:
+            return {
+                "success": False,
+                "message": "Feedback already submitted by another resident.",
+            }, 409
+        # Update existing feedback
+        try:
+            complaint.feedback.rating = data["rating"]
+            complaint.feedback.comment = data.get("comment")
+            db.session.commit()
+            return {
+                "success": True,
+                "message": "Feedback updated successfully.",
+                "feedback": _feedback_response(complaint.feedback),
+                "complaint": _complaint_response(complaint),
+            }, 200
+        except Exception:
+            db.session.rollback()
+            return {
+                "success": False,
+                "message": "Unable to update feedback.",
+            }, 500
 
     feedback = Feedback(
         complaint_id=complaint.id,

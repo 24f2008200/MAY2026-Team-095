@@ -91,7 +91,9 @@
                         const myTasks = await apiCall('/staff/complaints');
                         const complaints = myTasks.complaints || myTasks || [];
                         activeQueue.value = complaints.filter(c => ['ASSIGNED','IN_PROGRESS'].includes(c.status));
-                    } catch (err) {}
+                    } catch (err) {
+                        showToast('Failed to load staff dashboard.', 'error');
+                    }
                 };
 
                 onMounted(() => {

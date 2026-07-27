@@ -97,16 +97,16 @@
                     <div v-show="activeTab === 'messages'" class="flex-col h-full flex-grow flex">
                         <div class="flex-grow p-6 overflow-y-auto bg-slate-50 space-y-6 max-h-[400px]" ref="chatContainer">
                             <template v-for="event in timeline" :key="event.id">
-                                <div v-if="!event.actor" class="text-xs text-center my-3 text-slate-400 font-bold uppercase tracking-widest">
-                                    {{ event.action }} - {{ event.created_at ? new Date(event.created_at).toLocaleString() : '' }}
+                                <div v-if="!event.updated_by_user" class="text-xs text-center my-3 text-slate-400 font-bold uppercase tracking-widest">
+                                    {{ event.action }} - {{ event.created_at && !isNaN(new Date(event.created_at).getTime()) ? new Date(event.created_at).toLocaleString() : '' }}
                                 </div>
                                 <div v-else class="flex flex-col mb-4 w-full">
-                                    <div class="flex flex-col" :class="event.actor === user.name ? 'items-end' : 'items-start'">
+                                    <div class="flex flex-col" :class="event.updated_by_user?.name === user.name ? 'items-end' : 'items-start'">
                                         <div class="flex items-baseline gap-2 mb-1">
-                                            <span class="text-xs font-bold text-slate-900">{{ event.actor === user.name ? 'You' : event.actor }}</span>
-                                    <span class="text-[9px] text-slate-400">{{ event.created_at ? new Date(event.created_at).toLocaleString() : '' }}</span>
+                                            <span class="text-xs font-bold text-slate-900">{{ event.updated_by_user?.name === user.name ? 'You' : event.updated_by_user?.name }}</span>
+                                    <span class="text-[9px] text-slate-400">{{ event.created_at && !isNaN(new Date(event.created_at).getTime()) ? new Date(event.created_at).toLocaleString() : '' }}</span>
                                         </div>
-                                        <div class="max-w-md border p-3 rounded-lg text-sm shadow-sm text-left" :class="event.actor === user.name ? 'bg-indigo-600 text-white ml-auto' : 'bg-white border-slate-200 text-slate-700 mr-auto'">
+                                        <div class="max-w-md border p-3 rounded-lg text-sm shadow-sm text-left" :class="event.updated_by_user?.name === user.name ? 'bg-indigo-600 text-white ml-auto' : 'bg-white border-slate-200 text-slate-700 mr-auto'">
                                             {{ event.comment || event.action }}
                                         </div>
                                     </div>
@@ -135,9 +135,9 @@
                                 <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Location</p>
                                 <p class="text-sm font-medium text-slate-800">{{ complaint?.location }}</p>
                             </div>
-                            <div v-if="complaint?.assignedStaffName" class="bg-indigo-50 border border-indigo-100 rounded-lg p-3">
+                            <div v-if="complaint?.assigned_staff?.name" class="bg-indigo-50 border border-indigo-100 rounded-lg p-3">
                                 <p class="text-[10px] font-bold text-indigo-500 uppercase tracking-widest mb-1">Assigned To</p>
-                                <p class="text-sm font-bold text-slate-900">{{ complaint.assignedStaffName }}</p>
+                                <p class="text-sm font-bold text-slate-900">{{ complaint.assigned_staff?.name }}</p>
                             </div>
                         </div>
                     </div>
@@ -186,7 +186,9 @@
                                 chatContainer.value.scrollTop = chatContainer.value.scrollHeight;
                             }
                         });
-                    } catch (err) {}
+                    } catch (err) {
+                        showToast('Failed to load timeline.', 'error');
+                    }
                 };
 
                 onMounted(() => {
@@ -232,7 +234,9 @@
                         });
                         showToast("Media attached successfully!");
                         fetchTicketDetails();
-                    } catch (err) {}
+                    } catch (err) {
+                        showToast('Failed to upload media.', 'error');
+                    }
                 };
 
                 const navigate = (url) => window.location.href = url;

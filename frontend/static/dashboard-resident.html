@@ -104,11 +104,11 @@
                                 <td class="px-5 py-3 whitespace-nowrap text-xs text-slate-600 font-medium">{{ formatDate(c.created_at) }}</td>
                                 <td class="px-5 py-3 whitespace-nowrap text-right flex justify-end gap-2">
                                     <button @click="viewComplaint(c.id, 'dashboard-resident.html')" class="text-slate-600 border border-slate-200 bg-white hover:bg-slate-50 text-xs font-bold px-3 py-1.5 rounded-md transition shadow-sm">Details</button>
-                                    <button v-if="c.status === 'RESOLVED' || c.status === 'CLOSED'" @click="openReviewModal(c)" :class="c.rating ? 'text-slate-600 bg-slate-100 border-slate-200 hover:bg-slate-200' : 'text-indigo-600 bg-indigo-50 border-indigo-200 hover:bg-indigo-600 hover:text-white'" class="border text-xs font-bold px-3 py-1.5 rounded-md transition shadow-sm">
-                                        {{ c.rating ? 'View Review' : 'Add Review' }}
+                                    <button v-if="(c.status === 'RESOLVED' || c.status === 'CLOSED') && !c.feedback?.rating" @click="openReviewModal(c)" :class="c.feedback?.rating ? 'text-slate-600 bg-slate-100 border-slate-200 hover:bg-slate-200' : 'text-indigo-600 bg-indigo-50 border-indigo-200 hover:bg-indigo-600 hover:text-white'" class="border text-xs font-bold px-3 py-1.5 rounded-md transition shadow-sm">
+                                        {{ c.feedback?.rating ? 'View Review' : 'Add Review' }}
                                     </button>
                                     <button v-if="['OPEN','ASSIGNED','IN_PROGRESS'].includes(c.status)" @click="closeTicket(c.id)" class="bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 text-xs font-bold px-3 py-1.5 rounded-md transition shadow-sm">Close</button>
-                                    <button v-if="c.status === 'CLOSED' && !c.rating" @click="reopenTicket(c.id)" class="bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 text-xs font-bold px-3 py-1.5 rounded-md transition shadow-sm">Reopen</button>
+                                    <button v-if="c.status === 'CLOSED' && !c.feedback?.rating" @click="reopenTicket(c.id)" class="bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 text-xs font-bold px-3 py-1.5 rounded-md transition shadow-sm">Reopen</button>
                                 </td>
                             </tr>
                         </tbody>
@@ -125,11 +125,11 @@
                     <button @click="closeReviewModal" class="text-slate-400 hover:text-rose-500 transition"><i class="fas fa-times text-xl"></i></button>
                 </div>
                 <div class="p-5">
-                    <template v-if="currentTicket.rating">
+                    <template v-if="currentTicket.feedback?.rating">
                         <div class="mb-4"><label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Service Description</label><p class="text-sm text-slate-700 bg-slate-50 p-3 rounded-md border border-slate-200">{{ currentTicket.description }}</p></div>
                         <div class="mb-4">
                             <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Your Rating</label>
-                            <div class="flex gap-1 mt-1"><i v-for="i in 5" :key="i" :class="i <= currentTicket.rating ? 'fas fa-star text-amber-400 text-xl' : 'far fa-star text-slate-200 text-xl'"></i></div>
+                            <div class="flex gap-1 mt-1"><i v-for="i in 5" :key="i" :class="i <= currentTicket.feedback?.rating ? 'fas fa-star text-amber-400 text-xl' : 'far fa-star text-slate-200 text-xl'"></i></div>
                         </div>
                         <div><label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Your Comment</label><p class="text-sm text-slate-700 italic bg-slate-50 p-3 rounded-md border border-slate-200">"{{ currentTicket.comment }}"</p></div>
                     </template>
@@ -189,12 +189,12 @@
 
                 const statTotal = computed(() => complaints.value.length);
                 const statInProgress = computed(() => complaints.value.filter(c => ['ASSIGNED','IN_PROGRESS','OPEN','REOPENED'].includes(c.status)).length);
-                const statActionRequired = computed(() => complaints.value.filter(c => c.status === 'RESOLVED' && !c.rating).length);
-                const statClosed = computed(() => complaints.value.filter(c => c.status === 'CLOSED' || (c.status === 'RESOLVED' && c.rating)).length);
+                const statActionRequired = computed(() => complaints.value.filter(c => c.status === 'RESOLVED' && !c.feedback?.rating).length);
+                const statClosed = computed(() => complaints.value.filter(c => c.status === 'CLOSED' || (c.status === 'RESOLVED' && c.feedback?.rating)).length);
 
                 const openReviewModal = (ticket) => {
                     currentTicket.value = ticket;
-                    currentRating.value = ticket.rating ? parseInt(ticket.rating) : 0;
+                    currentRating.value = ticket.feedback?.rating ? parseInt(ticket.feedback.rating) : 0;
                     reviewComment.value = ticket.comment || '';
                     showModal.value = true;
                 };
@@ -205,7 +205,7 @@
                 };
 
                 const setRating = (rating) => {
-                    if (!currentTicket.value.rating) currentRating.value = rating;
+                    if (!currentTicket.value.feedback?.rating) currentRating.value = rating;
                 };
 
                 const submitReview = async () => {

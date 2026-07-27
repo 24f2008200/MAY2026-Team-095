@@ -102,6 +102,7 @@
                         const status = complaint.value.status;
                         selectedStatus.value = status === 'IN_PROGRESS' ? 'RESOLVED' : 'IN_PROGRESS';
                     } catch (err) {
+                        showToast('Failed to load complaint data.', 'error');
                         setTimeout(() => window.history.back(), 1500);
                     }
                 };

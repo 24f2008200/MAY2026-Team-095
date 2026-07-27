@@ -56,7 +56,7 @@
                     <button v-if="user?.role.toUpperCase() === 'ADMIN' && ['OPEN','ASSIGNED','IN_PROGRESS'].includes(complaint?.status)" @click="closeTicket(complaint?.id)" class="px-4 py-2 bg-amber-600 text-white rounded-md hover:bg-amber-700 text-xs font-bold shadow-sm transition"><i class="fas fa-lock mr-1"></i> Close Ticket</button>
                     <button v-if="user?.role.toUpperCase() === 'RESIDENT' && ['OPEN','ASSIGNED','IN_PROGRESS'].includes(complaint?.status)" @click="closeTicket(complaint?.id)" class="px-4 py-2 bg-amber-600 text-white rounded-md hover:bg-amber-700 text-xs font-bold shadow-sm transition"><i class="fas fa-lock mr-1"></i> Close Ticket</button>
 
-                    <button v-if="user?.role.toUpperCase() === 'RESIDENT' && ['CLOSED','RESOLVED'].includes(complaint?.status)" @click="reopenTicket(complaint?.id)" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-xs font-bold shadow-sm transition"><i class="fas fa-unlock mr-1"></i> Reopen Ticket</button>
+                    <button v-if="user?.role.toUpperCase() === 'RESIDENT' && complaint?.status === 'CLOSED' && !complaint?.rating" @click="reopenTicket(complaint?.id)" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-xs font-bold shadow-sm transition"><i class="fas fa-unlock mr-1"></i> Reopen Ticket</button>
                 </div>
             </div>
 

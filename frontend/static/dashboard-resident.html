@@ -108,7 +108,7 @@
                                         {{ c.rating ? 'View Review' : 'Add Review' }}
                                     </button>
                                     <button v-if="['OPEN','ASSIGNED','IN_PROGRESS'].includes(c.status)" @click="closeTicket(c.id)" class="bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 text-xs font-bold px-3 py-1.5 rounded-md transition shadow-sm">Close</button>
-                                    <button v-if="c.status === 'CLOSED' || c.status === 'RESOLVED'" @click="reopenTicket(c.id)" class="bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 text-xs font-bold px-3 py-1.5 rounded-md transition shadow-sm">Reopen</button>
+                                    <button v-if="c.status === 'CLOSED' && !c.rating" @click="reopenTicket(c.id)" class="bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 text-xs font-bold px-3 py-1.5 rounded-md transition shadow-sm">Reopen</button>
                                 </td>
                             </tr>
                         </tbody>

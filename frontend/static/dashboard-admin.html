@@ -174,7 +174,9 @@
                             resolved: data.status_counts?.RESOLVED || 0,
                             closed: data.status_counts?.CLOSED || 0,
                         };
-                    } catch (err) {}
+                    } catch (err) {
+                        showToast('Failed to load dashboard data.', 'error');
+                    }
                 };
 
                 const fetchTableData = async () => {
@@ -186,7 +188,9 @@
                     try {
                         const response = await apiCall(`/admin/complaints${queryString}`);
                         complaints.value = response.complaints || response || [];
-                    } catch (err) {}
+                    } catch (err) {
+                        showToast('Failed to load complaints.', 'error');
+                    }
                 };
 
                 onMounted(() => {

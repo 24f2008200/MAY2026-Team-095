@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Smart Society | Register</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+<body>
+    <div id="app" class="min-h-screen flex flex-col bg-slate-50">
+        <main class="flex-grow w-full h-screen flex justify-center items-center">
+            <div class="bg-white shadow-xl rounded-none flex flex-col md:flex-row w-full h-full overflow-hidden border-0">
+                <div class="w-full md:w-1/2 p-6 md:p-10 flex flex-col justify-center overflow-y-auto max-h-screen">
+                    <div class="mb-6">
+                        <h2 class="font-extrabold text-2xl text-slate-900 tracking-tight mb-1">Request Access</h2>
+                        <p class="text-sm text-slate-500 font-medium">Register as a new resident.</p>
+                    </div>
+                    <form @submit.prevent="handleRegister" class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div><label class="block text-xs font-bold text-slate-700 uppercase mb-1">First Name</label><input v-model="firstName" type="text" class="form-input w-full border border-slate-300 p-2 rounded-md text-sm" required /></div>
+                            <div><label class="block text-xs font-bold text-slate-700 uppercase mb-1">Last Name</label><input v-model="lastName" type="text" class="form-input w-full border border-slate-300 p-2 rounded-md text-sm" required /></div>
+                        </div>
+                        <div><label class="block text-xs font-bold text-slate-700 uppercase mb-1">Email Address</label><input v-model="email" type="email" class="form-input w-full border border-slate-300 p-2 rounded-md text-sm" required /></div>
+                        <div><label class="block text-xs font-bold text-slate-700 uppercase mb-1">Mobile Number (10 digits, starts with 6-9)</label><input v-model="mobileNumber" type="text" maxlength="10" placeholder="9876543210" class="form-input w-full border border-slate-300 p-2 rounded-md text-sm" required /></div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div><label class="block text-xs font-bold text-slate-700 uppercase mb-1">Flat Number</label><input v-model="flatNumber" type="text" placeholder="B-101" class="form-input w-full border border-slate-300 p-2 rounded-md text-sm" required /></div>
+                            <div><label class="block text-xs font-bold text-slate-700 uppercase mb-1">Building Name</label><input v-model="building" type="text" placeholder="Block B" class="form-input w-full border border-slate-300 p-2 rounded-md text-sm" required /></div>
+                        </div>
+                        <div><label class="block text-xs font-bold text-slate-700 uppercase mb-1">Password (Min 8 chars, 1 upper, 1 special)</label><input v-model="password" type="password" placeholder="Pass@123" class="form-input w-full border border-slate-300 p-2 rounded-md text-sm" required /></div>
+
+                        <button type="submit" :disabled="isLoading" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-md transition shadow-sm mt-4 disabled:opacity-50">
+                            {{ isLoading ? 'Submitting Application...' : 'Submit Application' }}
+                        </button>
+                    </form>
+                    <div class="mt-6 text-center text-sm font-medium">
+                        <a href="../index.html" class="text-slate-500 hover:text-slate-900 transition"><i class="fas fa-arrow-left mr-1"></i> Back to Login</a>
+                    </div>
+                </div>
+                <div class="w-full md:w-1/2 bg-slate-900 text-white p-8 md:p-12 relative overflow-hidden flex flex-col justify-between">
+                    <div class="absolute -right-20 -bottom-20 opacity-5 pointer-events-none"><i class="fas fa-city text-[300px]"></i></div>
+                    <div class="relative z-10 mb-8">
+                        <div class="mb-6"><img src="../images/logo.svg" alt="Smart Society Logo" class="w-12 h-12 rounded-lg shadow-md" /></div>
+                        <h3 class="font-extrabold text-2xl mb-3 leading-snug tracking-tight">Join the Community</h3>
+                        <p class="text-slate-400 text-sm leading-relaxed">Submit your details and our admin team will verify your residency and grant access.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="toast" class="fixed bottom-6 right-6 z-50 hidden items-center px-4 py-3 rounded-md shadow-lg border bg-slate-900 border-slate-800 text-white">
+        <i class="fas fa-check-circle text-emerald-400 mr-3 text-lg"></i>
+        <span id="toastMsg" class="font-medium text-sm">Success</span>
+    </div>
+
+    <script src="../js/utils.js"></script>
+    <script>
+        const { createApp, ref } = Vue;
+
+        createApp({
+            setup() {
+                const firstName = ref('');
+                const lastName = ref('');
+                const email = ref('');
+                const mobileNumber = ref('');
+                const flatNumber = ref('');
+                const building = ref('');
+                const password = ref('');
+                const isLoading = ref(false);
+
+                const handleRegister = async () => {
+                    isLoading.value = true;
+
+                    // Maps directly to RegisterSchema keys
+                    const payload = {
+                        name: `${firstName.value.trim()} ${lastName.value.trim()}`,
+                        email: email.value.trim(),
+                        mobile_number: mobileNumber.value.trim(),
+                        flat_number: flatNumber.value.trim(),
+                        building: building.value.trim(),
+                        password: password.value.trim()
+                    };
+
+                    try {
+                        await apiCall('/auth/register', { method: 'POST', body: payload });
+                        showToast('Registration successful! Redirecting to login...', 'success');
+                        setTimeout(() => { window.location.href = '../index.html'; }, 1500);
+                    } catch (err) {
+                        isLoading.value = false;
+                    }
+                };
+
+                return { firstName, lastName, email, mobileNumber, flatNumber, building, password, isLoading, handleRegister };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

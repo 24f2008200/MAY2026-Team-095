@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Smart Society | Resident Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>    
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <link rel="icon" type="image/svg+xml" href="../images/favicon.svg">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+<body>
+    <div id="app" class="min-h-screen flex flex-col bg-slate-50">
+        <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex justify-between items-center">
+                <div class="flex items-center cursor-pointer" @click="goHome()">
+                    <div class="mr-3"><img src="../images/logo.svg" alt="Smart Society Logo" class="w-8 h-8 rounded-md shadow-sm" /></div>
+                    <div><h1 class="font-extrabold text-lg text-slate-900 tracking-tight leading-none">Smart Society</h1><p class="text-[9px] text-indigo-600 font-bold uppercase tracking-widest mt-0.5">Complaint Resolution</p></div>
+                </div>
+                <div class="flex items-center space-x-4 relative">
+                    <div class="h-6 w-px bg-slate-200 hidden sm:block"></div>
+                    <div class="flex items-center gap-3 cursor-default">
+                        <div class="text-right hidden sm:block">
+                            <p class="text-sm font-bold text-slate-900 leading-tight">{{ user?.name }}</p>
+                            <p class="text-[0.65rem] text-slate-500 font-bold uppercase tracking-wider mt-0.5">{{ user?.role }} {{ user?.flatNumber ? '| ' + user.flatNumber : '' }}</p>
+                        </div>
+                        <div class="w-8 h-8 rounded-md bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm border border-indigo-200">{{ user?.name ? user.name.charAt(0) : 'U' }}</div>
+                    </div>
+                    <button @click="logout()" class="text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition p-1.5 rounded-md ml-1" title="Sign Out"><i class="fas fa-sign-out-alt text-lg"></i></button>
+                </div>
+            </div>
+            <nav class="bg-slate-50 border-t border-slate-200">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-6 overflow-x-auto">
+                    <a href="dashboard-resident.html" class="nav-link border-indigo-600 text-indigo-700 py-2 px-3 text-xs font-bold hover:text-slate-900 border-b-2 flex items-center transition"><i class="fas fa-home mr-1.5 text-base"></i> Portal</a>
+                    <a href="messages.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition"><i class="fas fa-comments mr-1.5 text-base"></i> Messages</a>
+                </div>
+            </nav>
+        </header>
+
+        <main class="flex-grow p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full space-y-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div><h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Resident Portal</h2><p class="text-sm text-slate-500 mt-1 font-medium">Track your service requests and facility updates.</p></div>
+                <button onclick="window.location.href='raise-complaint.html'" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold px-5 py-2.5 rounded-md shadow-sm transition flex items-center"><i class="fas fa-plus mr-2"></i> File New Request</button>
+            </div>
+
+            <!-- KPIs -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                <div class="bg-white border border-slate-200 rounded-lg p-5 shadow-sm">
+                    <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Total Filed</h3>
+                    <span class="text-3xl font-black text-slate-900">{{ statTotal }}</span>
+                </div>
+                <div class="bg-white border border-slate-200 rounded-lg p-5 shadow-sm">
+                    <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Active Work</h3>
+                    <span class="text-3xl font-black text-amber-600">{{ statInProgress }}</span>
+                </div>
+                <div class="bg-white border border-slate-200 rounded-lg p-5 shadow-sm relative overflow-hidden" :class="{'border-indigo-400 bg-indigo-50/30': statActionRequired > 0}">
+                    <div v-if="statActionRequired > 0" class="absolute top-0 right-0 w-1.5 h-full bg-indigo-500"></div>
+                    <h3 class="text-[10px] font-bold uppercase tracking-wider mb-2 text-slate-500" :class="{'text-indigo-600': statActionRequired > 0}">Needs Review</h3>
+                    <div class="flex items-end">
+                        <span class="text-3xl font-black" :class="statActionRequired > 0 ? 'text-indigo-900' : 'text-slate-900'">{{ statActionRequired }}</span>
+                        <span v-if="statActionRequired > 0" class="ml-2 text-xs text-indigo-600 font-bold mb-1">Resolved</span>
+                    </div>
+                </div>
+                <div class="bg-white border border-slate-200 rounded-lg p-5 shadow-sm">
+                    <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Completed</h3>
+                    <span class="text-3xl font-black text-emerald-600">{{ statClosed }}</span>
+                </div>
+            </div>
+
+            <!-- Ledger -->
+            <div class="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+                <div class="px-5 py-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+                    <h3 class="font-bold text-sm text-slate-800 uppercase tracking-wide">My Service Ledger</h3>
+                </div>
+
+                <div class="px-5 py-3 border-b border-slate-200 bg-white flex gap-3 items-center">
+                    <select v-model="statusFilter" @change="fetchComplaints" class="bg-slate-50 border border-slate-300 text-slate-700 text-xs font-bold rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+                        <option value="">All Statuses</option>
+                       <option value="OPEN">Open</option>
+                       <option value="ASSIGNED">Assigned</option>
+                       <option value="IN_PROGRESS">In Progress</option>
+                       <option value="RESOLVED">Resolved (Needs Review)</option>
+                       <option value="CLOSED">Closed</option>
+                    </select>
+                    <button @click="clearFilters" class="text-xs text-slate-500 hover:text-indigo-600 font-bold transition ml-auto">Clear Filters</button>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-white border-b border-slate-200"><tr><th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider w-32">Ticket ID</th><th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Issue Details</th><th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Priority</th><th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Lifecycle Status</th><th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Date Logged</th><th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">Action</th></tr></thead>
+                        <tbody class="divide-y divide-slate-100 bg-white">
+                            <tr v-if="complaints.length === 0">
+                                <td colspan="6" class="px-5 py-12 text-center text-slate-500 text-sm font-medium"><i class="fas fa-filter text-3xl text-slate-300 mb-3 block"></i> No requests match your current filters.</td>
+                            </tr>
+                            <tr v-for="c in complaints" :key="c.id" class="hover:bg-slate-50 transition duration-150">
+                                <td class="px-5 py-3 whitespace-nowrap font-bold text-slate-800 text-sm">{{ c.id }}</td>
+                                <td class="px-5 py-3">
+                                    <p class="text-sm font-bold text-slate-800">{{ c.category?.name || 'N/A' }}</p>
+                                    <p class="text-xs text-slate-500 font-medium">{{ c.title || '--' }}</p>
+                                </td>
+                                <td class="px-5 py-3 whitespace-nowrap"><span :class="'pri-' + c.priority">{{ c.priority.charAt(0) + c.priority.slice(1).toLowerCase() }}</span></td>
+                                <td class="px-5 py-3 whitespace-nowrap"><span :class="'status-pill status-' + c.status.replace(' ','')">{{ c.status.replace('_',' ') }}</span></td>
+                                <td class="px-5 py-3 whitespace-nowrap text-xs text-slate-600 font-medium">{{ formatDate(c.created_at) }}</td>
+                                <td class="px-5 py-3 whitespace-nowrap text-right flex justify-end gap-2">
+                                    <button @click="viewComplaint(c.id, 'dashboard-resident.html')" class="text-slate-600 border border-slate-200 bg-white hover:bg-slate-50 text-xs font-bold px-3 py-1.5 rounded-md transition shadow-sm">Details</button>
+                                    <button v-if="(c.status === 'RESOLVED' || c.status === 'CLOSED') && !c.feedback?.rating" @click="openReviewModal(c)" :class="c.feedback?.rating ? 'text-slate-600 bg-slate-100 border-slate-200 hover:bg-slate-200' : 'text-indigo-600 bg-indigo-50 border-indigo-200 hover:bg-indigo-600 hover:text-white'" class="border text-xs font-bold px-3 py-1.5 rounded-md transition shadow-sm">
+                                        {{ c.feedback?.rating ? 'View Review' : 'Add Review' }}
+                                    </button>
+                                    <button v-if="['OPEN','ASSIGNED','IN_PROGRESS'].includes(c.status)" @click="closeTicket(c.id)" class="bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 text-xs font-bold px-3 py-1.5 rounded-md transition shadow-sm">Close</button>
+                                    <button v-if="c.status === 'CLOSED' && !c.feedback?.rating" @click="reopenTicket(c.id)" class="bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 text-xs font-bold px-3 py-1.5 rounded-md transition shadow-sm">Reopen</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+
+        <!-- Review Modal -->
+        <div v-if="showModal" class="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden flex flex-col">
+                <div class="px-5 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                    <h3 class="font-bold text-lg text-slate-800">Ticket Review</h3>
+                    <button @click="closeReviewModal" class="text-slate-400 hover:text-rose-500 transition"><i class="fas fa-times text-xl"></i></button>
+                </div>
+                <div class="p-5">
+                    <template v-if="currentTicket.feedback?.rating">
+                        <div class="mb-4"><label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Service Description</label><p class="text-sm text-slate-700 bg-slate-50 p-3 rounded-md border border-slate-200">{{ currentTicket.description }}</p></div>
+                        <div class="mb-4">
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Your Rating</label>
+                            <div class="flex gap-1 mt-1"><i v-for="i in 5" :key="i" :class="i <= currentTicket.feedback?.rating ? 'fas fa-star text-amber-400 text-xl' : 'far fa-star text-slate-200 text-xl'"></i></div>
+                        </div>
+                        <div><label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Your Comment</label><p class="text-sm text-slate-700 italic bg-slate-50 p-3 rounded-md border border-slate-200">"{{ currentTicket.comment }}"</p></div>
+                    </template>
+                    <template v-else>
+                        <div class="mb-4"><label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Service Description</label><p class="text-sm text-slate-700 bg-slate-50 p-3 rounded-md border border-slate-200">{{ currentTicket.description }}</p></div>
+                        <div class="mb-5">
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Rate the Service</label>
+                            <div class="flex gap-2">
+                                <i v-for="i in 5" :key="i" @click="setRating(i)" :class="i <= currentRating ? 'fas fa-star text-amber-400' : 'far fa-star text-slate-300'" class="text-2xl cursor-pointer hover:text-amber-400 transition"></i>
+                            </div>
+                        </div>
+                        <div class="mb-5">
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Add a Comment</label>
+                            <textarea v-model="reviewComment" class="w-full border border-slate-300 rounded-md p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" rows="3" placeholder="Tell us how the maintenance team did..."></textarea>
+                        </div>
+                        <button @click="submitReview" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-md transition shadow-sm">Submit Review</button>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="fixed bottom-6 right-6 z-50 hidden items-center px-4 py-3 rounded-md shadow-lg border bg-slate-900 border-slate-800 text-white"><i class="fas fa-check-circle text-emerald-400 mr-3 text-lg"></i><span id="toastMsg" class="font-medium text-sm">Success</span></div>
+
+    <script src="../js/utils.js"></script>
+    <script>
+        const { createApp, ref, computed, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const user = ref(null);
+                const complaints = ref([]);
+                const statusFilter = ref('');
+
+                const showModal = ref(false);
+                const currentTicket = ref(null);
+                const currentRating = ref(0);
+                const reviewComment = ref('');
+
+                const fetchComplaints = async () => {
+                    try {
+                        let endpoint = '/complaints';
+                        if (statusFilter.value) {
+                            endpoint += `?status=${encodeURIComponent(statusFilter.value)}`;
+                        }
+                       const response = await apiCall(endpoint);
+                       complaints.value = response.complaints || response || [];
+                   } catch (err) {
+                       showToast('Failed to load complaints.', 'error');
+                   }
+                };
+
+                onMounted(() => {
+                    user.value = requireAuth('Resident');
+                    if (user.value) fetchComplaints();
+                });
+
+                const statTotal = computed(() => complaints.value.length);
+                const statInProgress = computed(() => complaints.value.filter(c => ['ASSIGNED','IN_PROGRESS','OPEN','REOPENED'].includes(c.status)).length);
+                const statActionRequired = computed(() => complaints.value.filter(c => c.status === 'RESOLVED' && !c.feedback?.rating).length);
+                const statClosed = computed(() => complaints.value.filter(c => c.status === 'CLOSED' || (c.status === 'RESOLVED' && c.feedback?.rating)).length);
+
+                const openReviewModal = (ticket) => {
+                    currentTicket.value = ticket;
+                    currentRating.value = ticket.feedback?.rating ? parseInt(ticket.feedback.rating) : 0;
+                    reviewComment.value = ticket.comment || '';
+                    showModal.value = true;
+                };
+
+                const closeReviewModal = () => {
+                    showModal.value = false;
+                    currentTicket.value = null;
+                };
+
+                const setRating = (rating) => {
+                    if (!currentTicket.value.feedback?.rating) currentRating.value = rating;
+                };
+
+                const submitReview = async () => {
+                    if (currentRating.value === 0) {
+                        showToast('Please select a star rating.', 'error');
+                        return;
+                    }
+                    try {
+                        await apiCall(`/complaints/${currentTicket.value.id}/feedback`, {
+                            method: 'POST',
+                            body: { rating: currentRating.value, comment: reviewComment.value }
+                        });
+                        showToast('Review submitted successfully!');
+                        closeReviewModal();
+                        fetchComplaints();
+                    } catch(err) {}
+                };
+
+                const clearFilters = () => {
+                    statusFilter.value = '';
+                    fetchComplaints();
+                };
+
+                const formatDate = (dateString) => dateString ? new Date(dateString).toLocaleDateString() : '';
+
+                const closeTicket = async (id) => {
+                    if (!confirm('Are you sure you want to close this ticket?')) return;
+                    try {
+                        await apiCall(`/complaints/${id}/close`, { method: 'PUT' });
+                        showToast('Ticket closed successfully.', 'success');
+                        fetchComplaints();
+                    } catch (err) {}
+                };
+
+                const reopenTicket = async (id) => {
+                    if (!confirm('Are you sure you want to reopen this ticket?')) return;
+                    try {
+                        await apiCall(`/complaints/${id}/reopen`, { method: 'PUT' });
+                        showToast('Ticket reopened successfully.', 'success');
+                        fetchComplaints();
+                    } catch (err) {}
+                };
+
+                return {
+                    user, complaints, statusFilter, statTotal, statInProgress, statActionRequired, statClosed,
+                    showModal, currentTicket, currentRating, reviewComment,
+                    fetchComplaints, openReviewModal, closeReviewModal, setRating, submitReview, clearFilters, formatDate,
+                    logout, goHome, viewComplaint, closeTicket, reopenTicket
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

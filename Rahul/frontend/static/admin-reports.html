@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Smart Society | Search Records</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <link rel="icon" type="image/svg+xml" href="../images/favicon.svg">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+<body>
+    <div id="app" class="min-h-screen flex flex-col bg-slate-50">
+        <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex justify-between items-center">
+                <div class="flex items-center cursor-pointer" @click="goHome()">
+                    <div class="mr-3"><img src="../images/logo.svg" alt="Smart Society Logo" class="w-8 h-8 rounded-md shadow-sm" /></div>
+                    <div><h1 class="font-extrabold text-lg text-slate-900 tracking-tight leading-none">Smart Society</h1><p class="text-[9px] text-indigo-600 font-bold uppercase tracking-widest mt-0.5">Complaint Resolution</p></div>
+                </div>
+                <div class="flex items-center space-x-4 relative">
+                    <div class="h-6 w-px bg-slate-200 hidden sm:block"></div>
+                    <div class="flex items-center gap-3 cursor-default">
+                        <div class="text-right hidden sm:block">
+                            <p class="text-sm font-bold text-slate-900 leading-tight">{{ user?.name }}</p>
+                            <p class="text-[0.65rem] text-slate-500 font-bold uppercase tracking-wider mt-0.5">{{ user?.role }}</p>
+                        </div>
+                        <div class="w-8 h-8 rounded-md bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm border border-indigo-200">{{ user?.name ? user.name.charAt(0) : 'U' }}</div>
+                    </div>
+                    <button @click="logout()" class="text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition p-1.5 rounded-md ml-1" title="Sign Out"><i class="fas fa-sign-out-alt text-lg"></i></button>
+                </div>
+            </div>
+            <nav class="bg-slate-50 border-t border-slate-200">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-6 overflow-x-auto">
+                    <a href="dashboard-admin.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition"><i class="fas fa-chart-pie mr-1.5 text-base"></i> Portal</a>
+                    <a href="admin-staff.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition"><i class="fas fa-users mr-1.5 text-base"></i> Staff</a>
+                    <a href="admin-reports.html" class="nav-link border-indigo-600 text-indigo-700 py-2 px-3 text-xs font-bold hover:text-slate-900 border-b-2 flex items-center transition"><i class="fas fa-search mr-1.5 text-base"></i> Records</a>
+                </div>
+            </nav>
+        </header>
+
+        <main class="flex-grow p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full space-y-6">
+            <div class="flex items-center space-x-4 mb-2">
+                <a href="dashboard-admin.html" class="w-8 h-8 rounded-md border border-slate-300 bg-white shadow-sm flex justify-center items-center text-slate-500 hover:text-slate-900 transition"><i class="fas fa-arrow-left text-sm"></i></a>
+                <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Search Database</h2>
+            </div>
+            <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+                <div class="px-6 py-5 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50">
+                    <div>
+                        <p class="text-xs text-slate-500 mt-1 font-medium">Find any service request by ID, resident, or trade.</p>
+                    </div>
+                    <button @click="exportData" class="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 font-bold text-xs px-4 py-2.5 rounded-md shadow-sm transition flex items-center">
+                        <i class="fas fa-download mr-2 text-indigo-500"></i> Export CSV / PDF
+                    </button>
+                </div>
+
+                <form @submit.prevent="fetchReports" class="bg-white p-5 border-b border-slate-200 flex flex-wrap gap-4 items-end">
+                    <div class="flex-grow md:max-w-xs">
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Search</label>
+                        <div class="relative">
+                            <i class="fas fa-search absolute left-3 top-2.5 text-slate-400 text-sm"></i>
+                            <input v-model="searchQuery" type="text" placeholder="Search ID, Name, Trade..." class="form-input w-full border border-slate-300 pl-9 p-2 rounded-md text-sm font-medium" />
+                        </div>
+                    </div>
+                    <div class="w-full sm:w-auto">
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Lifecycle Status</label>
+                        <select v-model="statusFilter" class="form-select w-full border border-slate-300 p-2 rounded-md text-sm min-w-[140px] bg-white font-medium text-slate-700">
+                            <option value="">All States</option>
+                            <option value="OPEN">Open</option>
+                            <option value="REOPENED">Reopened</option>
+                            <option value="ASSIGNED">Assigned</option>
+                            <option value="IN_PROGRESS">In Progress</option>
+                            <option value="RESOLVED">Resolved</option>
+                            <option value="CLOSED">Closed</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 text-sm font-bold rounded-md transition shadow-sm">Apply</button>
+                    <button type="button" @click="clearFilters" class="px-3 py-2 text-xs font-bold text-slate-500 hover:text-slate-900 transition underline underline-offset-2">Clear</button>
+                </form>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-slate-50 border-b border-slate-200">
+                            <tr>
+                                <th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Ref ID</th>
+                                <th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Date Logged</th>
+                                <th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Resident Info</th>
+                                <th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Trade</th>
+                                <th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Technician</th>
+                                <th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Lifecycle State</th>
+                                <th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 bg-white">
+                            <tr v-if="complaints.length === 0">
+                                <td colspan="7" class="px-5 py-12 text-center text-slate-500 text-sm font-medium"><i class="fas fa-search text-3xl text-slate-300 mb-3 block"></i> No records match current parameters.</td>
+                            </tr>
+                            <tr v-for="c in complaints" :key="c.id" class="hover:bg-slate-50 transition duration-150">
+                                <td class="px-5 py-3 font-bold text-slate-800 text-sm whitespace-nowrap">{{ c.id }}</td>
+                                <td class="px-5 py-3 text-xs font-medium text-slate-600 whitespace-nowrap">{{ new Date(c.created_at).toLocaleDateString() }}</td>
+                                <td class="px-5 py-3 text-sm font-semibold text-slate-700">{{ c.resident?.name || 'N/A' }}</td>
+                                <td class="px-5 py-3 text-sm font-medium text-slate-600">{{ c.category }}</td>
+                                <td class="px-5 py-3 text-sm font-bold" :class="c.assigned_staff?.name ? 'text-indigo-700' : 'text-slate-400 italic'">{{ c.assigned_staff?.name || '--' }}</td>
+                                <td class="px-5 py-3 whitespace-nowrap"><span :class="'status-pill text-[9px] status-' + c.status.replace(' ','')">{{ c.status }}</span></td>
+                                <td class="px-5 py-3 text-right whitespace-nowrap"><button @click="navigate('complaint-details.html?id=' + c.id)" class="text-indigo-600 hover:text-indigo-900 text-[10px] uppercase tracking-wide font-bold">Open Record</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="toast" class="fixed bottom-6 right-6 z-50 hidden items-center px-4 py-3 rounded-md shadow-lg border bg-slate-900 border-slate-800 text-white">
+        <i class="fas fa-check-circle text-emerald-400 mr-3 text-lg"></i>
+        <span id="toastMsg" class="font-medium text-sm">Success</span>
+    </div>
+
+    <script src="../js/utils.js"></script>
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const user = ref(null);
+                const complaints = ref([]);
+                const statusFilter = ref('');
+                const searchQuery = ref('');
+
+                const fetchReports = async () => {
+                    let queryParams = [];
+                    if (statusFilter.value) queryParams.push(`status=${encodeURIComponent(statusFilter.value)}`);
+                    if (searchQuery.value.trim()) queryParams.push(`search=${encodeURIComponent(searchQuery.value.trim())}`);
+                    const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
+
+                    try {
+                        const response = await apiCall(`/admin/complaints${queryString}`);
+                        complaints.value = response.complaints || response || [];
+                    } catch (err) {}
+                };
+
+                const clearFilters = () => {
+                    statusFilter.value = '';
+                    searchQuery.value = '';
+                    fetchReports();
+                };
+
+                const exportData = async () => {
+                    try {
+                        await apiCall('/admin/complaints/report?format=csv');
+                        showToast('Report generated. Download starting soon.', 'success');
+                    } catch (err) {}
+                };
+
+                onMounted(() => {
+                    user.value = requireAuth('Admin');
+                    if (user.value) fetchReports();
+                });
+
+                const navigate = (url) => window.location.href = url;
+
+                return { user, complaints, statusFilter, searchQuery, fetchReports, clearFilters, exportData, navigate, logout, goHome };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

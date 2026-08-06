@@ -261,7 +261,6 @@ def _extract_trade(member: User) -> str:
 
 
 def list_staff():
-    # #i added it: include trade and username fields in staff listing
     staff_members = (
         User.query
         .filter_by(role=UserRole.STAFF, is_active=True)

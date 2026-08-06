@@ -69,7 +69,6 @@
                     </table>
                 </div>
                 
-                <!-- Pagination -->
                 <div v-if="totalPages > 1" class="px-5 py-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center">
                     <span class="text-xs font-medium text-slate-500">Page <span class="font-bold text-slate-800">{{ currentPage }}</span> of {{ totalPages }} <span class="hidden sm:inline">({{ activeQueue.length }} total active tasks)</span></span>
                     <div class="flex gap-2">
@@ -92,7 +91,6 @@
                 const stats = ref({ assigned: 0, inProgress: 0, resolved: 0, closed: 0 });
                 const activeQueue = ref([]);
                 
-                // Pagination configuration
                 const currentPage = ref(1);
                 const itemsPerPage = 10;
 
@@ -101,10 +99,19 @@
                         const summary = await apiCall('/staff/dashboard/summary');
                         stats.value = summary.dashboard || summary;
 
-                        // Fetching with a large per_page to ensure we grab all active assignments for client-side slicing
-                        const myTasks = await apiCall('/staff/complaints?per_page=100');
-                        const complaints = myTasks.complaints || myTasks || [];
-                        activeQueue.value = complaints.filter(c => ['ASSIGNED','IN_PROGRESS'].includes(c.status));
+                        let allTasks = [];
+                        let p = 1;
+                        
+                        // Edge Case: Fetching all chunks safely in case the backend restricts high per_page values
+                        while(true) {
+                            const res = await apiCall(`/staff/complaints?page=${p}&per_page=100`);
+                            const items = res.complaints || [];
+                            allTasks = allTasks.concat(items);
+                            if (!res.pagination || p >= res.pagination.pages) break;
+                            p++;
+                        }
+                        
+                        activeQueue.value = allTasks.filter(c => ['ASSIGNED','IN_PROGRESS'].includes(c.status));
                         currentPage.value = 1;
                     } catch (err) {
                         showToast('Failed to load staff dashboard.', 'error');

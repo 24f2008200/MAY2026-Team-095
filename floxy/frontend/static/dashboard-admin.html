@@ -19,7 +19,6 @@
                     <div><h1 class="font-extrabold text-lg text-slate-900 tracking-tight leading-none">Smart Society</h1><p class="text-[9px] text-indigo-600 font-bold uppercase tracking-widest mt-0.5">Complaint Resolution</p></div>
                 </div>
                 <div class="flex items-center space-x-4 relative">
-                    <div class="text-xl" title="Canada">🇨🇦</div>
                     <div class="h-6 w-px bg-slate-200 hidden sm:block"></div>
                     <div class="flex items-center gap-3 cursor-default">
                         <div class="text-right hidden sm:block">
@@ -94,7 +93,7 @@
 
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
-                        <thead class="bg-slate-50 border-b border-slate-200">
+                        <thead class="bg-white border-b border-slate-200">
                             <tr>
                                 <th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">ID</th>
                                 <th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Resident Details</th>
@@ -115,9 +114,7 @@
                                 <td class="px-5 py-3 whitespace-nowrap text-right flex justify-end gap-2">
                                     <button v-if="['OPEN', 'REOPENED'].includes(c.status)" @click="navigate('assign-complaint.html?id=' + c.id)" class="bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-600 hover:text-white font-bold text-[10px] uppercase tracking-wide px-3 py-1.5 rounded-md transition shadow-sm">Assign Resource</button>
                                     <button v-else @click="navigate('complaint-details.html?id=' + c.id)" class="bg-white border border-slate-300 text-slate-600 hover:bg-slate-50 font-bold text-[10px] uppercase tracking-wide px-3 py-1.5 rounded-md transition shadow-sm">Monitor</button>
-
                                     <button v-if="['OPEN','ASSIGNED','IN_PROGRESS'].includes(c.status)" @click="closeTicket(c.id)" class="bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 font-bold text-[10px] uppercase tracking-wide px-3 py-1.5 rounded-md transition shadow-sm">Close</button>
-
                                     <button v-if="c.rating" @click="openModal(c)" class="bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-500 hover:text-white font-bold text-[10px] uppercase tracking-wide px-3 py-1.5 rounded-md transition shadow-sm"><i class="fas fa-star mr-1"></i> Review</button>
                                 </td>
                             </tr>
@@ -125,7 +122,6 @@
                     </table>
                 </div>
 
-                <!-- Pagination -->
                 <div v-if="totalPages > 1" class="px-5 py-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center">
                     <span class="text-xs font-medium text-slate-500">Page <span class="font-bold text-slate-800">{{ currentPage }}</span> of {{ totalPages }} <span class="hidden sm:inline">({{ totalItems }} total records)</span></span>
                     <div class="flex gap-2">
@@ -137,7 +133,6 @@
             </div>
         </main>
 
-        <!-- Admin Review Modal -->
         <div v-if="showModal" class="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
             <div class="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden flex flex-col border-t-4 border-t-amber-400">
                 <div class="px-5 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
@@ -173,7 +168,6 @@
                 const showModal = ref(false);
                 const currentTicket = ref(null);
                 
-                // Pagination State
                 const currentPage = ref(1);
                 const totalPages = ref(1);
                 const totalItems = ref(0);
@@ -190,9 +184,7 @@
                             resolved: data.status_counts?.RESOLVED || 0,
                             closed: data.status_counts?.CLOSED || 0,
                         };
-                    } catch (err) {
-                        showToast('Failed to load dashboard data.', 'error');
-                    }
+                    } catch (err) {}
                 };
 
                 const fetchTableData = async () => {
@@ -209,9 +201,7 @@
                             totalPages.value = response.pagination.pages || 1;
                             totalItems.value = response.pagination.total || 0;
                         }
-                    } catch (err) {
-                        showToast('Failed to load complaints.', 'error');
-                    }
+                    } catch (err) {}
                 };
 
                 const applyFilters = () => {
@@ -244,9 +234,7 @@
                     currentTicket.value = null;
                 };
 
-                const navigate = (url) => {
-                    window.location.href = url;
-                };
+                const navigate = (url) => window.location.href = url;
 
                 const closeTicket = async (id) => {
                     if (!confirm('Are you sure you want to close this ticket?')) return;

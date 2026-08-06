@@ -19,6 +19,7 @@
                     <div><h1 class="font-extrabold text-lg text-slate-900 tracking-tight leading-none">Smart Society</h1><p class="text-[9px] text-indigo-600 font-bold uppercase tracking-widest mt-0.5">Complaint Resolution</p></div>
                 </div>
                 <div class="flex items-center space-x-4 relative">
+                    <div class="text-xl" title="Canada">🇨🇦</div>
                     <div class="h-6 w-px bg-slate-200 hidden sm:block"></div>
                     <div class="flex items-center gap-3 cursor-default">
                         <div class="text-right hidden sm:block">
@@ -50,7 +51,7 @@
                         <p class="text-xs text-slate-500 mt-1 font-medium">Find any service request by ID, resident, or trade.</p>
                     </div>
                     <button @click="exportData" class="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 font-bold text-xs px-4 py-2.5 rounded-md shadow-sm transition flex items-center">
-                        <i class="fas fa-download mr-2 text-indigo-500"></i> Export CSV
+                        <i class="fas fa-download mr-2 text-indigo-500"></i> Export CSV / PDF
                     </button>
                 </div>
 
@@ -177,68 +178,10 @@
                 };
 
                 const exportData = async () => {
-                    if (totalItems.value === 0) {
-                        showToast('No records available to export.', 'error');
-                        return;
-                    }
-                    
-                    showToast('Gathering data for export...', 'success');
-                    
-                    let allData = [];
-                    let fetchPage = 1;
-                    const limit = 100; // Utilize max API limit to reduce requests
-                    
                     try {
-                        // Loop through all pages to retrieve the full dataset matching current filters
-                        while (true) {
-                            let queryParams = [`page=${fetchPage}`, `per_page=${limit}`];
-                            if (statusFilter.value) queryParams.push(`status=${encodeURIComponent(statusFilter.value)}`);
-                            if (searchQuery.value.trim()) queryParams.push(`search=${encodeURIComponent(searchQuery.value.trim())}`);
-                            const queryString = `?${queryParams.join('&')}`;
-
-                            const response = await apiCall(`/admin/complaints${queryString}`);
-                            const items = response.complaints || [];
-                            allData = allData.concat(items);
-                            
-                            if (!response.pagination || fetchPage >= response.pagination.pages) {
-                                break;
-                            }
-                            fetchPage++;
-                        }
-                        
-                        // Parse data and build CSV
-                        const headers = ['Ref ID', 'Date Logged', 'Resident Info', 'Trade', 'Technician', 'Lifecycle State'];
-                        const csvRows = [headers.join(',')];
-                        
-                        allData.forEach(c => {
-                            const date = c.created_at ? new Date(c.created_at).toLocaleDateString() : 'N/A';
-                            const resident = c.resident?.name ? `"${c.resident.name}"` : 'N/A';
-                            const category = c.category?.name || c.category || 'N/A';
-                            const tech = c.assigned_staff?.name ? `"${c.assigned_staff.name}"` : '--';
-                            
-                            csvRows.push([
-                                c.complaint_code || c.id,
-                                date,
-                                resident,
-                                category,
-                                tech,
-                                c.status
-                            ].join(','));
-                        });
-                        
-                        const csvString = csvRows.join('\n');
-                        const blob = new Blob([csvString], { type: 'text/csv' });
-                        const url = window.URL.createObjectURL(blob);
-                        
-                        const a = document.createElement('a');
-                        a.setAttribute('href', url);
-                        a.setAttribute('download', 'smart_society_records.csv');
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                    } catch (error) {
-                        showToast('Failed to export data.', 'error');
-                    }
+                        await apiCall('/admin/complaints/report?format=csv');
+                        showToast('Report generated. Download starting soon.', 'success');
+                    } catch (err) {}
                 };
 
                 onMounted(() => {

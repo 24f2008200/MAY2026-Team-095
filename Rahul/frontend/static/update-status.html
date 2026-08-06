@@ -43,7 +43,7 @@
                     <h3 class="text-[10px] uppercase font-bold text-slate-400 mb-6 tracking-wider border-b border-slate-100 pb-3">Work Order Data</h3>
                     <div class="grid grid-cols-[120px_1fr] gap-y-4 text-sm">
                         <span class="font-bold text-slate-500">Task ID</span><span class="font-bold text-slate-900">{{ complaint?.id || 'Loading...' }}</span>
-                        <span class="font-bold text-slate-500">Contact</span><span class="font-bold text-slate-700">{{ complaint?.resident?.name || '...' }}</span>
+                        <span class="font-bold text-slate-500">Contact</span><span class="font-bold text-slate-700">{{ complaint?.resident?.name || '...' }} <span class="font-normal text-slate-500">(Flat {{ complaint?.resident?.flat_number || 'N/A' }})</span></span>
                         <span class="font-bold text-slate-700 mt-2">Trade Scope</span>
                                                 <span class="font-medium text-slate-700 mt-2">{{ complaint?.category?.name || 'N/A' }} - {{ complaint?.title || 'N/A' }}</span>
                         <span class="font-bold text-slate-500">Location</span><span class="font-bold text-slate-800">{{ complaint?.location || '...' }}</span>
@@ -97,7 +97,7 @@
 
                 const fetchComplaintData = async () => {
                     try {
-                        const data = await apiCall(`/complaints/${ticketId}`);
+                        const data = await apiCall(`/staff/complaints/${ticketId}`);
                         complaint.value = data.complaint || data;
                         const status = complaint.value.status;
                         selectedStatus.value = status === 'IN_PROGRESS' ? 'RESOLVED' : 'IN_PROGRESS';
@@ -109,6 +109,7 @@
 
                 onMounted(() => {
                     user.value = requireAuth('STAFF');
+                    if (user.value) refreshUserProfile(user, 'STAFF');
                     if (!user.value) return;
 
                     const params = new URLSearchParams(window.location.search);

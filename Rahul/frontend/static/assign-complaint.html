@@ -44,7 +44,7 @@
                         <span class="font-bold text-slate-500">System ID</span><span class="font-bold text-slate-900">{{ complaint?.id || 'Loading...' }}</span>
                         <span class="font-bold text-slate-500">Current State</span>
                         <div><span v-if="complaint" :class="'status-pill text-xs status-' + complaint.status.replace(' ', '')">{{ complaint.status }}</span></div>
-                        <span class="font-bold text-slate-500">Originator</span><span class="font-bold text-slate-800">{{ complaint?.resident?.name || '...' }}</span>
+                        <span class="font-bold text-slate-500">Originator</span><span class="font-bold text-slate-800">{{ complaint?.resident?.name || '...' }} <span class="font-normal text-slate-500">(Flat {{ complaint?.resident?.flat_number || 'N/A' }})</span></span>
                         <span class="font-bold text-slate-500">Classification</span><span class="text-slate-800 font-medium">{{ complaint ? complaint.category?.name + ' - ' + complaint.title : '...' }}</span>
                         <span class="font-bold text-slate-500">Description Log</span>
                         <div class="bg-slate-50 p-4 rounded-md border border-slate-200 text-slate-700 text-sm mt-1 leading-relaxed font-medium">{{ complaint?.description || '...' }}</div>
@@ -119,6 +119,7 @@
 
                 onMounted(() => {
                     user.value = requireAuth('Admin');
+                    if (user.value) refreshUserProfile(user, 'Admin');
                     if (!user.value) return;
 
                     const params = new URLSearchParams(window.location.search);

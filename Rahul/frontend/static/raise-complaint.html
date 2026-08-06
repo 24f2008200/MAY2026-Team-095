@@ -23,7 +23,7 @@
                     <div class="flex items-center gap-3 cursor-default">
                         <div class="text-right hidden sm:block">
                             <p class="text-sm font-bold text-slate-900 leading-tight">{{ user?.name }}</p>
-                            <p class="text-[0.65rem] text-slate-500 font-bold uppercase tracking-wider mt-0.5">{{ user?.role }} {{ user?.flatNumber ? '| ' + user.flatNumber : '' }}</p>
+                            <p class="text-[0.65rem] text-slate-500 font-bold uppercase tracking-wider mt-0.5">{{ user?.role }} {{ user?.flat_number ? '| Flat ' + user.flat_number : '' }}</p>
                         </div>
                         <div class="w-8 h-8 rounded-md bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm border border-indigo-200">{{ user?.name ? user.name.charAt(0) : 'U' }}</div>
                     </div>
@@ -41,14 +41,17 @@
                 <a href="dashboard-resident.html" class="text-slate-400 hover:text-slate-900 transition"><i class="fas fa-arrow-left text-lg"></i></a>
                 <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Log Service Request</h2>
             </div>
+            <div v-if="user" class="bg-indigo-50 border border-indigo-100 rounded-lg px-4 py-2.5 text-xs font-bold text-indigo-700 flex items-center">
+                <i class="fas fa-map-marker-alt mr-2"></i> Submitting as {{ user.name }} - Flat {{ user.flat_number || 'N/A' }}
+            </div>
             <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
                 <div class="p-6 md:p-8">
                     <form @submit.prevent="submitComplaint" class="space-y-6">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div><label class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">Trade Category <span class="text-rose-500">*</span></label>
                                 <select v-model="category" class="form-select w-full border border-slate-300 p-2.5 rounded-md text-sm bg-white font-medium text-slate-700" required>
-                                    <option value="" disabled>Select category...</option>
-                                    <option>Plumbing</option><option>Electrical</option><option>Carpentry</option><option>HVAC</option><option>Janitorial</option><option>Security</option>
+                                    <option value="" disabled>{{ categories.length ? 'Select category...' : 'Loading categories...' }}</option>
+                                    <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
                                 </select>
                             </div>
                             <div><label class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">Specific Issue <span class="text-rose-500">*</span></label>
@@ -93,22 +96,10 @@
     <script>
         const { createApp, ref, onMounted } = Vue;
 
-        const CATEGORY_MAP = {
-            'Plumbing': 1,
-            'Electrical': 2,
-            'Carpentry': 3,
-            'HVAC': 4,
-            'Janitorial': 5,
-            'Security': 6,
-        };
-
-        function getCategoryId(name) {
-            return CATEGORY_MAP[name] || null;
-        }
-
         createApp({
             setup() {
                 const user = ref(null);
+                const categories = ref([]);
                 const category = ref('');
                 const subCategory = ref('');
                 const priority = ref('Low');
@@ -116,24 +107,31 @@
                 const description = ref('');
                 const isLoading = ref(false);
 
+                const fetchCategories = async () => {
+                    try {
+                        const response = await apiCall('/categories');
+                        categories.value = response.categories || [];
+                    } catch (err) {
+                        showToast('Failed to load categories.', 'error');
+                    }
+                };
+
                 onMounted(() => {
                     user.value = requireAuth('Resident');
+                    if (user.value) refreshUserProfile(user, 'Resident');
+                    fetchCategories();
                 });
 
                 const submitComplaint = async () => {
                     isLoading.value = true;
-                    const catId = getCategoryId(category.value);
-                    if (!catId) {
-                        showToast('Please select a trade category.', 'error');
-                        isLoading.value = false;
-                        return;
-                    }
                     if (!category.value || !subCategory.value) {
                         showToast('Please select both trade category and specific issue.', 'error');
                         isLoading.value = false;
                         return;
                     }
-                    const title = (category.value + ' - ' + subCategory.value).slice(0, 150);
+                    const selectedCategory = categories.value.find(c => c.id === category.value);
+                    const categoryName = selectedCategory ? selectedCategory.name : '';
+                    const title = (categoryName + ' - ' + subCategory.value).slice(0, 150);
                     const desc = description.value.trim();
                     const loc = location.value.trim();
 
@@ -149,7 +147,7 @@
                     }
 
                     const payload = {
-                        category_id: catId,
+                        category_id: category.value,
                         title: title,
                         description: desc,
                         location: loc,
@@ -165,7 +163,7 @@
                     }
                 };
 
-                return { user, category, subCategory, priority, location, description, isLoading, submitComplaint, logout, goHome };
+                return { user, categories, category, subCategory, priority, location, description, isLoading, submitComplaint, logout, goHome };
             }
         }).mount('#app');
     </script>

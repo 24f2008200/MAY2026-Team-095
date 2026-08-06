@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Smart Society | Resident Portal</title>
-    <script src="https://cdn.tailwindcss.com"></script>    
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="../assets/css/styles.css" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
     <link rel="icon" type="image/svg+xml" href="../images/favicon.svg">
@@ -73,19 +73,17 @@
                 <div class="px-5 py-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
                     <h3 class="font-bold text-sm text-slate-800 uppercase tracking-wide">My Service Ledger</h3>
                 </div>
-
                 <div class="px-5 py-3 border-b border-slate-200 bg-white flex gap-3 items-center">
-                    <select v-model="statusFilter" @change="fetchComplaints" class="bg-slate-50 border border-slate-300 text-slate-700 text-xs font-bold rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+                    <select v-model="statusFilter" @change="applyFilters" class="bg-slate-50 border border-slate-300 text-slate-700 text-xs font-bold rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
                         <option value="">All Statuses</option>
-                       <option value="OPEN">Open</option>
-                       <option value="ASSIGNED">Assigned</option>
-                       <option value="IN_PROGRESS">In Progress</option>
-                       <option value="RESOLVED">Resolved (Needs Review)</option>
-                       <option value="CLOSED">Closed</option>
+                        <option value="OPEN">Open</option>
+                        <option value="ASSIGNED">Assigned</option>
+                        <option value="IN_PROGRESS">In Progress</option>
+                        <option value="RESOLVED">Resolved (Needs Review)</option>
+                        <option value="CLOSED">Closed</option>
                     </select>
                     <button @click="clearFilters" class="text-xs text-slate-500 hover:text-indigo-600 font-bold transition ml-auto">Clear Filters</button>
                 </div>
-
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
                         <thead class="bg-white border-b border-slate-200"><tr><th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider w-32">Ticket ID</th><th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Issue Details</th><th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Priority</th><th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Lifecycle Status</th><th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Date Logged</th><th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">Action</th></tr></thead>
@@ -94,9 +92,9 @@
                                 <td colspan="6" class="px-5 py-12 text-center text-slate-500 text-sm font-medium"><i class="fas fa-filter text-3xl text-slate-300 mb-3 block"></i> No requests match your current filters.</td>
                             </tr>
                             <tr v-for="c in complaints" :key="c.id" class="hover:bg-slate-50 transition duration-150">
-                                <td class="px-5 py-3 whitespace-nowrap font-bold text-slate-800 text-sm">{{ c.id }}</td>
+                                <td class="px-5 py-3 whitespace-nowrap font-bold text-slate-800 text-sm">{{ c.complaint_code || c.id }}</td>
                                 <td class="px-5 py-3">
-                                    <p class="text-sm font-bold text-slate-800">{{ c.category?.name || 'N/A' }}</p>
+                                    <p class="text-sm font-bold text-slate-800">{{ c.category?.name || c.category || 'N/A' }}</p>
                                     <p class="text-xs text-slate-500 font-medium">{{ c.title || '--' }}</p>
                                 </td>
                                 <td class="px-5 py-3 whitespace-nowrap"><span :class="'pri-' + c.priority">{{ c.priority.charAt(0) + c.priority.slice(1).toLowerCase() }}</span></td>
@@ -114,6 +112,15 @@
                         </tbody>
                     </table>
                 </div>
+
+                <div v-if="totalPages > 1" class="px-5 py-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center">
+                    <span class="text-xs font-medium text-slate-500">Page <span class="font-bold text-slate-800">{{ currentPage }}</span> of {{ totalPages }} <span class="hidden sm:inline">({{ totalItems }} total requests)</span></span>
+                    <div class="flex gap-2">
+                        <button @click="changePage(currentPage - 1)" :disabled="currentPage === 1" class="px-3 py-1.5 text-xs font-bold text-slate-600 bg-white border border-slate-300 rounded-md hover:bg-slate-50 disabled:opacity-50 transition shadow-sm">Prev</button>
+                        <button @click="changePage(currentPage + 1)" :disabled="currentPage === totalPages" class="px-3 py-1.5 text-xs font-bold text-slate-600 bg-white border border-slate-300 rounded-md hover:bg-slate-50 disabled:opacity-50 transition shadow-sm">Next</button>
+                    </div>
+                </div>
+
             </div>
         </main>
 
@@ -131,7 +138,7 @@
                             <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Your Rating</label>
                             <div class="flex gap-1 mt-1"><i v-for="i in 5" :key="i" :class="i <= currentTicket.feedback?.rating ? 'fas fa-star text-amber-400 text-xl' : 'far fa-star text-slate-200 text-xl'"></i></div>
                         </div>
-                        <div><label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Your Comment</label><p class="text-sm text-slate-700 italic bg-slate-50 p-3 rounded-md border border-slate-200">"{{ currentTicket.comment }}"</p></div>
+                        <div><label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Your Comment</label><p class="text-sm text-slate-700 italic bg-slate-50 p-3 rounded-md border border-slate-200">"{{ currentTicket.feedback?.comment || currentTicket.comment }}"</p></div>
                     </template>
                     <template v-else>
                         <div class="mb-4"><label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Service Description</label><p class="text-sm text-slate-700 bg-slate-50 p-3 rounded-md border border-slate-200">{{ currentTicket.description }}</p></div>
@@ -151,7 +158,6 @@
             </div>
         </div>
     </div>
-
     <div id="toast" class="fixed bottom-6 right-6 z-50 hidden items-center px-4 py-3 rounded-md shadow-lg border bg-slate-900 border-slate-800 text-white"><i class="fas fa-check-circle text-emerald-400 mr-3 text-lg"></i><span id="toastMsg" class="font-medium text-sm">Success</span></div>
 
     <script src="../js/utils.js"></script>
@@ -163,39 +169,88 @@
                 const user = ref(null);
                 const complaints = ref([]);
                 const statusFilter = ref('');
-
                 const showModal = ref(false);
                 const currentTicket = ref(null);
                 const currentRating = ref(0);
                 const reviewComment = ref('');
 
+                // KPI Refs (we will calculate these across the entire user's history safely)
+                const statTotal = ref(0);
+                const statInProgress = ref(0);
+                const statActionRequired = ref(0);
+                const statClosed = ref(0);
+
+                const currentPage = ref(1);
+                const totalPages = ref(1);
+                const totalItems = ref(0);
+
+                const calculateKPIs = async () => {
+                    let allTasks = [];
+                    let p = 1;
+                    try {
+                        while(true) {
+                            const res = await apiCall(`/complaints?page=${p}&per_page=100`);
+                            allTasks = allTasks.concat(res.complaints || []);
+                            if (!res.pagination || p >= res.pagination.pages) break;
+                            p++;
+                        }
+                        statTotal.value = allTasks.length;
+                        statInProgress.value = allTasks.filter(c => ['ASSIGNED','IN_PROGRESS','OPEN','REOPENED'].includes(c.status)).length;
+                        statActionRequired.value = allTasks.filter(c => c.status === 'RESOLVED' && !c.feedback?.rating).length;
+                        statClosed.value = allTasks.filter(c => c.status === 'CLOSED' || (c.status === 'RESOLVED' && c.feedback?.rating)).length;
+                    } catch(err) { }
+                };
+
                 const fetchComplaints = async () => {
                     try {
-                        let endpoint = '/complaints';
-                        if (statusFilter.value) {
-                            endpoint += `?status=${encodeURIComponent(statusFilter.value)}`;
+                        let queryParams = [`page=${currentPage.value}`, `per_page=10`];
+                        if (statusFilter.value) queryParams.push(`status=${encodeURIComponent(statusFilter.value)}`);
+                        const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
+
+                        const response = await apiCall(`/complaints${queryString}`);
+                        complaints.value = response.complaints || [];
+                        
+                        if (response.pagination) {
+                            currentPage.value = response.pagination.page;
+                            totalPages.value = response.pagination.pages || 1;
+                            totalItems.value = response.pagination.total || 0;
                         }
-                       const response = await apiCall(endpoint);
-                       complaints.value = response.complaints || response || [];
-                   } catch (err) {
-                       showToast('Failed to load complaints.', 'error');
-                   }
+                    } catch (err) {
+                        showToast('Failed to load complaints.', 'error');
+                    }
                 };
 
                 onMounted(() => {
                     user.value = requireAuth('Resident');
-                    if (user.value) fetchComplaints();
+                    if (user.value) refreshUserProfile(user, 'Resident');
+                    if (user.value) {
+                        calculateKPIs();
+                        fetchComplaints();
+                    }
                 });
 
-                const statTotal = computed(() => complaints.value.length);
-                const statInProgress = computed(() => complaints.value.filter(c => ['ASSIGNED','IN_PROGRESS','OPEN','REOPENED'].includes(c.status)).length);
-                const statActionRequired = computed(() => complaints.value.filter(c => c.status === 'RESOLVED' && !c.feedback?.rating).length);
-                const statClosed = computed(() => complaints.value.filter(c => c.status === 'CLOSED' || (c.status === 'RESOLVED' && c.feedback?.rating)).length);
+                const applyFilters = () => {
+                    currentPage.value = 1;
+                    fetchComplaints();
+                };
+
+                const clearFilters = () => {
+                    statusFilter.value = '';
+                    currentPage.value = 1;
+                    fetchComplaints();
+                };
+
+                const changePage = (page) => {
+                    if (page >= 1 && page <= totalPages.value) {
+                        currentPage.value = page;
+                        fetchComplaints();
+                    }
+                };
 
                 const openReviewModal = (ticket) => {
                     currentTicket.value = ticket;
                     currentRating.value = ticket.feedback?.rating ? parseInt(ticket.feedback.rating) : 0;
-                    reviewComment.value = ticket.comment || '';
+                    reviewComment.value = ticket.feedback?.comment || ticket.comment || '';
                     showModal.value = true;
                 };
 
@@ -220,13 +275,9 @@
                         });
                         showToast('Review submitted successfully!');
                         closeReviewModal();
+                        calculateKPIs();
                         fetchComplaints();
                     } catch(err) {}
-                };
-
-                const clearFilters = () => {
-                    statusFilter.value = '';
-                    fetchComplaints();
                 };
 
                 const formatDate = (dateString) => dateString ? new Date(dateString).toLocaleDateString() : '';
@@ -236,6 +287,7 @@
                     try {
                         await apiCall(`/complaints/${id}/close`, { method: 'PUT' });
                         showToast('Ticket closed successfully.', 'success');
+                        calculateKPIs();
                         fetchComplaints();
                     } catch (err) {}
                 };
@@ -245,14 +297,15 @@
                     try {
                         await apiCall(`/complaints/${id}/reopen`, { method: 'PUT' });
                         showToast('Ticket reopened successfully.', 'success');
+                        calculateKPIs();
                         fetchComplaints();
                     } catch (err) {}
                 };
 
                 return {
                     user, complaints, statusFilter, statTotal, statInProgress, statActionRequired, statClosed,
-                    showModal, currentTicket, currentRating, reviewComment,
-                    fetchComplaints, openReviewModal, closeReviewModal, setRating, submitReview, clearFilters, formatDate,
+                    showModal, currentTicket, currentRating, reviewComment, currentPage, totalPages, totalItems,
+                    fetchComplaints, openReviewModal, closeReviewModal, setRating, submitReview, clearFilters, applyFilters, changePage, formatDate,
                     logout, goHome, viewComplaint, closeTicket, reopenTicket
                 };
             }

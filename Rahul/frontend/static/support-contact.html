@@ -98,6 +98,7 @@
 
                 onMounted(() => {
                     user.value = requireAuth();
+                    if (user.value) refreshUserProfile(user);
                 });
 
                 const sendInquiry = () => {

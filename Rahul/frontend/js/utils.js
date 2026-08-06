@@ -114,6 +114,27 @@ function requireAuth(requiredRole) {
     return user;
 }
 
+// Re-validates the session against the server (GET /auth/profile) and
+// refreshes the cached user with authoritative data (role, flat_number,
+// etc). Fire-and-forget: keeps the cached user as a fast first paint,
+// then upgrades it once the server responds. apiCall() already redirects
+// to login on a 401, so no separate expiry handling is needed here.
+async function refreshUserProfile(userRef, requiredRole) {
+    try {
+        const response = await apiCall('/auth/profile');
+        if (response && response.user) {
+            if (requiredRole && response.user.role.toUpperCase() !== requiredRole.toUpperCase()) {
+                goHome();
+                return;
+            }
+            setCurrentUser(response.user);
+            if (userRef) userRef.value = response.user;
+        }
+    } catch (err) {
+        // Network/server error - keep working off the cached user.
+    }
+}
+
 function logout() {
     clearCurrentUser();
     window.location.href = window.location.pathname.includes('/static/') ? '../index.html' : 'index.html';

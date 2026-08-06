@@ -41,6 +41,7 @@
                             <h2 class="font-bold text-xl text-slate-900 tracking-tight">{{ complaint?.id || 'Loading...' }}</h2>
                             <span class="text-slate-400 text-xl mx-1">|</span>
                                 <span class="font-bold text-lg text-slate-700">{{ complaint?.resident?.name || '...' }}</span>
+                                <span v-if="complaint?.resident?.flat_number" class="text-xs font-bold text-slate-400">(Flat {{ complaint.resident.flat_number }})</span>
                             <span v-if="complaint" :class="'px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-widest status-' + complaint.status.replace('_','')">{{ complaint.status.replace('_',' ') }}</span>
                             <span v-if="complaint" :class="'px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-widest pri-' + complaint.priority.toLowerCase()">{{ complaint.priority.split('_').map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(' ') }} Priority</span>
                         </div>
@@ -129,6 +130,7 @@
                             <div>
                                 <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Logged By</p>
                                 <p class="text-sm font-bold text-slate-800">{{ complaint?.resident?.name || '...' }}</p>
+                                <p class="text-xs text-slate-500">Flat {{ complaint?.resident?.flat_number || 'N/A' }}</p>
                                 <p class="text-xs text-slate-500">{{ complaint?.created_at ? new Date(complaint.created_at).toLocaleString() : '' }}</p>
                             </div>
                             <div>
@@ -193,6 +195,7 @@
 
                 onMounted(() => {
                     user.value = requireAuth();
+                    if (user.value) refreshUserProfile(user);
                     if (!user.value) return;
 
                     const params = new URLSearchParams(window.location.search);
@@ -206,7 +209,10 @@
                     if (!newMessage.value.trim()) return;
                     isSending.value = true;
                     try {
-                        await apiCall(`/complaints/${currentId}/timeline`, {
+                        const endpoint = (user.value?.role || '').toUpperCase() === 'STAFF'
+                            ? `/staff/complaints/${currentId}/timeline`
+                            : `/complaints/${currentId}/timeline`;
+                        await apiCall(endpoint, {
                             method: 'POST',
                             body: { comment: newMessage.value.trim() }
                         });

@@ -47,7 +47,6 @@
                 </div>
 
                 <div class="px-5 py-3 border-b border-slate-200 bg-white flex flex-col sm:flex-row gap-3 items-center">
-                    <!-- Added applyFilters binding here -->
                     <select v-model="statusFilter" @change="applyFilters" class="bg-slate-50 border border-slate-300 text-slate-700 text-xs font-bold rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none w-full sm:w-auto">
                         <option value="">All Completed</option>
                         <option value="RESOLVED">Resolved (Needs Review)</option>
@@ -67,7 +66,6 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 bg-white">
-                            <!-- Mapped correctly to historyData directly from backend -->
                             <tr v-if="historyData.length === 0">
                                 <td colspan="5" class="px-5 py-12 text-center text-slate-500 text-sm font-medium"><i class="fas fa-filter text-2xl text-slate-300 mb-2 block"></i> No records found for these filters.</td>
                             </tr>
@@ -90,7 +88,6 @@
                     </table>
                 </div>
 
-                <!-- Pagination -->
                 <div v-if="totalPages > 1" class="px-5 py-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center">
                     <span class="text-xs font-medium text-slate-500">Page <span class="font-bold text-slate-800">{{ currentPage }}</span> of {{ totalPages }} <span class="hidden sm:inline">({{ totalItems }} total records)</span></span>
                     <div class="flex gap-2">
@@ -104,7 +101,7 @@
 
     <script src="../js/utils.js"></script>
     <script>
-        const { createApp, ref, computed, onMounted } = Vue;
+        const { createApp, ref, onMounted } = Vue;
 
         createApp({
             setup() {
@@ -112,7 +109,6 @@
                 const historyData = ref([]);
                 const statusFilter = ref('');
                 
-                // Pagination configuration
                 const currentPage = ref(1);
                 const totalPages = ref(1);
                 const totalItems = ref(0);

@@ -19,6 +19,7 @@
                     <div><h1 class="font-extrabold text-lg text-slate-900 tracking-tight leading-none">Smart Society</h1><p class="text-[9px] text-indigo-600 font-bold uppercase tracking-widest mt-0.5">Complaint Resolution</p></div>
                 </div>
                 <div class="flex items-center space-x-4 relative">
+                    <div class="text-xl" title="Canada">🇨🇦</div>
                     <div class="h-6 w-px bg-slate-200 hidden sm:block"></div>
                     <div class="flex items-center gap-3 cursor-default">
                         <div class="text-right hidden sm:block">
@@ -52,13 +53,13 @@
                     <table class="w-full text-left border-collapse">
                         <thead class="bg-white border-b border-slate-200"><tr><th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Job ID</th><th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Location / Originator</th><th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Task Type</th><th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">SLA Priority</th><th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Current State</th><th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">Action</th></tr></thead>
                         <tbody class="divide-y divide-slate-100 bg-white">
-                            <tr v-if="activeQueue.length === 0">
+                            <tr v-if="paginatedQueue.length === 0">
                                 <td colspan="6" class="px-5 py-12 text-center text-slate-500 text-sm font-medium"><i class="fas fa-mug-hot text-3xl text-slate-300 mb-3 block"></i> No active jobs in queue.</td>
                             </tr>
-                            <tr v-for="c in activeQueue" :key="c.id" class="hover:bg-slate-50 transition duration-150">
-                                <td class="px-5 py-4 whitespace-nowrap font-bold text-slate-800 text-sm">{{ c.id }}</td>
+                            <tr v-for="c in paginatedQueue" :key="c.id" class="hover:bg-slate-50 transition duration-150">
+                                <td class="px-5 py-4 whitespace-nowrap font-bold text-slate-800 text-sm">{{ c.complaint_code || c.id }}</td>
                                 <td class="px-5 py-4"><span class="block text-sm font-bold text-slate-800">{{ c.location }}</span><span class="text-[10px] text-slate-500 uppercase font-bold">{{ c.resident?.name || '...' }}</span></td>
-                                <td class="px-5 py-4 text-sm text-slate-700 font-medium">{{ c.category?.name || 'N/A' }} - {{ c.title || 'N/A' }}</td>
+                                <td class="px-5 py-4 text-sm text-slate-700 font-medium">{{ c.category?.name || c.category || 'N/A' }} - {{ c.title || 'N/A' }}</td>
                                 <td class="px-5 py-4 whitespace-nowrap"><span :class="'pri-' + c.priority">{{ c.priority.charAt(0) + c.priority.slice(1).toLowerCase() }}</span></td>
                                 <td class="px-5 py-4 whitespace-nowrap"><span :class="'status-pill status-' + c.status.replace(' ','')">{{ c.status.replace('_',' ') }}</span></td>
                                 <td class="px-5 py-4 whitespace-nowrap text-right">
@@ -68,6 +69,15 @@
                         </tbody>
                     </table>
                 </div>
+                
+                <!-- Pagination -->
+                <div v-if="totalPages > 1" class="px-5 py-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center">
+                    <span class="text-xs font-medium text-slate-500">Page <span class="font-bold text-slate-800">{{ currentPage }}</span> of {{ totalPages }} <span class="hidden sm:inline">({{ activeQueue.length }} total active tasks)</span></span>
+                    <div class="flex gap-2">
+                        <button @click="changePage(currentPage - 1)" :disabled="currentPage === 1" class="px-3 py-1.5 text-xs font-bold text-slate-600 bg-white border border-slate-300 rounded-md hover:bg-slate-50 disabled:opacity-50 transition shadow-sm">Prev</button>
+                        <button @click="changePage(currentPage + 1)" :disabled="currentPage === totalPages" class="px-3 py-1.5 text-xs font-bold text-slate-600 bg-white border border-slate-300 rounded-md hover:bg-slate-50 disabled:opacity-50 transition shadow-sm">Next</button>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
@@ -75,22 +85,28 @@
 
     <script src="../js/utils.js"></script>
     <script>
-        const { createApp, ref, onMounted } = Vue;
+        const { createApp, ref, onMounted, computed } = Vue;
 
         createApp({
             setup() {
                 const user = ref(null);
                 const stats = ref({ assigned: 0, inProgress: 0, resolved: 0, closed: 0 });
                 const activeQueue = ref([]);
+                
+                // Pagination configuration
+                const currentPage = ref(1);
+                const itemsPerPage = 10;
 
                 const fetchStaffDashboard = async () => {
                     try {
                         const summary = await apiCall('/staff/dashboard/summary');
                         stats.value = summary.dashboard || summary;
 
-                        const myTasks = await apiCall('/staff/complaints');
+                        // Fetching with a large per_page to ensure we grab all active assignments for client-side slicing
+                        const myTasks = await apiCall('/staff/complaints?per_page=100');
                         const complaints = myTasks.complaints || myTasks || [];
                         activeQueue.value = complaints.filter(c => ['ASSIGNED','IN_PROGRESS'].includes(c.status));
+                        currentPage.value = 1;
                     } catch (err) {
                         showToast('Failed to load staff dashboard.', 'error');
                     }
@@ -101,9 +117,22 @@
                     if (user.value) fetchStaffDashboard();
                 });
 
+                const totalPages = computed(() => Math.ceil(activeQueue.value.length / itemsPerPage) || 1);
+
+                const paginatedQueue = computed(() => {
+                    const start = (currentPage.value - 1) * itemsPerPage;
+                    return activeQueue.value.slice(start, start + itemsPerPage);
+                });
+
+                const changePage = (page) => {
+                    if (page >= 1 && page <= totalPages.value) {
+                        currentPage.value = page;
+                    }
+                };
+
                 const navigate = (url) => window.location.href = url;
 
-                return { user, stats, activeQueue, navigate, logout, goHome };
+                return { user, stats, activeQueue, paginatedQueue, currentPage, totalPages, changePage, navigate, logout, goHome };
             }
         }).mount('#app');
     </script>

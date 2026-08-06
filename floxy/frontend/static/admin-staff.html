@@ -19,7 +19,6 @@
                     <div><h1 class="font-extrabold text-lg text-slate-900 tracking-tight leading-none">Smart Society</h1><p class="text-[9px] text-indigo-600 font-bold uppercase tracking-widest mt-0.5">Complaint Resolution</p></div>
                 </div>
                 <div class="flex items-center space-x-4 relative">
-                    <div class="text-xl" title="Canada">🇨🇦</div>
                     <div class="h-6 w-px bg-slate-200 hidden sm:block"></div>
                     <div class="flex items-center gap-3 cursor-default">
                         <div class="text-right hidden sm:block">
@@ -77,7 +76,6 @@
                     </div>
                 </form>
 
-                <!-- Search and Filter for Staff -->
                 <div class="px-5 py-4 border-b border-slate-200 bg-white flex flex-col sm:flex-row gap-3 justify-between items-center">
                     <div class="flex gap-3 w-full sm:w-auto">
                         <select v-model="tradeFilter" class="bg-slate-50 border border-slate-300 text-slate-700 text-xs font-bold rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none w-full sm:w-auto">
@@ -121,7 +119,6 @@
                     </table>
                 </div>
 
-                <!-- Pagination -->
                 <div v-if="totalPages > 1" class="px-5 py-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center">
                     <span class="text-xs font-medium text-slate-500">Page <span class="font-bold text-slate-800">{{ currentPage }}</span> of {{ totalPages }} <span class="hidden sm:inline">({{ filteredStaff.length }} total records)</span></span>
                     <div class="flex gap-2">
@@ -150,7 +147,6 @@
                 const isLoading = ref(false);
                 const newStaff = ref({ name: '', trade: '', email: '', password: '', mobileNumber: '', flatNumber: '' });
                 
-                // Filtering and Pagination
                 const searchQuery = ref('');
                 const tradeFilter = ref('');
                 const currentPage = ref(1);
@@ -170,7 +166,6 @@
                     if (user.value) fetchStaffList();
                 });
 
-                // Client-side filtering logic since API doesn't support it inherently
                 const filteredStaff = computed(() => {
                     let result = staffList.value;
                     if (tradeFilter.value) {

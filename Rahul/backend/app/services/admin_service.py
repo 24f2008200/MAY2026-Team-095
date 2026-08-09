@@ -489,3 +489,112 @@ def create_category():
         "message": "Category created successfully.",
         "category": category.to_dict(),
     }, 201
+
+
+def _resident_summary(resident: User) -> dict:
+    return {
+        "id": resident.id,
+        "name": resident.name,
+        "email": resident.email,
+        "mobile_number": resident.mobile_number,
+        "flat_number": resident.flat_number,
+        "building": resident.building,
+        "is_active": resident.is_active,
+        "created_at": (
+            resident.created_at.isoformat()
+            if resident.created_at
+            else None
+        ),
+    }
+
+
+def list_pending_residents():
+    """
+    Residents who have registered but not yet been approved by an admin.
+    """
+    pending = (
+        User.query
+        .filter_by(role=UserRole.RESIDENT, is_active=False)
+        .order_by(User.created_at.asc())
+        .all()
+    )
+
+    return {
+        "success": True,
+        "residents": [_resident_summary(r) for r in pending],
+    }, 200
+
+
+def approve_resident(resident_id: int):
+    resident = User.query.filter_by(
+        id=resident_id,
+        role=UserRole.RESIDENT,
+    ).first()
+
+    if not resident:
+        return {
+            "success": False,
+            "message": "Resident not found.",
+        }, 404
+
+    if resident.is_active:
+        return {
+            "success": False,
+            "message": "This account is already approved.",
+        }, 409
+
+    resident.is_active = True
+    db.session.commit()
+
+    create_notification(
+        user_id=resident.id,
+        complaint_id=None,
+        title="Account Approved",
+        message=(
+            "Your resident account has been approved. You can now log "
+            "in and start raising complaints."
+        ),
+        notification_type="ACCOUNT_APPROVED",
+    )
+    db.session.commit()
+
+    return {
+        "success": True,
+        "message": "Resident approved successfully.",
+        "resident": _resident_summary(resident),
+    }, 200
+
+
+def reject_resident(resident_id: int):
+    """
+    Rejects (deletes) a pending resident registration. Only allowed while
+    the account is still pending - once approved, use staff-style
+    deactivation instead of deleting real account history.
+    """
+    resident = User.query.filter_by(
+        id=resident_id,
+        role=UserRole.RESIDENT,
+    ).first()
+
+    if not resident:
+        return {
+            "success": False,
+            "message": "Resident not found.",
+        }, 404
+
+    if resident.is_active:
+        return {
+            "success": False,
+            "message": (
+                "This account is already approved and active - it can't "
+                "be rejected, only deactivated by other means."
+            ),
+        }, 409
+
+    db.session.delete(resident)
+    db.session.commit()
+
+    return {
+        "success": True,
+        "message": "Registration rejected and removed.",
+    }, 200

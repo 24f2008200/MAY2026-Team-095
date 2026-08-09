@@ -50,6 +50,21 @@
                         <span class="font-bold text-slate-500 mt-2">Required Action</span>
                         <div class="bg-slate-50 p-4 rounded-md border border-slate-200 text-slate-800 font-medium mt-1 leading-relaxed">{{ complaint?.description || '...' }}</div>
                     </div>
+                    <div class="mt-6 pt-6 border-t border-slate-100">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Proof of Work</h3>
+                            <button @click="$refs.workFileUpload.click()" :disabled="isUploading" class="text-xs bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 px-3 py-1.5 rounded-md font-bold shadow-sm transition flex items-center disabled:opacity-50">
+                                <i class="fas fa-camera mr-1.5"></i> {{ isUploading ? 'Uploading...' : 'Attach Photo' }}
+                            </button>
+                            <input type="file" ref="workFileUpload" class="hidden" @change="handleMediaUpload" multiple accept="image/*,.pdf" />
+                        </div>
+                        <div class="flex gap-3 overflow-x-auto pb-1">
+                            <div v-if="!complaint?.attachments?.length" class="text-xs text-slate-400 italic">No photos attached yet - add proof once the job is done.</div>
+                            <a v-for="att in complaint?.attachments" :key="att.id" :href="resolveFileUrl(att.url)" target="_blank" class="w-24 h-20 rounded-lg border border-slate-200 overflow-hidden shadow-sm flex-shrink-0 block bg-slate-100">
+                                <img :src="resolveFileUrl(att.url)" class="w-full h-full object-cover" alt="Work evidence" />
+                            </a>
+                        </div>
+                    </div>
                 </div>
                 <div class="lg:w-1/2">
                     <div class="bg-slate-50 rounded-lg shadow-inner border border-slate-200 p-6 md:p-8">
@@ -93,6 +108,7 @@
                 const selectedStatus = ref('');
                 const comment = ref('');
                 const isLoading = ref(false);
+                const isUploading = ref(false);
                 let ticketId = null;
 
                 const fetchComplaintData = async () => {
@@ -138,7 +154,35 @@
                     }
                 };
 
-                return { user, complaint, selectedStatus, comment, isLoading, updateStatus, logout, goHome };
+                const handleMediaUpload = async (event) => {
+                    const files = event.target.files;
+                    if (!files || files.length === 0) return;
+
+                    isUploading.value = true;
+                    let successCount = 0;
+                    for (let i = 0; i < files.length; i++) {
+                        const formData = new FormData();
+                        formData.append('file', files[i]);
+                        try {
+                            await apiCall(`/complaints/${ticketId}/attachments`, {
+                                method: 'POST',
+                                body: formData
+                            });
+                            successCount++;
+                        } catch (err) {
+                            showToast(`Failed to upload ${files[i].name}.`, 'error');
+                        }
+                    }
+
+                    if (successCount > 0) {
+                        showToast(`${successCount} file${successCount > 1 ? 's' : ''} attached successfully!`);
+                        fetchComplaintData();
+                    }
+                    isUploading.value = false;
+                    event.target.value = '';
+                };
+
+                return { user, complaint, selectedStatus, comment, isLoading, isUploading, updateStatus, handleMediaUpload, resolveFileUrl, logout, goHome };
             }
         }).mount('#app');
     </script>

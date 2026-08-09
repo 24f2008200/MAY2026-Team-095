@@ -78,4 +78,16 @@ def create_app():
 
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
+    # Serves uploaded attachment files so <img src="..."> / download links
+    # in the frontend can actually load them. Filenames are randomised
+    # (uuid4 hex prefix) at upload time, so this is safe to leave public.
+    from flask import send_from_directory
+
+    @app.route("/uploads/<path:filename>")
+    def uploaded_file(filename):
+        return send_from_directory(
+            app.config["UPLOAD_FOLDER"],
+            filename,
+        )
+
     return app

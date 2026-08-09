@@ -86,8 +86,8 @@
 
                     try {
                         await apiCall('/auth/register', { method: 'POST', body: payload });
-                        showToast('Registration successful! Redirecting to login...', 'success');
-                        setTimeout(() => { window.location.href = '../index.html'; }, 1500);
+                        showToast('Registration submitted! An admin needs to approve your account before you can log in.', 'success');
+                        setTimeout(() => { window.location.href = '../index.html'; }, 2500);
                     } catch (err) {
                         isLoading.value = false;
                     }

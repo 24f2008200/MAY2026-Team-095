@@ -81,16 +81,16 @@
                         <div>
                             <div class="flex items-center justify-between mb-4">
                                 <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Attached Evidence</h3>
-                                <button v-if="user?.role.toUpperCase() !== 'ADMIN'" @click="$refs.fileUpload.click()" class="text-xs bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 px-3 py-1.5 rounded-md font-bold shadow-sm transition flex items-center">
+                                <button @click="$refs.fileUpload.click()" class="text-xs bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 px-3 py-1.5 rounded-md font-bold shadow-sm transition flex items-center">
                                     <i class="fas fa-plus mr-1.5"></i> Add Media
                                 </button>
-                                <input type="file" ref="fileUpload" class="hidden" @change="handleMediaUpload" multiple />
+                                <input type="file" ref="fileUpload" class="hidden" @change="handleMediaUpload" multiple accept="image/*,.pdf" />
                             </div>
                             <div class="flex gap-4 overflow-x-auto pb-2">
                                 <div v-if="!complaint?.attachments?.length" class="text-xs text-slate-400 italic">No media attached.</div>
-                                <div v-for="att in complaint?.attachments" :key="att.id" class="w-32 h-24 rounded-lg border border-slate-200 overflow-hidden shadow-sm flex-shrink-0">
-                                    <img :src="att.url" class="w-full h-full object-cover" alt="Evidence" />
-                                </div>
+                                <a v-for="att in complaint?.attachments" :key="att.id" :href="resolveFileUrl(att.url)" target="_blank" class="w-32 h-24 rounded-lg border border-slate-200 overflow-hidden shadow-sm flex-shrink-0 block bg-slate-100">
+                                    <img :src="resolveFileUrl(att.url)" class="w-full h-full object-cover" alt="Evidence" />
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -228,21 +228,28 @@
                     const files = event.target.files;
                     if (!files || files.length === 0) return;
 
-                    const formData = new FormData();
+                    // Backend accepts one file per request (request.files["file"]),
+                    // so multi-file selections are uploaded one request at a time.
+                    let successCount = 0;
                     for (let i = 0; i < files.length; i++) {
+                        const formData = new FormData();
                         formData.append('file', files[i]);
+                        try {
+                            await apiCall(`/complaints/${currentId}/attachments`, {
+                                method: 'POST',
+                                body: formData
+                            });
+                            successCount++;
+                        } catch (err) {
+                            showToast(`Failed to upload ${files[i].name}.`, 'error');
+                        }
                     }
 
-                    try {
-                        await apiCall(`/complaints/${currentId}/attachments`, {
-                            method: 'POST',
-                            body: formData
-                        });
-                        showToast("Media attached successfully!");
+                    if (successCount > 0) {
+                        showToast(`${successCount} file${successCount > 1 ? 's' : ''} attached successfully!`);
                         fetchTicketDetails();
-                    } catch (err) {
-                        showToast('Failed to upload media.', 'error');
                     }
+                    event.target.value = '';
                 };
 
                 const navigate = (url) => window.location.href = url;
@@ -265,7 +272,7 @@
                     } catch (err) {}
                 };
 
-                return { user, complaint, timeline, activeTab, newMessage, isSending, chatContainer, submitMessage, handleMediaUpload, navigate, logout, goHome, closeTicket, reopenTicket };
+                return { user, complaint, timeline, activeTab, newMessage, isSending, chatContainer, submitMessage, handleMediaUpload, navigate, logout, goHome, closeTicket, reopenTicket, resolveFileUrl };
             }
         }).mount('#app');
     </script>

@@ -26,6 +26,9 @@ from app.services.admin_service import (
     remove_staff,
     assign_staff,
     create_category,
+    list_pending_residents,
+    approve_resident,
+    reject_resident,
 )
 
 
@@ -78,3 +81,15 @@ def list_complaints_handler() -> tuple[dict[str, Any], int]:
         "success": True,
         "complaints": [_complaint_response(c) for c in complaints],
     }, 200
+
+
+def list_pending_residents_handler() -> tuple[dict[str, Any], int]:
+    return list_pending_residents()
+
+
+def approve_resident_handler(resident_id: int) -> tuple[dict[str, Any], int]:
+    return approve_resident(resident_id)
+
+
+def reject_resident_handler(resident_id: int) -> tuple[dict[str, Any], int]:
+    return reject_resident(resident_id)

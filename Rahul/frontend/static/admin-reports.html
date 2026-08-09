@@ -9,6 +9,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
     <link rel="icon" type="image/svg+xml" href="../images/favicon.svg">
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
 </head>
 <body>
     <div id="app" class="min-h-screen flex flex-col bg-slate-50">
@@ -34,6 +35,7 @@
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-6 overflow-x-auto">
                     <a href="dashboard-admin.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition"><i class="fas fa-chart-pie mr-1.5 text-base"></i> Portal</a>
                     <a href="admin-staff.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition"><i class="fas fa-users mr-1.5 text-base"></i> Staff</a>
+                    <a href="admin-approvals.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition"><i class="fas fa-user-check mr-1.5 text-base"></i> Approvals</a>
                     <a href="admin-reports.html" class="nav-link border-indigo-600 text-indigo-700 py-2 px-3 text-xs font-bold hover:text-slate-900 border-b-2 flex items-center transition"><i class="fas fa-search mr-1.5 text-base"></i> Records</a>
                     <a href="messages.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition"><i class="fas fa-bell mr-1.5 text-base"></i> Notifications</a>
                 </div>
@@ -47,31 +49,40 @@
             </div>
 
             <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-5">
-                <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Analytics Overview</h3>
-                <div v-if="!analytics" class="text-sm text-slate-500">Loading analytics...</div>
-                <div v-else class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div class="border border-slate-200 rounded-md p-4">
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Complaints by Category</p>
-                        <ul class="space-y-1">
-                            <li v-for="row in analytics.complaints_by_category" :key="row.category" class="flex justify-between text-sm">
-                                <span class="font-medium text-slate-700">{{ row.category }}</span>
-                                <span class="font-bold text-slate-900">{{ row.count }}</span>
-                            </li>
-                        </ul>
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Analytics Overview</h3>
+                    <button @click="fetchAnalytics" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition flex items-center"><i class="fas fa-rotate mr-1.5"></i> Refresh</button>
+                </div>
+                <div v-if="!analytics" class="text-sm text-slate-500 py-8 text-center">Loading analytics...</div>
+                <div v-else class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <div class="border border-slate-200 rounded-lg p-4 lg:col-span-2">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Complaints by Category</p>
+                        <div class="relative" style="height: 260px;"><canvas ref="categoryChartRef"></canvas></div>
                     </div>
-                    <div class="border border-slate-200 rounded-md p-4">
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Resolution & Feedback</p>
-                        <p class="text-sm text-slate-700">Avg. Resolution Time: <span class="font-bold text-slate-900">{{ analytics.average_resolution_hours != null ? analytics.average_resolution_hours + ' hrs' : 'N/A' }}</span></p>
-                        <p class="text-sm text-slate-700 mt-1">Avg. Rating: <span class="font-bold text-slate-900">{{ analytics.feedback_summary?.average_rating ?? 'N/A' }}</span> ({{ analytics.feedback_summary?.total_feedback || 0 }} reviews)</p>
-                    </div>
-                    <div class="border border-slate-200 rounded-md p-4">
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Status Overview</p>
-                        <ul class="space-y-1">
-                            <li v-for="(count, status) in analytics.status_overview" :key="status" class="flex justify-between text-sm">
-                                <span class="font-medium text-slate-700">{{ status.replace('_',' ') }}</span>
+                    <div class="border border-slate-200 rounded-lg p-4">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Status Breakdown</p>
+                        <div class="relative" style="height: 220px;"><canvas ref="statusChartRef"></canvas></div>
+                        <ul class="mt-3 space-y-1">
+                            <li v-for="(count, status) in analytics.status_overview" :key="status" class="flex justify-between text-xs">
+                                <span class="font-medium text-slate-600">{{ status.replace('_',' ') }}</span>
                                 <span class="font-bold text-slate-900">{{ count }}</span>
                             </li>
                         </ul>
+                    </div>
+                    <div class="border border-slate-200 rounded-lg p-4 flex flex-col justify-center items-center text-center">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 self-start">Avg. Resolution Time</p>
+                        <p class="text-4xl font-black text-indigo-600 leading-none">{{ analytics.average_resolution_hours != null ? analytics.average_resolution_hours : '—' }}</p>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wide mt-1">{{ analytics.average_resolution_hours != null ? 'hours' : 'no data yet' }}</p>
+                    </div>
+                    <div class="border border-slate-200 rounded-lg p-4 lg:col-span-2">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Resident Satisfaction</p>
+                        <div class="flex items-center gap-6">
+                            <div class="relative flex-shrink-0" style="height: 140px; width: 140px;"><canvas ref="ratingChartRef"></canvas></div>
+                            <div>
+                                <p class="text-3xl font-black text-slate-900 leading-none">{{ analytics.feedback_summary?.average_rating ?? '—' }}<span class="text-sm font-bold text-slate-400"> / 5</span></p>
+                                <p class="text-xs font-bold text-slate-500 uppercase tracking-wide mt-2">{{ analytics.feedback_summary?.total_feedback || 0 }} review{{ analytics.feedback_summary?.total_feedback === 1 ? '' : 's' }} submitted</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -160,7 +171,7 @@
 
     <script src="../js/utils.js"></script>
     <script>
-        const { createApp, ref, onMounted } = Vue;
+        const { createApp, ref, onMounted, nextTick } = Vue;
 
         createApp({
             setup() {
@@ -174,10 +185,102 @@
                 const isExporting = ref(false);
                 const analytics = ref(null);
 
+                const categoryChartRef = ref(null);
+                const statusChartRef = ref(null);
+                const ratingChartRef = ref(null);
+                let categoryChart = null;
+                let statusChart = null;
+                let ratingChart = null;
+
+                const CHART_COLORS = ['#4f46e5', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#64748b'];
+                const STATUS_COLORS = { OPEN: '#f59e0b', ASSIGNED: '#0ea5e9', IN_PROGRESS: '#8b5cf6', RESOLVED: '#10b981', CLOSED: '#64748b', REOPENED: '#ef4444' };
+
+                const renderCharts = () => {
+                    if (!analytics.value) return;
+
+                    // --- Complaints by category (horizontal bar) ---
+                    const catRows = (analytics.value.complaints_by_category || []).filter(r => r.count > 0);
+                    if (categoryChart) categoryChart.destroy();
+                    if (categoryChartRef.value) {
+                        categoryChart = new Chart(categoryChartRef.value, {
+                            type: 'bar',
+                            data: {
+                                labels: catRows.map(r => r.category),
+                                datasets: [{
+                                    label: 'Complaints',
+                                    data: catRows.map(r => r.count),
+                                    backgroundColor: catRows.map((_, i) => CHART_COLORS[i % CHART_COLORS.length]),
+                                    borderRadius: 4,
+                                }],
+                            },
+                            options: {
+                                indexAxis: 'y',
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: { legend: { display: false } },
+                                scales: {
+                                    x: { beginAtZero: true, ticks: { precision: 0 } },
+                                    y: { grid: { display: false } },
+                                },
+                            },
+                        });
+                    }
+
+                    // --- Status breakdown (doughnut) ---
+                    const statusEntries = Object.entries(analytics.value.status_overview || {}).filter(([, c]) => c > 0);
+                    if (statusChart) statusChart.destroy();
+                    if (statusChartRef.value) {
+                        statusChart = new Chart(statusChartRef.value, {
+                            type: 'doughnut',
+                            data: {
+                                labels: statusEntries.map(([s]) => s.replace('_', ' ')),
+                                datasets: [{
+                                    data: statusEntries.map(([, c]) => c),
+                                    backgroundColor: statusEntries.map(([s]) => STATUS_COLORS[s] || '#94a3b8'),
+                                    borderWidth: 2,
+                                    borderColor: '#ffffff',
+                                }],
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                cutout: '65%',
+                                plugins: { legend: { display: false } },
+                            },
+                        });
+                    }
+
+                    // --- Resident satisfaction (rating gauge, 0-5) ---
+                    const rating = analytics.value.feedback_summary?.average_rating || 0;
+                    if (ratingChart) ratingChart.destroy();
+                    if (ratingChartRef.value) {
+                        ratingChart = new Chart(ratingChartRef.value, {
+                            type: 'doughnut',
+                            data: {
+                                datasets: [{
+                                    data: [rating, Math.max(5 - rating, 0)],
+                                    backgroundColor: ['#f59e0b', '#f1f5f9'],
+                                    borderWidth: 0,
+                                }],
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                cutout: '75%',
+                                circumference: 270,
+                                rotation: 225,
+                                plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                            },
+                        });
+                    }
+                };
+
                 const fetchAnalytics = async () => {
                     try {
                         const response = await apiCall('/admin/reports');
                         analytics.value = response.reports || null;
+                        await nextTick();
+                        renderCharts();
                     } catch (err) {
                         analytics.value = null;
                     }
@@ -297,7 +400,7 @@
 
                 const navigate = (url) => window.location.href = url;
 
-                return { user, complaints, statusFilter, searchQuery, currentPage, totalPages, totalItems, isExporting, analytics, fetchReports, applyFilters, clearFilters, changePage, exportData, navigate, logout, goHome };
+                return { user, complaints, statusFilter, searchQuery, currentPage, totalPages, totalItems, isExporting, analytics, categoryChartRef, statusChartRef, ratingChartRef, fetchReports, applyFilters, clearFilters, changePage, exportData, fetchAnalytics, navigate, logout, goHome };
             }
         }).mount('#app');
     </script>

@@ -85,6 +85,7 @@ def _user_summary(user: User | None) -> dict | None:
 
 
 def _attachment_response(attachment: Attachment) -> dict:
+    filename = os.path.basename(attachment.file_path) if attachment.file_path else None
     return {
         "id": attachment.id,
         "complaint_id": attachment.complaint_id,
@@ -93,6 +94,10 @@ def _attachment_response(attachment: Attachment) -> dict:
         "file_path": attachment.file_path,
         "file_type": attachment.file_type,
         "file_size": attachment.file_size,
+        # Browser-loadable URL for the file, served by the /uploads/<name>
+        # route registered in app/__init__.py. file_path on disk is not
+        # directly reachable from the browser, so <img src> needs this.
+        "url": f"/uploads/{filename}" if filename else None,
         "created_at": (
             attachment.created_at.isoformat()
             if attachment.created_at

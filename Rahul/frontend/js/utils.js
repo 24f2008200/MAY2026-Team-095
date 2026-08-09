@@ -1,5 +1,15 @@
 const API_BASE = 'http://127.0.0.1:5000';
 
+// Uploaded file URLs come back from the backend as relative paths
+// (e.g. "/uploads/abc123_photo.jpg"). They need the API origin prefixed
+// to be loadable from the frontend, which is served from a different
+// origin/port than the API.
+function resolveFileUrl(path) {
+    if (!path) return '';
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    return `${API_BASE}${path}`;
+}
+
 async function apiCall(endpoint, options = {}) {
     const token = localStorage.getItem('smartSocietyToken');
     const headers = options.headers || {};
@@ -22,9 +32,15 @@ async function apiCall(endpoint, options = {}) {
         const response = await fetch(`${API_BASE}${endpoint}`, config);
 
         if (response.status === 401) {
-            clearCurrentUser();
-            window.location.href = window.location.pathname.includes('/static/') ? '../index.html' : 'index.html';
-            throw new Error('Session expired. Please login again.');
+            if (token) {
+                clearCurrentUser();
+                window.location.href = window.location.pathname.includes('/static/') ? '../index.html' : 'index.html';
+                throw new Error('Session expired. Please login again.');
+            }
+            // No token was sent (e.g. a login attempt) - this is a real
+            // auth failure (bad credentials, pending approval, etc), not
+            // an expired session, so fall through and surface the
+            // backend's actual message below instead of redirecting.
         }
 
         if (!response.ok) {
@@ -47,9 +63,19 @@ async function apiCall(endpoint, options = {}) {
             if (response.status === 400) {
                 message = errorData.message || errorData.detail || message;
             } else if (response.status === 401) {
-                message = 'Your session has expired. Please log in again.';
+                // The expired-token case is already handled above (redirects
+                // before reaching here), so a 401 that reaches this point is
+                // a real auth failure like bad login credentials - keep the
+                // backend's specific message instead of a generic one.
+                message = (typeof errorData.message === 'string' && errorData.message)
+                    ? errorData.message
+                    : 'Authentication failed.';
             } else if (response.status === 403) {
-                message = 'You do not have permission to perform this action.';
+                // Prefer the backend's specific reason (e.g. "pending admin
+                // approval") over a generic message, when it gave one.
+                message = (typeof errorData.message === 'string' && errorData.message)
+                    ? errorData.message
+                    : 'You do not have permission to perform this action.';
             } else if (response.status === 404) {
                 message = 'The requested resource was not found.';
             } else if (response.status >= 500) {

@@ -12,6 +12,7 @@ from werkzeug.security import (
 
 from app.extensions import db
 from app.models.user import User, UserRole
+from app.services.notification_service import create_notification
 from app.schemas.auth_schema import (
     ForgotPasswordSchema,
     RegisterSchema,
@@ -93,7 +94,10 @@ def register():
         role=UserRole.RESIDENT,
         flat_number=data["flat_number"].strip(),
         building=data["building"].strip(),
-        is_active=True,
+        # New resident sign-ups are held for admin approval before they
+        # can log in. Staff/admin accounts are created pre-approved
+        # elsewhere (admin_service.create_staff, initial admin seed).
+        is_active=False,
     )
 
     try:
@@ -110,18 +114,29 @@ def register():
             "message": "Unable to register user."
         }, 500
 
-    access_token = create_access_token(
-        identity=str(user.id),
-        additional_claims={
-            "role": user.role.value,
-            "email": user.email,
-        },
-    )
+    # No access_token here: the account is pending admin approval
+    # (is_active=False) and must not be usable until approved.
+    # Notify every admin so they see it in the Approvals section.
+    admins = User.query.filter_by(role=UserRole.ADMIN, is_active=True).all()
+    for admin in admins:
+        create_notification(
+            user_id=admin.id,
+            complaint_id=None,
+            title="New Resident Registration",
+            message=(
+                f"{user.name} (Flat {user.flat_number}) has registered "
+                f"and is awaiting approval."
+            ),
+            notification_type="RESIDENT_APPROVAL",
+        )
+    db.session.commit()
 
     return {
         "success": True,
-        "message": "Registration successful.",
-        "access_token": access_token,
+        "message": (
+            "Registration successful. Your account is pending admin "
+            "approval - you'll be able to log in once it's approved."
+        ),
         "user": _user_response(user),
     }, 201
 
@@ -165,9 +180,15 @@ def login():
         }, 401
 
     if not user.is_active:
+        message = (
+            "Your account is pending admin approval. You'll be able to "
+            "log in once an administrator approves it."
+            if user.role == UserRole.RESIDENT
+            else "Account has been disabled."
+        )
         return {
             "success": False,
-            "message": "Account has been disabled."
+            "message": message,
         }, 403
 
     access_token = create_access_token(

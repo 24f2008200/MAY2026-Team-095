@@ -10,6 +10,9 @@ from app.controllers.admin_controller import (
     reports_handler,
     remove_staff_handler,
     list_complaints_handler,
+    list_pending_residents_handler,
+    approve_resident_handler,
+    reject_resident_handler,
 )
 from app.middleware.auth import admin_required
 from app.models.complaint import Complaint, ComplaintPriority, ComplaintStatus
@@ -219,3 +222,47 @@ class AdminComplaintListResource(Resource):
                 "has_prev": pagination.has_prev,
             }
         }, 200
+
+
+@admin_ns.route("/residents/pending")
+class AdminPendingResidentsResource(Resource):
+
+    @admin_required
+    @admin_ns.doc(
+        security="Bearer",
+        summary="List residents pending approval",
+        description="Residents who registered but have not yet been approved by an admin.",
+    )
+    @admin_ns.response(200, "Success")
+    def get(self):
+        return list_pending_residents_handler()
+
+
+@admin_ns.route("/residents/<int:resident_id>/approve")
+class AdminApproveResidentResource(Resource):
+
+    @admin_required
+    @admin_ns.doc(
+        security="Bearer",
+        summary="Approve a pending resident registration",
+    )
+    @admin_ns.response(200, "Resident approved")
+    @admin_ns.response(404, "Not found")
+    @admin_ns.response(409, "Already approved")
+    def put(self, resident_id):
+        return approve_resident_handler(resident_id)
+
+
+@admin_ns.route("/residents/<int:resident_id>/reject")
+class AdminRejectResidentResource(Resource):
+
+    @admin_required
+    @admin_ns.doc(
+        security="Bearer",
+        summary="Reject (and remove) a pending resident registration",
+    )
+    @admin_ns.response(200, "Registration rejected")
+    @admin_ns.response(404, "Not found")
+    @admin_ns.response(409, "Already approved")
+    def delete(self, resident_id):
+        return reject_resident_handler(resident_id)

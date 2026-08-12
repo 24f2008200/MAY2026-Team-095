@@ -94,9 +94,7 @@ def _attachment_response(attachment: Attachment) -> dict:
         "file_path": attachment.file_path,
         "file_type": attachment.file_type,
         "file_size": attachment.file_size,
-        # Browser-loadable URL for the file, served by the /uploads/<name>
-        # route registered in app/__init__.py. file_path on disk is not
-        # directly reachable from the browser, so <img src> needs this.
+
         "url": f"/uploads/{filename}" if filename else None,
         "created_at": (
             attachment.created_at.isoformat()
@@ -850,7 +848,6 @@ def close_complaint(complaint_id: int):
     """
     Close a complaint (RESOLVED → CLOSED).
     Admin or resident can close an open/in-progress complaint.
-    #i added it: allows admin and resident to close tickets.
     """
     user = _get_user(_current_user_id())
 
@@ -894,7 +891,6 @@ def reopen_complaint(complaint_id: int):
     """
     Reopen a closed complaint (CLOSED → OPEN) within 7 days.
     Only the resident who created the complaint can reopen.
-    #i added it: allows residents to reopen tickets closed within 7 days.
     """
     user = _get_user(_current_user_id())
 

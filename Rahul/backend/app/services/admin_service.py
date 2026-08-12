@@ -253,7 +253,6 @@ def get_reports():
 def _extract_trade(member: User) -> str:
     """
     Derive trade from user record.
-    #i added it: tries to get trade from building field.
     """
     if member.building:
         return member.building
@@ -261,12 +260,14 @@ def _extract_trade(member: User) -> str:
 
 
 def list_staff():
-    staff_members = (
-        User.query
-        .filter_by(role=UserRole.STAFF, is_active=True)
-        .order_by(User.name.asc())
-        .all()
-    )
+    trade = request.args.get("trade", type=str)
+
+    query = User.query.filter_by(role=UserRole.STAFF, is_active=True)
+
+    if trade:
+        query = query.filter(User.building == trade)
+
+    staff_members = query.order_by(User.name.asc()).all()
 
     return {
         "success": True,
@@ -298,7 +299,6 @@ def create_staff(json_data: dict) -> tuple[dict[str, Any], int]:
     """
     Create a new maintenance staff account.
     Only accessible by administrators.
-    #i added it: this function handles staff creation with proper validation.
     """
     if not json_data:
         return {"success": False, "message": "Request body is required."}, 400
@@ -319,9 +319,7 @@ def create_staff(json_data: dict) -> tuple[dict[str, Any], int]:
         return {"success": False, "message": "Valid email is required."}, 400
 
     if not mobile_number:
-        # #i added it: generate a unique mobile number for staff accounts
-        # Staff accounts don't need a real mobile number for login purposes;
-        # we generate a unique placeholder to avoid unique constraint conflicts.
+
         existing_mobile = True
         counter = 0
         while existing_mobile:
@@ -373,9 +371,6 @@ def create_staff(json_data: dict) -> tuple[dict[str, Any], int]:
         is_active=True,
     )
 
-    # #i added it: store trade in building field for display purposes
-    # This is a workaround since the User model does not have a dedicated trade column.
-    # In production, a separate staff_profile table would be used.
 
     try:
         db.session.add(new_staff)
@@ -384,7 +379,6 @@ def create_staff(json_data: dict) -> tuple[dict[str, Any], int]:
         db.session.rollback()
         return {"success": False, "message": "Unable to create staff account."}, 500
 
-    # #i added it: create a notification for the new staff member
     create_notification(
         user_id=new_staff.id,
         complaint_id=None,
@@ -412,7 +406,6 @@ def remove_staff(staff_id: int, admin_id: int) -> tuple[dict[str, Any], int]:
     """
     Deactivate a staff account by setting is_active to False.
     Admin cannot deactivate their own account.
-    #i added it: proper staff removal with safety checks.
     """
     if admin_id == staff_id:
         return {"success": False, "message": "You cannot deactivate your own account."}, 403

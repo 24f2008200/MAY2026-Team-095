@@ -56,7 +56,6 @@ def create_staff_handler() -> tuple[dict[str, Any], int]:
     """
     Create a new maintenance staff account.
     Only accessible by administrators.
-    #i added it: delegates to admin_service.create_staff.
     """
     json_data = request.get_json(silent=True)
     return create_staff(json_data)
@@ -65,7 +64,6 @@ def create_staff_handler() -> tuple[dict[str, Any], int]:
 def remove_staff_handler(staff_id: int) -> tuple[dict[str, Any], int]:
     """
     Deactivate a staff account.
-    #i added it: delegates to admin_service.remove_staff.
     """
     admin_id = int(get_jwt_identity())
     return remove_staff(staff_id, admin_id)
@@ -74,7 +72,6 @@ def remove_staff_handler(staff_id: int) -> tuple[dict[str, Any], int]:
 def list_complaints_handler() -> tuple[dict[str, Any], int]:
     """
     List all complaints for admin dashboard.
-    #i added it: returns all complaints with full details.
     """
     complaints = Complaint.query.order_by(Complaint.created_at.desc()).all()
     return {

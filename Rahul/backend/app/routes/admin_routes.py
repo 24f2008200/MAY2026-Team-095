@@ -106,6 +106,8 @@ class AdminStaffListResource(Resource):
     @admin_ns.doc(
         security="Bearer",
         summary="List active staff members",
+        description="Optionally filter by trade using the ?trade= query param (e.g. /admin/staff?trade=Electrical).",
+        params={"trade": "Filter staff by trade (e.g. Plumbing, Electrical, Carpentry, Janitorial, Security)"},
     )
     @admin_ns.response(200, "Success")
     def get(self):

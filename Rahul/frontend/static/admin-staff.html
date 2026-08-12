@@ -184,7 +184,8 @@
 
                 const fetchStaffList = async () => {
                     try {
-                        const response = await apiCall('/admin/staff');
+                        const query = tradeFilter.value ? `?trade=${encodeURIComponent(tradeFilter.value)}` : '';
+                        const response = await apiCall(`/admin/staff${query}`);
                         staffList.value = response.staff || [];
                     } catch (err) {
                         staffList.value = [];
@@ -211,9 +212,6 @@
 
                 const filteredStaff = computed(() => {
                     let result = staffList.value;
-                    if (tradeFilter.value) {
-                        result = result.filter(s => s.trade === tradeFilter.value);
-                    }
                     if (searchQuery.value.trim()) {
                         const q = searchQuery.value.toLowerCase();
                         result = result.filter(s => 
@@ -236,7 +234,14 @@
                     if (page >= 1 && page <= totalPages.value) currentPage.value = page;
                 };
 
-                watch([searchQuery, tradeFilter], () => {
+                // Trade filter is a real API call (GET /admin/staff?trade=...);
+                // text search stays client-side over whatever the API returned.
+                watch(tradeFilter, () => {
+                    currentPage.value = 1;
+                    fetchStaffList();
+                });
+
+                watch(searchQuery, () => {
                     currentPage.value = 1;
                 });
 

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Smart Society | Assign Resource</title>
+    <script src="https://cdn.tailwindcss.com"></script>    
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <link rel="icon" type="image/svg+xml" href="../images/favicon.svg">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+<body>
+    <div id="app" class="min-h-screen flex flex-col bg-slate-50">
+        <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex justify-between items-center">
+                <div class="flex items-center cursor-pointer" @click="goHome()">
+                    <div class="mr-3"><img src="../images/logo.svg" alt="Smart Society Logo" class="w-8 h-8 rounded-md shadow-sm" /></div>
+                    <div><h1 class="font-extrabold text-lg text-slate-900 tracking-tight leading-none">Smart Society</h1><p class="text-[9px] text-indigo-600 font-bold uppercase tracking-widest mt-0.5">Complaint Resolution</p></div>
+                </div>
+                <div class="flex items-center space-x-4 relative">
+                    <div class="h-6 w-px bg-slate-200 hidden sm:block"></div>
+                    <div class="flex items-center gap-3 cursor-default">
+                        <div class="text-right hidden sm:block">
+                            <p class="text-sm font-bold text-slate-900 leading-tight">{{ user?.name }}</p>
+                            <p class="text-[0.65rem] text-slate-500 font-bold uppercase tracking-wider mt-0.5">{{ user?.role }}</p>
+                        </div>
+                        <div class="w-8 h-8 rounded-md bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm border border-indigo-200">{{ user?.name ? user.name.charAt(0) : 'U' }}</div>
+                    </div>
+                    <button @click="logout()" class="text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition p-1.5 rounded-md ml-1" title="Sign Out"><i class="fas fa-sign-out-alt text-lg"></i></button>
+                </div>
+            </div>
+        </header>
+        <main class="flex-grow p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full max-w-5xl space-y-6">
+            <div class="mb-2">
+                <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Resource Dispatch</h2>
+            </div>
+
+            <div class="flex flex-col lg:flex-row gap-6">
+                <div class="lg:w-2/3 bg-white rounded-lg shadow-sm border border-slate-200 p-6 md:p-8">
+                    <h3 class="text-[10px] uppercase font-bold text-slate-400 mb-6 tracking-wider border-b border-slate-100 pb-3">Incident Briefing</h3>
+                    <div class="grid grid-cols-[140px_1fr] gap-y-5 text-sm">
+                        <span class="font-bold text-slate-500">System ID</span><span class="font-bold text-slate-900">{{ complaint?.id || 'Loading...' }}</span>
+                        <span class="font-bold text-slate-500">Current State</span>
+                        <div><span v-if="complaint" :class="'status-pill text-xs status-' + complaint.status.replace(' ', '')">{{ complaint.status }}</span></div>
+                        <span class="font-bold text-slate-500">Originator</span><span class="font-bold text-slate-800">{{ complaint?.resident?.name || '...' }} <span class="font-normal text-slate-500">(Flat {{ complaint?.resident?.flat_number || 'N/A' }})</span></span>
+                        <span class="font-bold text-slate-500">Classification</span><span class="text-slate-800 font-medium">{{ complaint ? complaint.category?.name + ' - ' + complaint.title : '...' }}</span>
+                        <span class="font-bold text-slate-500">Description Log</span>
+                        <div class="bg-slate-50 p-4 rounded-md border border-slate-200 text-slate-700 text-sm mt-1 leading-relaxed font-medium">{{ complaint?.description || '...' }}</div>
+                    </div>
+                </div>
+                <div class="lg:w-1/3">
+                    <div class="bg-slate-50 rounded-lg shadow-inner border border-slate-200 p-6 md:p-8 sticky top-24">
+                        <h3 class="font-bold text-slate-900 mb-5 text-sm uppercase tracking-wide">Dispatch Config</h3>
+                        <form @submit.prevent="handleAssign">
+                            <div class="mb-5">
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-2">Available Personnel <span class="text-rose-500">*</span></label>
+                                <select v-model="selectedStaffId" class="form-select w-full border border-slate-300 p-2.5 rounded-md text-sm bg-white font-bold text-slate-800" required>
+                                    <option value="" disabled>Select technician...</option>
+                                    <option v-for="staff in staffList" :key="staff.id" :value="staff.id">
+                                        {{ staff.name }} ({{ staff.trade || 'General' }})
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="mb-6">
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-2">Dispatch Instructions (Internal)</label>
+                                <textarea v-model="assignRemarks" rows="3" placeholder="Add specific SLA instructions..." class="form-textarea w-full border border-slate-300 p-2.5 rounded-md text-sm bg-white resize-none font-medium"></textarea>
+                            </div>
+                            <button type="submit" :disabled="isLoading" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-md shadow-sm transition flex justify-center items-center text-sm disabled:opacity-50">
+                                {{ isLoading ? 'Dispatching...' : 'Execute Dispatch' }}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="toast" class="fixed bottom-6 right-6 z-50 hidden items-center px-4 py-3 rounded-md shadow-lg border bg-slate-900 border-slate-800 text-white">
+        <i class="fas fa-check-circle text-emerald-400 mr-3 text-lg"></i>
+        <span id="toastMsg" class="font-medium text-sm">Success</span>
+    </div>
+
+    <script src="../js/utils.js"></script>
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const user = ref(null);
+                const complaint = ref(null);
+                const staffList = ref([]);
+                const selectedStaffId = ref('');
+                const assignRemarks = ref('');
+                const isLoading = ref(false);
+                let currentTicketId = null;
+
+                const fetchComplaintData = async () => {
+                    try {
+                        const response = await apiCall(`/complaints/${currentTicketId}`);
+                        complaint.value = response.complaint || response;
+                    } catch (err) {
+                        console.error('Failed to fetch complaint:', err);
+                        showToast('Failed to load ticket.', 'error');
+                        setTimeout(() => window.history.back(), 2000);
+                    }
+                };
+
+                const fetchStaffList = async () => {
+                    try {
+                        const response = await apiCall('/admin/staff');
+                        staffList.value = response.staff || [];
+                    } catch (err) {
+                        staffList.value = [];
+                        showToast('Failed to load staff list.', 'error');
+                    }
+                };
+
+                onMounted(() => {
+                    user.value = requireAuth('Admin');
+                    if (user.value) refreshUserProfile(user, 'Admin');
+                    if (!user.value) return;
+
+                    const params = new URLSearchParams(window.location.search);
+                    currentTicketId = params.get('id');
+                    if (!currentTicketId) {
+                        window.location.href = 'dashboard-admin.html';
+                        return;
+                    }
+
+                    fetchComplaintData();
+                    fetchStaffList();
+                });
+
+                const handleAssign = async () => {
+                    isLoading.value = true;
+                    try {
+                        await apiCall(`/admin/complaints/${currentTicketId}/assign`, {
+                            method: 'PUT',
+                            body: {
+                                staff_id: parseInt(selectedStaffId.value),
+                            }
+                        });
+                        showToast('Successfully dispatched resource!');
+                        setTimeout(() => { window.location.href = 'dashboard-admin.html'; }, 1000);
+                    } catch (err) {
+                        isLoading.value = false;
+                    }
+                };
+
+                return { user, complaint, staffList, selectedStaffId, assignRemarks, isLoading, handleAssign, logout, goHome };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

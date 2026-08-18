@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Smart Society | Raise Complaint</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <link rel="icon" type="image/svg+xml" href="../images/favicon.svg">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+<body>
+    <div id="app" class="min-h-screen flex flex-col bg-slate-50">
+        <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex justify-between items-center">
+                <div class="flex items-center cursor-pointer" @click="goHome()">
+                    <div class="mr-3"><img src="../images/logo.svg" alt="Smart Society Logo" class="w-8 h-8 rounded-md shadow-sm" /></div>
+                    <div><h1 class="font-extrabold text-lg text-slate-900 tracking-tight leading-none">Smart Society</h1><p class="text-[9px] text-indigo-600 font-bold uppercase tracking-widest mt-0.5">Complaint Resolution</p></div>
+                </div>
+                <div class="flex items-center space-x-4 relative">
+                    <div class="h-6 w-px bg-slate-200 hidden sm:block"></div>
+                    <div class="flex items-center gap-3 cursor-default">
+                        <div class="text-right hidden sm:block">
+                            <p class="text-sm font-bold text-slate-900 leading-tight">{{ user?.name }}</p>
+                            <p class="text-[0.65rem] text-slate-500 font-bold uppercase tracking-wider mt-0.5">{{ user?.role }} {{ user?.flat_number ? '| Flat ' + user.flat_number : '' }}</p>
+                        </div>
+                        <div class="w-8 h-8 rounded-md bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm border border-indigo-200">{{ user?.name ? user.name.charAt(0) : 'U' }}</div>
+                    </div>
+                    <button @click="logout()" class="text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition p-1.5 rounded-md ml-1" title="Sign Out"><i class="fas fa-sign-out-alt text-lg"></i></button>
+                </div>
+            </div>
+            <nav class="bg-slate-50 border-t border-slate-200">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-6 overflow-x-auto">
+                    <a href="dashboard-resident.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition"><i class="fas fa-home mr-1.5 text-base"></i> Portal</a>
+                </div>
+            </nav>
+        </header>
+        <main class="flex-grow p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full max-w-3xl space-y-6">
+            <div class="mb-2">
+                <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Log Service Request</h2>
+            </div>
+            <div v-if="user" class="bg-indigo-50 border border-indigo-100 rounded-lg px-4 py-2.5 text-xs font-bold text-indigo-700 flex items-center">
+                <i class="fas fa-map-marker-alt mr-2"></i> Submitting as {{ user.name }} - Flat {{ user.flat_number || 'N/A' }}
+            </div>
+            <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+                <div class="p-6 md:p-8">
+                    <form @submit.prevent="submitComplaint" class="space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div><label class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">Trade Category <span class="text-rose-500">*</span></label>
+                                <select v-model="category" class="form-select w-full border border-slate-300 p-2.5 rounded-md text-sm bg-white font-medium text-slate-700" required>
+                                    <option value="" disabled>{{ categories.length ? 'Select category...' : 'Loading categories...' }}</option>
+                                    <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
+                                </select>
+                            </div>
+                            <div><label class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">Specific Issue <span class="text-rose-500">*</span></label>
+                                <select v-model="subCategory" class="form-select w-full border border-slate-300 p-2.5 rounded-md text-sm bg-white font-medium text-slate-700" required>
+                                    <option value="" disabled>Select specific issue...</option>
+                                    <option>Leakage / Blockage</option><option>Fixture Broken</option><option>Power Outage</option><option>Appliance Malfunction</option><option>Cleaning Required</option><option>Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div><label class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">Impact / Priority <span class="text-rose-500">*</span></label>
+                                <div class="flex rounded-md shadow-sm bg-slate-50 border border-slate-200 p-1">
+                                    <label class="flex-1 text-center cursor-pointer relative"><input type="radio" v-model="priority" value="Low" class="peer sr-only"><div class="py-1.5 text-xs font-bold rounded text-slate-500 peer-checked:bg-white peer-checked:text-emerald-700 peer-checked:shadow-sm transition">Low</div></label>
+                                    <label class="flex-1 text-center cursor-pointer relative"><input type="radio" v-model="priority" value="Medium" class="peer sr-only"><div class="py-1.5 text-xs font-bold rounded text-slate-500 peer-checked:bg-white peer-checked:text-amber-700 peer-checked:shadow-sm transition">Medium</div></label>
+                                    <label class="flex-1 text-center cursor-pointer relative"><input type="radio" v-model="priority" value="High" class="peer sr-only"><div class="py-1.5 text-xs font-bold rounded text-slate-500 peer-checked:bg-white peer-checked:text-rose-700 peer-checked:shadow-sm transition">High</div></label>
+                                </div>
+                            </div>
+                            <div><label class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">Exact Location <span class="text-rose-500">*</span></label>
+                                <input v-model="location" type="text" placeholder="e.g. Master Bath, Kitchen" class="form-input w-full border border-slate-300 p-2.5 rounded-md text-sm font-medium text-slate-700" required />
+                            </div>
+                        </div>
+                        <div><label class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">Detailed Description <span class="text-rose-500">*</span></label>
+                            <textarea v-model="description" rows="4" placeholder="Provide details to assist the maintenance team..." class="form-textarea w-full border border-slate-300 p-3 rounded-md text-sm font-medium text-slate-700 resize-none" required></textarea>
+                        </div>
+                        <div class="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-end space-x-3 -mx-6 md:-mx-8 -mb-6 md:-mb-8">
+                            <a href="dashboard-resident.html" class="px-4 py-2 font-bold text-sm text-slate-600 bg-white border border-slate-300 rounded-md hover:bg-slate-100 transition shadow-sm">Cancel</a>
+                            <button type="submit" :disabled="isLoading" class="px-6 py-2 font-bold text-sm text-white bg-indigo-600 rounded-md hover:bg-indigo-700 shadow-sm transition disabled:opacity-50">
+                                {{ isLoading ? 'Submitting...' : 'Submit Request' }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+    <div id="toast" class="fixed bottom-6 right-6 z-50 hidden items-center px-4 py-3 rounded-md shadow-lg border bg-slate-900 border-slate-800 text-white">
+        <i class="fas fa-check-circle text-emerald-400 mr-3 text-lg"></i>
+        <span id="toastMsg" class="font-medium text-sm">Success</span>
+    </div>
+
+    <script src="../js/utils.js"></script>
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const user = ref(null);
+                const categories = ref([]);
+                const category = ref('');
+                const subCategory = ref('');
+                const priority = ref('Low');
+                const location = ref('');
+                const description = ref('');
+                const isLoading = ref(false);
+
+                const fetchCategories = async () => {
+                    try {
+                        const response = await apiCall('/categories');
+                        categories.value = response.categories || [];
+                    } catch (err) {
+                        showToast('Failed to load categories.', 'error');
+                    }
+                };
+
+                onMounted(() => {
+                    user.value = requireAuth('Resident');
+                    if (user.value) refreshUserProfile(user, 'Resident');
+                    fetchCategories();
+                });
+
+                const submitComplaint = async () => {
+                    isLoading.value = true;
+                    if (!category.value || !subCategory.value) {
+                        showToast('Please select both trade category and specific issue.', 'error');
+                        isLoading.value = false;
+                        return;
+                    }
+                    const selectedCategory = categories.value.find(c => c.id === category.value);
+                    const categoryName = selectedCategory ? selectedCategory.name : '';
+                    const title = (categoryName + ' - ' + subCategory.value).slice(0, 150);
+                    const desc = description.value.trim();
+                    const loc = location.value.trim();
+
+                    if (desc.length < 10) {
+                        showToast('Please provide a more detailed description (at least 10 characters).', 'error');
+                        isLoading.value = false;
+                        return;
+                    }
+                    if (loc.length < 2) {
+                        showToast('Please provide a valid location (at least 2 characters).', 'error');
+                        isLoading.value = false;
+                        return;
+                    }
+
+                    const payload = {
+                        category_id: category.value,
+                        title: title,
+                        description: desc,
+                        location: loc,
+                        priority: priority.value.toUpperCase(),
+                    };
+
+                    try {
+                        await apiCall('/complaints', { method: 'POST', body: payload });
+                        showToast('Service request created successfully!');
+                        setTimeout(() => { window.location.href = 'dashboard-resident.html'; }, 1000);
+                    } catch (err) {
+                        isLoading.value = false;
+                    }
+                };
+
+                return { user, categories, category, subCategory, priority, location, description, isLoading, submitComplaint, logout, goHome };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

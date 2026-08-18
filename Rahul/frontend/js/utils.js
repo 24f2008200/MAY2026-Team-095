@@ -2,19 +2,115 @@ const API_BASE = (window.location.hostname === 'localhost' || window.location.ho
     ? 'http://127.0.0.1:5000'
     : 'https://smart-society-backend-2dqe.onrender.com';
 
-// Uploaded file URLs come back from the backend as relative paths
-// (e.g. "/uploads/abc123_photo.jpg"). They need the API origin prefixed
-// to be loadable from the frontend, which is served from a different
-// origin/port than the API.
 function resolveFileUrl(path) {
     if (!path) return '';
     if (path.startsWith('http://') || path.startsWith('https://')) return path;
     return `${API_BASE}${path}`;
 }
 
+const API_FIELD_LABELS = {
+    name: 'Name',
+    first_name: 'First name',
+    last_name: 'Last name',
+    email: 'Email address',
+    mobile_number: 'Mobile number',
+    mobile: 'Mobile number',
+    flat_number: 'Flat number',
+    flat: 'Flat number',
+    building: 'Building',
+    password: 'Password'
+};
+
+function formatFieldValidationMessage(field, value) {
+    const label = API_FIELD_LABELS[field] || String(field || '')
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, char => char.toUpperCase());
+    const raw = Array.isArray(value) ? value.filter(Boolean).join(' ') : String(value || '').trim();
+    if (!raw) return '';
+
+    const betweenMatch = raw.match(/length must be between\s+(\d+)\s+and\s+(\d+)/i);
+    if (betweenMatch) {
+        return `${label} must be between ${betweenMatch[1]} and ${betweenMatch[2]} characters.`;
+    }
+
+    const minMatch = raw.match(/shorter than minimum length\s+(\d+)|length must be at least\s+(\d+)/i);
+    if (minMatch) {
+        const min = minMatch[1] || minMatch[2];
+        return `${label} must be at least ${min} characters.`;
+    }
+
+    const maxMatch = raw.match(/longer than maximum length\s+(\d+)|length must be at most\s+(\d+)/i);
+    if (maxMatch) {
+        const max = maxMatch[1] || maxMatch[2];
+        return `${label} must be at most ${max} characters.`;
+    }
+
+    // If the server already names the field, don't repeat it.
+    if (raw.toLowerCase().startsWith(label.toLowerCase())) return raw;
+    return `${label}: ${raw}`;
+}
+
+function extractFieldErrors(container) {
+    if (!container || typeof container !== 'object' || Array.isArray(container)) return '';
+    const messages = Object.entries(container)
+        .map(([field, value]) => formatFieldValidationMessage(field, value))
+        .filter(Boolean);
+    return messages.join(' ');
+}
+
+function extractApiMessage(errorData) {
+    if (!errorData || typeof errorData !== 'object') return '';
+
+    const errorsMessage = extractFieldErrors(errorData.errors);
+    if (errorsMessage) return errorsMessage;
+
+    if (errorData.message && typeof errorData.message === 'object') {
+        const message = extractFieldErrors(errorData.message);
+        if (message) return message;
+    }
+
+    if (typeof errorData.message === 'string' && errorData.message.trim()) {
+        return errorData.message.trim();
+    }
+
+    if (typeof errorData.detail === 'string' && errorData.detail.trim()) {
+        return errorData.detail.trim();
+    }
+
+    return '';
+}
+
+function friendlyHttpMessage(status, serverMessage = '') {
+    if (serverMessage && !/^request failed with status\s+\d+/i.test(serverMessage)) {
+        return serverMessage;
+    }
+
+    switch (status) {
+        case 400:
+            return 'Please check the information you entered and try again.';
+        case 401:
+            return 'Authentication failed. Please check your details and try again.';
+        case 403:
+            return 'You do not have permission to perform this action.';
+        case 404:
+            return 'The requested information could not be found.';
+        case 409:
+            return 'This information is already in use. Please review your details and try again.';
+        case 422:
+            return 'Some of the information entered is invalid. Please review it and try again.';
+        case 429:
+            return 'Too many attempts. Please wait a moment and try again.';
+        default:
+            return status >= 500
+                ? 'The server is temporarily unavailable. Please try again later.'
+                : 'Something went wrong. Please try again.';
+    }
+}
+
 async function apiCall(endpoint, options = {}) {
     const token = localStorage.getItem('smartSocietyToken');
-    const headers = options.headers || {};
+    const headers = { ...(options.headers || {}) };
+    const suppressErrorToast = Boolean(options.suppressErrorToast);
 
     if (token) {
         headers['Authorization'] = `Bearer ${token}`;
@@ -26,85 +122,71 @@ async function apiCall(endpoint, options = {}) {
 
     const config = {
         method: options.method || 'GET',
-        headers: headers,
+        headers,
         body: options.body instanceof FormData ? options.body : (options.body ? JSON.stringify(options.body) : null)
     };
 
     try {
         const response = await fetch(`${API_BASE}${endpoint}`, config);
 
-        if (response.status === 401) {
-            if (token) {
-                clearCurrentUser();
-                window.location.href = window.location.pathname.includes('/static/') ? '../index.html' : 'index.html';
-                throw new Error('Session expired. Please login again.');
-            }
-            // No token was sent (e.g. a login attempt) - this is a real
-            // auth failure (bad credentials, pending approval, etc), not
-            // an expired session, so fall through and surface the
-            // backend's actual message below instead of redirecting.
+        if (response.status === 401 && token) {
+            clearCurrentUser();
+            window.location.href = window.location.pathname.includes('/static/') ? '../index.html' : 'index.html';
+            const sessionError = new Error('Your session has expired. Please sign in again.');
+            sessionError.status = 401;
+            throw sessionError;
         }
 
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ detail: 'An error occurred' }));
-            let message = errorData.detail || `Request failed with status ${response.status}`;
-            
-            // Handle marshmallow validation errors
-            if (errorData.errors) {
-                const errors = Object.values(errorData.errors).flat();
-                message = errors.join(' ');
+            let errorData = {};
+            const responseText = await response.text().catch(() => '');
+            if (responseText) {
+                try {
+                    errorData = JSON.parse(responseText);
+                } catch {
+                    errorData = {};
+                }
             }
-            
-            // Handle flask-restx field-level validation errors
-            if (errorData.message && typeof errorData.message === 'object') {
-                const fieldErrors = Object.values(errorData.message).flat();
-                message = fieldErrors.join(' ');
-            }
-            
-            // Override with specific friendly messages based on HTTP status
-            if (response.status === 400) {
-                message = errorData.message || errorData.detail || message;
-            } else if (response.status === 401) {
-                // The expired-token case is already handled above (redirects
-                // before reaching here), so a 401 that reaches this point is
-                // a real auth failure like bad login credentials - keep the
-                // backend's specific message instead of a generic one.
-                message = (typeof errorData.message === 'string' && errorData.message)
-                    ? errorData.message
-                    : 'Authentication failed.';
-            } else if (response.status === 403) {
-                // Prefer the backend's specific reason (e.g. "pending admin
-                // approval") over a generic message, when it gave one.
-                message = (typeof errorData.message === 'string' && errorData.message)
-                    ? errorData.message
-                    : 'You do not have permission to perform this action.';
-            } else if (response.status === 404) {
-                message = 'The requested resource was not found.';
-            } else if (response.status >= 500) {
-                message = 'Server error. Please try again later.';
-            }
-            throw new Error(message);
+
+            const serverMessage = extractApiMessage(errorData);
+            const error = new Error(friendlyHttpMessage(response.status, serverMessage));
+            error.status = response.status;
+            error.data = errorData;
+            throw error;
         }
 
         if (response.status === 204) return null;
-        return await response.json();
-    } catch (err) {
-        let message = err.message;
-        if (message === 'Failed to fetch') {
-            message = 'Unable to connect to the server. Please check your connection.';
-        } else if (err instanceof TypeError || message.includes('NetworkError') || message.includes('network')) {
-            message = 'Network error. Please check your connection and try again.';
+
+        const text = await response.text();
+        if (!text) return null;
+        try {
+            return JSON.parse(text);
+        } catch {
+            return text;
         }
-        showToast(message, 'error');
-        throw err;
+    } catch (err) {
+        let normalizedError = err;
+
+        if (err instanceof TypeError || err.message === 'Failed to fetch' || /networkerror|network request failed/i.test(err.message || '')) {
+            normalizedError = new Error('Unable to connect to the server. Please check your connection and try again.');
+            normalizedError.status = 0;
+        }
+
+        if (!suppressErrorToast && typeof showToast === 'function') {
+            showToast(normalizedError.message || 'Something went wrong. Please try again.', 'error');
+        }
+
+        throw normalizedError;
     }
 }
 
 function showToast(message, type = 'success') {
     const toast = document.getElementById('toast');
     const toastMsg = document.getElementById('toastMsg');
-    if (!toast) return;
-    toast.className = 'fixed bottom-6 right-6 z-50 flex items-center px-4 py-3 rounded-md shadow-lg border ' + (type === 'error' ? 'bg-white border-rose-200 text-rose-800' : 'bg-slate-900 border-slate-800 text-white');
+    if (!toast || !toastMsg) return;
+
+    toast.className = 'fixed bottom-6 right-6 z-50 flex items-center px-4 py-3 rounded-md shadow-lg border ' +
+        (type === 'error' ? 'bg-white border-rose-200 text-rose-800' : 'bg-slate-900 border-slate-800 text-white');
     toastMsg.textContent = message;
     toast.classList.remove('hidden');
     clearTimeout(window.toastTimer);
@@ -114,7 +196,9 @@ function showToast(message, type = 'success') {
 function getCurrentUser() {
     try {
         return JSON.parse(localStorage.getItem('smartSocietyUser'));
-    } catch { return null; }
+    } catch {
+        return null;
+    }
 }
 
 function setCurrentUser(user, token) {
@@ -135,23 +219,20 @@ function requireAuth(requiredRole) {
         window.location.href = window.location.pathname.includes('/static/') ? '../index.html' : 'index.html';
         return null;
     }
-    if (requiredRole && user.role.toUpperCase() !== requiredRole.toUpperCase()) {
+
+    if (requiredRole && String(user.role || '').toUpperCase() !== requiredRole.toUpperCase()) {
         goHome();
         return null;
     }
+
     return user;
 }
 
-// Re-validates the session against the server (GET /auth/profile) and
-// refreshes the cached user with authoritative data (role, flat_number,
-// etc). Fire-and-forget: keeps the cached user as a fast first paint,
-// then upgrades it once the server responds. apiCall() already redirects
-// to login on a 401, so no separate expiry handling is needed here.
 async function refreshUserProfile(userRef, requiredRole) {
     try {
         const response = await apiCall('/auth/profile');
         if (response && response.user) {
-            if (requiredRole && response.user.role.toUpperCase() !== requiredRole.toUpperCase()) {
+            if (requiredRole && String(response.user.role || '').toUpperCase() !== requiredRole.toUpperCase()) {
                 goHome();
                 return;
             }
@@ -159,7 +240,6 @@ async function refreshUserProfile(userRef, requiredRole) {
             if (userRef) userRef.value = response.user;
         }
     } catch (err) {
-        // Network/server error - keep working off the cached user.
     }
 }
 
@@ -170,16 +250,19 @@ function logout() {
 
 function goHome() {
     const user = getCurrentUser();
-    if (!user) { 
-        window.location.href = window.location.pathname.includes('/static/') ? '../index.html' : 'index.html'; 
-        return; 
+    if (!user) {
+        window.location.href = window.location.pathname.includes('/static/') ? '../index.html' : 'index.html';
+        return;
     }
-    const role = user.role.toUpperCase();
+
+    const role = String(user.role || '').toUpperCase();
     if (role === 'ADMIN') window.location.href = 'dashboard-admin.html';
     else if (role === 'STAFF') window.location.href = 'dashboard-staff.html';
     else window.location.href = 'dashboard-resident.html';
 }
 
 function viewComplaint(id, returnPage) {
-    window.location.href = (window.location.pathname.includes('/static/') ? '' : 'static/') + 'complaint-details.html?id=' + id + (returnPage ? '&return=' + encodeURIComponent(returnPage) : '');
+    window.location.href = (window.location.pathname.includes('/static/') ? '' : 'static/') +
+        'complaint-details.html?id=' + encodeURIComponent(id) +
+        (returnPage ? '&return=' + encodeURIComponent(returnPage) : '');
 }

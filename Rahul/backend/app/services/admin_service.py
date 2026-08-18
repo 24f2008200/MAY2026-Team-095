@@ -484,6 +484,46 @@ def create_category():
     }, 201
 
 
+def list_all_categories():
+    """
+    All categories (active and inactive) for the admin management view.
+    The public /categories endpoint only returns active ones.
+    """
+    categories = Category.query.order_by(Category.name.asc()).all()
+
+    return {
+        "success": True,
+        "categories": [category.to_dict() for category in categories],
+    }, 200
+
+
+def set_category_status(category_id: int, is_active: bool):
+    category = Category.query.get(category_id)
+
+    if not category:
+        return {
+            "success": False,
+            "message": "Category not found.",
+        }, 404
+
+    category.is_active = is_active
+
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return {
+            "success": False,
+            "message": "Unable to update category.",
+        }, 500
+
+    return {
+        "success": True,
+        "message": f"Category {'activated' if is_active else 'deactivated'} successfully.",
+        "category": category.to_dict(),
+    }, 200
+
+
 def _resident_summary(resident: User) -> dict:
     return {
         "id": resident.id,

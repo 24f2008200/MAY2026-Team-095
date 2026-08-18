@@ -149,9 +149,18 @@
                         </button>
                     </form>
                 </div>
-                <div class="px-5 py-4 flex flex-wrap gap-2">
-                    <span v-if="categories.length === 0" class="text-sm text-slate-500">No categories yet - add one above.</span>
-                    <span v-for="cat in categories" :key="cat.id" class="bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold px-3 py-1.5 rounded-full">{{ cat.name }}</span>
+                <div class="divide-y divide-slate-100">
+                    <div v-if="categories.length === 0" class="px-5 py-6 text-sm text-slate-500">No categories yet - add one above.</div>
+                    <div v-for="cat in categories" :key="cat.id" class="px-5 py-3 flex items-center justify-between gap-3">
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm font-bold text-slate-800">{{ cat.name }}</span>
+                                <span :class="['text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full', cat.is_active ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-500 border border-slate-200']">{{ cat.is_active ? 'Active' : 'Inactive' }}</span>
+                            </div>
+                            <p v-if="cat.description" class="text-xs text-slate-500 mt-0.5 truncate">{{ cat.description }}</p>
+                        </div>
+                        <button @click="toggleCategoryStatus(cat)" :class="['text-xs font-bold uppercase tracking-wide px-3 py-1.5 rounded border transition whitespace-nowrap', cat.is_active ? 'text-rose-600 hover:text-rose-800 bg-rose-50 border-rose-100' : 'text-emerald-600 hover:text-emerald-800 bg-emerald-50 border-emerald-100']">{{ cat.is_active ? 'Deactivate' : 'Activate' }}</button>
+                    </div>
                 </div>
             </div>
         </main>
@@ -194,11 +203,24 @@
 
                 const fetchCategories = async () => {
                     try {
-                        const response = await apiCall('/categories');
+                        // Admin view needs inactive categories too (to re-activate them),
+                        // unlike the public /categories endpoint which only returns active ones.
+                        const response = await apiCall('/admin/categories');
                         categories.value = response.categories || [];
                     } catch (err) {
                         categories.value = [];
                     }
+                };
+
+                const toggleCategoryStatus = async (cat) => {
+                    try {
+                        await apiCall(`/admin/categories/${cat.id}/status`, {
+                            method: 'PUT',
+                            body: { is_active: !cat.is_active }
+                        });
+                        showToast(`Category ${cat.is_active ? 'deactivated' : 'activated'}.`, 'success');
+                        fetchCategories();
+                    } catch (err) {}
                 };
 
                 onMounted(() => {
@@ -234,8 +256,6 @@
                     if (page >= 1 && page <= totalPages.value) currentPage.value = page;
                 };
 
-                // Trade filter is a real API call (GET /admin/staff?trade=...);
-                // text search stays client-side over whatever the API returned.
                 watch(tradeFilter, () => {
                     currentPage.value = 1;
                     fetchStaffList();
@@ -293,7 +313,7 @@
                     }
                 };
 
-                return { user, staffList, isLoading, newStaff, searchQuery, tradeFilter, currentPage, totalPages, filteredStaff, paginatedStaff, changePage, handleAddStaff, removeStaff, categories, newCategory, isCategoryLoading, handleAddCategory, logout, goHome };
+                return { user, staffList, isLoading, newStaff, searchQuery, tradeFilter, currentPage, totalPages, filteredStaff, paginatedStaff, changePage, handleAddStaff, removeStaff, categories, newCategory, isCategoryLoading, handleAddCategory, toggleCategoryStatus, logout, goHome };
             }
         }).mount('#app');
     </script>

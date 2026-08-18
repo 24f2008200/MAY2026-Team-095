@@ -146,3 +146,81 @@ body {
 .text-body { @apply text-sm text-slate-700; }
 .text-caption { @apply text-xs text-slate-600 font-medium; }
 .text-label { @apply text-xs text-slate-600 font-bold uppercase tracking-wider; }
+@media print {
+    header, nav, form, button, .fixed { display: none !important; }
+    main { padding: 0 !important; max-width: 100% !important; }
+    body { background-color: #ffffff; color: #000000; }
+    table { width: 100% !important; border: 1px solid #cbd5e1; }
+}
+
+/* Auth form consistency and browser password-control cleanup */
+.password-input::-ms-reveal,
+.password-input::-ms-clear {
+    display: none;
+}
+
+.password-input::-webkit-credentials-auto-fill-button,
+.password-input::-webkit-contacts-auto-fill-button {
+    visibility: hidden;
+    display: none !important;
+    pointer-events: none;
+    position: absolute;
+    right: 0;
+}
+
+/* Prevent iOS from zooming form controls and keep touch targets comfortable. */
+@media (max-width: 767px) {
+    input,
+    select,
+    textarea,
+    button {
+        font-size: 16px;
+    }
+}
+
+
+/* Compact auth feedback: one clean row with no oversized blank padding. */
+.auth-alert {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.625rem 0.75rem;
+    border: 1px solid;
+    border-radius: 0.5rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    line-height: 1.25rem;
+}
+
+.auth-alert > i {
+    flex: 0 0 auto;
+    font-size: 0.9rem;
+}
+
+.auth-alert > span {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    overflow-wrap: anywhere;
+}
+
+.auth-alert-error {
+    background: #fff1f2;
+    border-color: #fecdd3;
+    color: #9f1239;
+}
+
+.auth-alert-error > i {
+    color: #f43f5e;
+}
+
+.auth-alert-success {
+    background: #ecfdf5;
+    border-color: #a7f3d0;
+    color: #065f46;
+}
+
+.auth-alert-success > i {
+    color: #10b981;
+}

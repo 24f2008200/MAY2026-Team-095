@@ -1,6 +1,7 @@
 from flask_restx import Namespace, Resource
 
 from app.controllers.notification_controller import (
+    delete_notification_handler,
     list_notifications_handler,
     mark_all_read_handler,
     mark_read_handler,
@@ -44,6 +45,20 @@ class NotificationReadResource(Resource):
     @notification_ns.response(404, "Not found")
     def put(self, notification_id):
         return mark_read_handler(notification_id)
+
+
+@notification_ns.route("/<int:notification_id>")
+class NotificationResource(Resource):
+
+    @authenticated_required
+    @notification_ns.doc(
+        security="Bearer",
+        summary="Delete/dismiss a notification",
+    )
+    @notification_ns.response(200, "Removed")
+    @notification_ns.response(404, "Not found")
+    def delete(self, notification_id):
+        return delete_notification_handler(notification_id)
 
 
 @notification_ns.route("/read-all")

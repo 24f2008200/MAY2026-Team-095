@@ -26,6 +26,8 @@ from app.services.admin_service import (
     remove_staff,
     assign_staff,
     create_category,
+    list_all_categories,
+    set_category_status,
     list_pending_residents,
     approve_resident,
     reject_resident,
@@ -50,6 +52,23 @@ def list_staff_handler() -> tuple[dict[str, Any], int]:
 
 def create_category_handler() -> tuple[dict[str, Any], int]:
     return create_category()
+
+
+def list_all_categories_handler() -> tuple[dict[str, Any], int]:
+    return list_all_categories()
+
+
+def update_category_status_handler(category_id: int) -> tuple[dict[str, Any], int]:
+    json_data = request.get_json(silent=True) or {}
+    is_active = json_data.get("is_active")
+
+    if not isinstance(is_active, bool):
+        return {
+            "success": False,
+            "message": "is_active (true/false) is required.",
+        }, 400
+
+    return set_category_status(category_id, is_active)
 
 
 def create_staff_handler() -> tuple[dict[str, Any], int]:

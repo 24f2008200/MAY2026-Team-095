@@ -312,8 +312,6 @@
                         c.location,
                         c.status,
                         c.priority,
-                        c.created_at,
-                        c.updated_at,
                         typeof category === 'object' ? category.name : category,
                         typeof category === 'object' ? category.description : '',
                         resident.name,
@@ -328,10 +326,15 @@
                         staff.trade,
                     ];
 
-                    const haystack = normalizeSearchValue(searchableValues.filter(Boolean).join(' '));
-                    // Every word typed by the user must appear somewhere in the record.
-                    // Example: "john electrician" can match resident John + trade Electrician.
-                    return query.split(' ').filter(Boolean).every(token => haystack.includes(token));
+                    // Match the typed phrase against each field on its own,
+                    // instead of joining every field into one blob and
+                    // checking words independently - that previously let
+                    // unrelated fields (e.g. one containing "resident" from
+                    // a description, another containing "new" from a status
+                    // or date) combine into a false positive match.
+                    return searchableValues.some(value =>
+                        normalizeSearchValue(value).includes(query)
+                    );
                 };
 
                 const fetchAllMatchingRecords = async () => {
@@ -350,7 +353,16 @@
                         page++;
                     }
 
-                    return allData.filter(recordMatchesSearch);
+                    // IMPORTANT: wrap in a single-arg closure. Array.filter()
+                    // calls its callback as (element, index, array) - passing
+                    // recordMatchesSearch directly means its second parameter
+                    // (rawQuery) silently receives the array INDEX instead of
+                    // using its `= searchQuery.value` default, since default
+                    // params only kick in for `undefined`, not other values.
+                    // That made every record match (index "0", "1"... is a
+                    // substring of almost any field) regardless of what was
+                    // actually typed in the search box.
+                    return allData.filter(c => recordMatchesSearch(c));
                 };
 
                 const fetchReports = async () => {

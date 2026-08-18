@@ -115,7 +115,6 @@ def register():
             "message": "Unable to register user."
         }, 500
 
-
     admins = User.query.filter_by(role=UserRole.ADMIN, is_active=True).all()
     for admin in admins:
         create_notification(
@@ -305,8 +304,6 @@ def forgot_password():
         "contact an administrator immediately."
     )
 
-    # Send BEFORE touching the DB - never lock a user out of an account
-    # they can't log into if the email never arrives.
     if not send_email(user.email, subject, html_body, text_body):
         return {
             "success": False,

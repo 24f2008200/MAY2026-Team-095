@@ -238,6 +238,8 @@ class AdminComplaintListResource(Resource):
             except KeyError:
                 pass
         if search:
+            # Also match on resident name/flat, assigned staff name, and
+            # category name - not just the ticket's own title/code.
             search_term = f"%{search}%"
             Resident = aliased(User)
             Staff = aliased(User)

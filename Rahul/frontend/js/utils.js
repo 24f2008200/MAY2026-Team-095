@@ -2,6 +2,10 @@ const API_BASE = (window.location.hostname === 'localhost' || window.location.ho
     ? 'http://127.0.0.1:5000'
     : 'https://smart-society-backend-2dqe.onrender.com';
 
+// Uploaded file URLs come back from the backend as relative paths
+// (e.g. "/uploads/abc123_photo.jpg"). They need the API origin prefixed
+// to be loadable from the frontend, which is served from a different
+// origin/port than the API.
 function resolveFileUrl(path) {
     if (!path) return '';
     if (path.startsWith('http://') || path.startsWith('https://')) return path;
@@ -81,6 +85,8 @@ function extractApiMessage(errorData) {
 }
 
 function friendlyHttpMessage(status, serverMessage = '') {
+    // Never expose raw HTTP codes (e.g. "Request failed with status 409")
+    // to end users. Prefer a useful server message when one exists.
     if (serverMessage && !/^request failed with status\s+\d+/i.test(serverMessage)) {
         return serverMessage;
     }
@@ -144,6 +150,8 @@ async function apiCall(endpoint, options = {}) {
                 try {
                     errorData = JSON.parse(responseText);
                 } catch {
+                    // Some backends/proxies return plain text or an HTML error page.
+                    // Do not surface that raw content to the user.
                     errorData = {};
                 }
             }
@@ -228,6 +236,11 @@ function requireAuth(requiredRole) {
     return user;
 }
 
+// Re-validates the session against the server (GET /auth/profile) and
+// refreshes the cached user with authoritative data (role, flat_number,
+// etc). Fire-and-forget: keeps the cached user as a fast first paint,
+// then upgrades it once the server responds. apiCall() already redirects
+// to login on a 401, so no separate expiry handling is needed here.
 async function refreshUserProfile(userRef, requiredRole) {
     try {
         const response = await apiCall('/auth/profile');
@@ -240,6 +253,7 @@ async function refreshUserProfile(userRef, requiredRole) {
             if (userRef) userRef.value = response.user;
         }
     } catch (err) {
+        // Network/server error - keep working off the cached user.
     }
 }
 

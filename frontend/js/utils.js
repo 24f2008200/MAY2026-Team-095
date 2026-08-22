@@ -2,7 +2,7 @@ const API_BASE =
     window.location.hostname === 'localhost' ||
     window.location.hostname === '127.0.0.1'
         ? 'http://127.0.0.1:5000'
-        : 'https://smart-society-backend-2dqe.onrender.com';
+        : 'https://may2026-team-095-smart-society-backend.onrender.com';
 
 
 /* ==========================================================================

@@ -1,6 +1,7 @@
 from typing import Any
 
 from app.services.complaint_service import (
+    add_timeline_comment,
     create_complaint,
     get_all_complaints,
     get_complaint,
@@ -31,6 +32,10 @@ def update_complaint_handler(complaint_id: int) -> tuple[dict[str, Any], int]:
 
 def get_timeline_handler(complaint_id: int) -> tuple[dict[str, Any], int]:
     return get_timeline(complaint_id)
+
+
+def add_timeline_comment_handler(complaint_id: int) -> tuple[dict[str, Any], int]:
+    return add_timeline_comment(complaint_id)
 
 
 def upload_attachment_handler(complaint_id: int) -> tuple[dict[str, Any], int]:

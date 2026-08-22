@@ -30,11 +30,17 @@
                     <button @click="logout()" class="text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition p-1.5 rounded-md ml-1" title="Sign Out"><i class="fas fa-sign-out-alt text-lg"></i></button>
                 </div>
             </div>
+                    <nav class="bg-slate-50 border-t border-slate-200">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-6 overflow-x-auto">
+                    <a href="dashboard-staff.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition whitespace-nowrap"><i class="fas fa-clipboard-list mr-1.5 text-base"></i> My Queue</a>
+                    <a href="staff-history.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition whitespace-nowrap"><i class="fas fa-check-double mr-1.5 text-base"></i> History</a>
+                    <a href="messages.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition whitespace-nowrap"><i class="fas fa-bell mr-1.5 text-base"></i> Notifications</a>
+                </div>
+            </nav>
         </header>
 
         <main class="flex-grow p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full max-w-5xl space-y-6">
-            <div class="flex items-center space-x-4 mb-2">
-                <a href="dashboard-staff.html" class="w-8 h-8 rounded-md border border-slate-300 bg-white shadow-sm flex justify-center items-center text-slate-500 hover:text-slate-900 transition"><i class="fas fa-arrow-left text-sm"></i></a>
+            <div class="mb-2">
                 <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Execute Job</h2>
             </div>
 
@@ -42,13 +48,28 @@
                 <div class="lg:w-1/2 bg-white rounded-lg shadow-sm border border-slate-200 p-6 md:p-8">
                     <h3 class="text-[10px] uppercase font-bold text-slate-400 mb-6 tracking-wider border-b border-slate-100 pb-3">Work Order Data</h3>
                     <div class="grid grid-cols-[120px_1fr] gap-y-4 text-sm">
-                        <span class="font-bold text-slate-500">Task ID</span><span class="font-bold text-slate-900">{{ complaint?.id || 'Loading...' }}</span>
-                        <span class="font-bold text-slate-500">Contact</span><span class="font-bold text-slate-700">{{ complaint?.resident?.name || '...' }}</span>
+                        <span class="font-bold text-slate-500">Task ID</span><span class="font-bold text-slate-900">{{ complaint?.complaint_code || complaint?.id || 'Loading...' }}</span>
+                        <span class="font-bold text-slate-500">Contact</span><span class="font-bold text-slate-700">{{ complaint?.resident?.name || '...' }} <span class="font-normal text-slate-500">(Flat {{ complaint?.resident?.flat_number || 'N/A' }})</span></span>
                         <span class="font-bold text-slate-700 mt-2">Trade Scope</span>
                                                 <span class="font-medium text-slate-700 mt-2">{{ complaint?.category?.name || 'N/A' }} - {{ complaint?.title || 'N/A' }}</span>
                         <span class="font-bold text-slate-500">Location</span><span class="font-bold text-slate-800">{{ complaint?.location || '...' }}</span>
                         <span class="font-bold text-slate-500 mt-2">Required Action</span>
                         <div class="bg-slate-50 p-4 rounded-md border border-slate-200 text-slate-800 font-medium mt-1 leading-relaxed">{{ complaint?.description || '...' }}</div>
+                    </div>
+                    <div class="mt-6 pt-6 border-t border-slate-100">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Proof of Work</h3>
+                            <button @click="$refs.workFileUpload.click()" :disabled="isUploading" class="text-xs bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 px-3 py-1.5 rounded-md font-bold shadow-sm transition flex items-center disabled:opacity-50">
+                                <i class="fas fa-camera mr-1.5"></i> {{ isUploading ? 'Uploading...' : 'Attach Photo' }}
+                            </button>
+                            <input type="file" ref="workFileUpload" class="hidden" @change="handleMediaUpload" multiple accept="image/*,.pdf" />
+                        </div>
+                        <div class="flex gap-3 overflow-x-auto pb-1">
+                            <div v-if="!complaint?.attachments?.length" class="text-xs text-slate-400 italic">No photos attached yet - add proof once the job is done.</div>
+                            <a v-for="att in complaint?.attachments" :key="att.id" :href="resolveFileUrl(att.url)" target="_blank" class="w-24 h-20 rounded-lg border border-slate-200 overflow-hidden shadow-sm flex-shrink-0 block bg-slate-100">
+                                <img :src="resolveFileUrl(att.url)" class="w-full h-full object-cover" alt="Work evidence" />
+                            </a>
+                        </div>
                     </div>
                 </div>
                 <div class="lg:w-1/2">
@@ -56,15 +77,13 @@
                         <h3 class="font-bold text-sm text-slate-800 uppercase tracking-wide mb-5">Commit Progress</h3>
                         <form @submit.prevent="updateStatus">
                             <div class="mb-5">
-                                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-2">State Transition <span class="text-rose-500">*</span></label>
-                                <select v-model="selectedStatus" class="form-select w-full border border-slate-300 p-2.5 rounded-md text-sm bg-white font-bold text-slate-800" required>
-                                    <option value="ASSIGNED">Assigned (Awaiting Start)</option>
-                                    <option value="IN_PROGRESS">Begin Work (In Progress)</option>
-                                    <option value="RESOLVED">Complete Task (Mark Resolved)</option>
-                                </select>
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-2">Next State</label>
+                                <div class="w-full border border-slate-200 p-3 rounded-md text-sm bg-white font-bold text-slate-800">
+                                    <i class="fas fa-arrow-right text-indigo-500 mr-2"></i>{{ selectedStatus === 'RESOLVED' ? 'Complete Task (Resolved)' : 'Begin Work (In Progress)' }}
+                                </div>
                             </div>
                             <div class="mb-6">
-                                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-2">Completion Log <span class="text-rose-500">*</span></label>
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-2">Work Log <span class="text-rose-500">*</span></label>
                                 <textarea v-model="comment" rows="4" placeholder="Detail the actions taken..." class="form-textarea w-full border border-slate-300 p-3 rounded-md text-sm bg-white resize-none font-medium text-slate-700" required></textarea>
                             </div>
                             <button type="submit" :disabled="isLoading" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-md shadow-sm transition text-sm disabled:opacity-50">
@@ -93,12 +112,20 @@
                 const selectedStatus = ref('');
                 const comment = ref('');
                 const isLoading = ref(false);
+                const isUploading = ref(false);
                 let ticketId = null;
 
                 const fetchComplaintData = async () => {
                     try {
-                        const data = await apiCall(`/complaints/${ticketId}`);
+                        const data = await apiCall(`/staff/complaints/${ticketId}`);
                         complaint.value = data.complaint || data;
+
+                        if (!canStaffWorkComplaint(user.value, complaint.value)) {
+                            showToast('This work order is not currently assigned to you.', 'error');
+                            setTimeout(() => { window.location.href = 'dashboard-staff.html'; }, 1200);
+                            return;
+                        }
+
                         const status = complaint.value.status;
                         selectedStatus.value = status === 'IN_PROGRESS' ? 'RESOLVED' : 'IN_PROGRESS';
                     } catch (err) {
@@ -109,6 +136,7 @@
 
                 onMounted(() => {
                     user.value = requireAuth('STAFF');
+                    if (user.value) refreshUserProfile(user, 'STAFF');
                     if (!user.value) return;
 
                     const params = new URLSearchParams(window.location.search);
@@ -137,7 +165,35 @@
                     }
                 };
 
-                return { user, complaint, selectedStatus, comment, isLoading, updateStatus, logout, goHome };
+                const handleMediaUpload = async (event) => {
+                    const files = event.target.files;
+                    if (!files || files.length === 0) return;
+
+                    isUploading.value = true;
+                    let successCount = 0;
+                    for (let i = 0; i < files.length; i++) {
+                        const formData = new FormData();
+                        formData.append('file', files[i]);
+                        try {
+                            await apiCall(`/complaints/${ticketId}/attachments`, {
+                                method: 'POST',
+                                body: formData
+                            });
+                            successCount++;
+                        } catch (err) {
+                            showToast(`Failed to upload ${files[i].name}.`, 'error');
+                        }
+                    }
+
+                    if (successCount > 0) {
+                        showToast(`${successCount} file${successCount > 1 ? 's' : ''} attached successfully!`);
+                        fetchComplaintData();
+                    }
+                    isUploading.value = false;
+                    event.target.value = '';
+                };
+
+                return { user, complaint, selectedStatus, comment, isLoading, isUploading, updateStatus, handleMediaUpload, resolveFileUrl, logout, goHome };
             }
         }).mount('#app');
     </script>

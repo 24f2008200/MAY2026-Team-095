@@ -2,7 +2,9 @@ from flask_restx import Namespace, Resource, fields
 
 from app.controllers.staff_controller import (
     add_timeline_handler,
+    dashboard_summary_handler,
     get_assigned_complaint_handler,
+    history_handler,
     list_assigned_complaints_handler,
     update_status_handler,
 )
@@ -53,6 +55,40 @@ class StaffComplaintListResource(Resource):
     @staff_ns.response(200, "Success")
     def get(self):
         return list_assigned_complaints_handler()
+
+
+@staff_ns.route("/dashboard/summary")
+class StaffDashboardSummaryResource(Resource):
+
+    @staff_required
+    @staff_ns.doc(
+        security="Bearer",
+        summary="Staff dashboard summary",
+        description="Counts of the staff member's assigned complaints by status.",
+    )
+    @staff_ns.response(200, "Success")
+    def get(self):
+        return dashboard_summary_handler()
+
+
+@staff_ns.route("/complaints/history")
+class StaffComplaintHistoryResource(Resource):
+
+    @staff_required
+    @staff_ns.doc(
+        security="Bearer",
+        summary="Staff complaint history",
+        description="Resolved/closed complaints previously assigned to the staff member.",
+        params={
+            "page": "Page number",
+            "per_page": "Items per page",
+            "status": "Filter by status (RESOLVED or CLOSED)",
+        },
+    )
+    @staff_ns.response(200, "Success")
+    @staff_ns.response(400, "Validation error")
+    def get(self):
+        return history_handler()
 
 
 @staff_ns.route("/complaints/<int:complaint_id>")

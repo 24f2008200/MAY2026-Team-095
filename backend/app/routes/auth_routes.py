@@ -5,6 +5,7 @@ from app.controllers.auth_controller import (
     register_user,
     login_user,
     get_profile,
+    forgot_password_handler,
 )
 
 auth_ns = Namespace(
@@ -22,6 +23,13 @@ register_model = auth_ns.model(
         "password": fields.String(required=True, example="Password@123"),
         "flat_number": fields.String(required=True, example="A101"),
         "building": fields.String(required=True, example="Block A"),
+    },
+)
+
+forgot_password_model = auth_ns.model(
+    "ForgotPasswordRequest",
+    {
+        "email": fields.String(required=True, example="rahul@example.com"),
     },
 )
 
@@ -63,6 +71,23 @@ class LoginResource(Resource):
     @auth_ns.response(403, "Inactive account")
     def post(self):
         return login_user()
+
+
+@auth_ns.route("/forgot-password")
+class ForgotPasswordResource(Resource):
+
+    @auth_ns.doc(
+        summary="Forgot password",
+        description=(
+            "Accepts an email and (stub) triggers a password reset. "
+            "Always returns a generic success response."
+        ),
+    )
+    @auth_ns.expect(forgot_password_model, validate=True)
+    @auth_ns.response(200, "Request accepted")
+    @auth_ns.response(400, "Validation error")
+    def post(self):
+        return forgot_password_handler()
 
 
 @auth_ns.route("/profile")

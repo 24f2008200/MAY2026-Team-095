@@ -125,6 +125,17 @@ class RegisterSchema(Schema):
         data["building"] = data["building"].strip()
 
 
+class ForgotPasswordSchema(Schema):
+    email = fields.Email(
+        required=True,
+        validate=validate.Length(max=120),
+    )
+
+    @validates_schema
+    def normalize(self, data, **kwargs):
+        data["email"] = data["email"].strip().lower()
+
+
 class LoginSchema(Schema):
     email = fields.Email(
         required=True,

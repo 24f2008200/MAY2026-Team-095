@@ -25,26 +25,22 @@ from app.routes.category_routes import category_ns
 from app.routes.admin_routes import admin_ns
 from app.routes.staff_routes import staff_ns
 from app.routes.notification_routes import notification_ns
-from flask_cors import CORS  # 1. Import it here
 
 def create_app():
     app = Flask(__name__)
-    CORS(app)  # 2. Add this right here after app is initialized
 
     # Configuration
-    
     app.config.from_object(Config)
 
     # Extensions
-    # Extensions
     CORS(
-    app,
-    resources={
-        r"/*": {
-            "origins": "*"
-        }
-    }
-)
+        app,
+        resources={
+            r"/*": {
+                "origins": "*",
+            }
+        },
+    )
 
     db.init_app(app)
     migrate.init_app(app, db)
@@ -77,5 +73,14 @@ def create_app():
     api.add_namespace(notification_ns, path="/notifications")
 
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
+
+    from flask import send_from_directory
+
+    @app.route("/uploads/<path:filename>")
+    def uploaded_file(filename):
+        return send_from_directory(
+            app.config["UPLOAD_FOLDER"],
+            filename,
+        )
 
     return app

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Smart Society | Messages</title>
+    <title>Smart Society | Notifications</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="../assets/css/styles.css" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
@@ -20,52 +20,76 @@
                 </div>
                 <div class="flex items-center space-x-4 relative">
                     <div class="h-6 w-px bg-slate-200 hidden sm:block"></div>
-                    <div class="flex items-center gap-3 cursor-default">
-                        <div class="text-right hidden sm:block">
-                            <p class="text-sm font-bold text-slate-900 leading-tight">{{ user?.name }}</p>
-                            <p class="text-[0.65rem] text-slate-500 font-bold uppercase tracking-wider mt-0.5">{{ user?.role }}</p>
+                    <div class="flex items-center gap-2 sm:gap-3 cursor-default min-w-0">
+                        <div class="text-right min-w-0">
+                            <p class="text-sm font-bold text-slate-900 leading-tight hidden sm:block truncate max-w-[180px]">{{ user?.name }}</p>
+                            <p class="text-[0.65rem] text-indigo-600 font-extrabold uppercase tracking-wider sm:mt-0.5 whitespace-nowrap">{{ user?.role || 'USER' }}</p>
                         </div>
-                        <div class="w-8 h-8 rounded-md bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm border border-indigo-200">{{ user?.name ? user.name.charAt(0) : 'U' }}</div>
+                        <div class="w-8 h-8 rounded-md bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm border border-indigo-200 shrink-0">{{ user?.name ? user.name.charAt(0) : 'U' }}</div>
                     </div>
                     <button @click="logout()" class="text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition p-1.5 rounded-md ml-1" title="Sign Out"><i class="fas fa-sign-out-alt text-lg"></i></button>
                 </div>
             </div>
+
+            <!-- Keep the same role-specific navigation visible on Messages/Notifications. -->
+            <nav v-if="user" class="bg-slate-50 border-t border-slate-200">
+                <div v-if="user.role === 'ADMIN'" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-6 overflow-x-auto">
+                    <a href="dashboard-admin.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition whitespace-nowrap"><i class="fas fa-chart-pie mr-1.5 text-base"></i> Portal</a>
+                    <a href="admin-staff.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition whitespace-nowrap"><i class="fas fa-users mr-1.5 text-base"></i> Staff</a>
+                    <a href="admin-approvals.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition whitespace-nowrap"><i class="fas fa-user-check mr-1.5 text-base"></i> Approvals</a>
+                    <a href="admin-reports.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition whitespace-nowrap"><i class="fas fa-search mr-1.5 text-base"></i> Records</a>
+                    <a href="messages.html" aria-current="page" class="nav-link border-indigo-600 text-indigo-700 py-2 px-3 text-xs font-bold hover:text-slate-900 border-b-2 flex items-center transition whitespace-nowrap"><i class="fas fa-bell mr-1.5 text-base"></i> Notifications</a>
+                </div>
+
+                <div v-else-if="user.role === 'STAFF'" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-6 overflow-x-auto">
+                    <a href="dashboard-staff.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition whitespace-nowrap"><i class="fas fa-clipboard-list mr-1.5 text-base"></i> My Queue</a>
+                    <a href="staff-history.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition whitespace-nowrap"><i class="fas fa-check-double mr-1.5 text-base"></i> History</a>
+                    <a href="messages.html" aria-current="page" class="nav-link border-indigo-600 text-indigo-700 py-2 px-3 text-xs font-bold hover:text-slate-900 border-b-2 flex items-center transition whitespace-nowrap"><i class="fas fa-bell mr-1.5 text-base"></i> Notifications</a>
+                </div>
+
+                <div v-else class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-6 overflow-x-auto">
+                    <a href="dashboard-resident.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition whitespace-nowrap"><i class="fas fa-home mr-1.5 text-base"></i> Portal</a>
+                    <a href="messages.html" aria-current="page" class="nav-link border-indigo-600 text-indigo-700 py-2 px-3 text-xs font-bold hover:text-slate-900 border-b-2 flex items-center transition whitespace-nowrap"><i class="fas fa-bell mr-1.5 text-base"></i> Notifications</a>
+                </div>
+            </nav>
         </header>
 
         <main class="flex-grow p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full max-w-4xl space-y-6">
-            <div class="flex items-center space-x-4 mb-2">
-                <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Messages</h2>
-            </div>
-
-            <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-                <h3 class="font-bold text-sm text-slate-800 uppercase tracking-wide mb-4">Send New Message</h3>
-                <form @submit.prevent="sendMessage" class="space-y-4">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5">Recipient</label>
-                        <select v-model="recipient" class="form-select w-full border border-slate-300 p-2.5 rounded-md text-sm bg-white font-medium" required>
-                            <option value="" disabled>Select recipient...</option>
-                            <option value="System Administrator">System Administrator (Admin)</option>
-                            <option value="John Doe">John Doe (Resident)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5">Message</label>
-                        <textarea v-model="messageText" rows="3" placeholder="Type your message here..." class="form-textarea w-full border border-slate-300 p-3 rounded-md text-sm resize-none font-medium" required></textarea>
-                    </div>
-                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-6 rounded-md shadow-sm transition text-sm">Send</button>
-                </form>
+            <div class="flex items-center justify-between mb-2">
+                <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Notifications</h2>
             </div>
 
             <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
                 <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
-                    <h3 class="font-bold text-sm text-slate-800 uppercase tracking-wide">Conversation History</h3>
+                    <h3 class="font-bold text-sm text-slate-800 uppercase tracking-wide">
+                        Notifications <span v-if="unreadCount > 0" class="ml-2 bg-indigo-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{{ unreadCount }} unread</span>
+                    </h3>
+                    <button v-if="unreadCount > 0" @click="markAllRead" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition">Mark all as read</button>
                 </div>
                 <div class="divide-y divide-slate-100">
-                    <div class="p-12 text-center text-slate-500 text-sm font-medium">
-                        <i class="fas fa-inbox text-3xl text-slate-300 mb-3 block"></i>No messages yet. (Backend Integration Required)
+                    <div v-if="notifications.length === 0" class="p-12 text-center text-slate-500 text-sm font-medium">
+                        <i class="fas fa-bell-slash text-3xl text-slate-300 mb-3 block"></i>No notifications yet.
+                    </div>
+                    <div v-for="n in notifications" :key="n.id" :class="['p-5 flex items-start gap-3', !n.is_read ? 'bg-indigo-50/40' : '']">
+                        <i :class="['mt-0.5', n.is_read ? 'fas fa-circle text-slate-200 text-[8px] mt-1.5' : 'fas fa-circle text-indigo-600 text-[8px] mt-1.5']"></i>
+                        <div class="flex-grow">
+                            <p class="text-sm font-bold text-slate-800">{{ n.title }}</p>
+                            <p class="text-sm text-slate-600 mt-0.5">{{ n.message }}</p>
+                            <p class="text-xs text-slate-400 mt-1">{{ n.created_at ? new Date(n.created_at).toLocaleString() : '' }}</p>
+                        </div>
+                        <button v-if="!n.is_read" @click="markRead(n.id)" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition whitespace-nowrap">Mark read</button>
+                        <button @click="dismissNotification(n.id)" title="Remove" class="text-slate-300 hover:text-rose-600 transition text-sm leading-none px-1"><i class="fas fa-times"></i></button>
+                    </div>
+                </div>
+                <div v-if="totalPages > 1" class="px-5 py-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center">
+                    <span class="text-xs font-medium text-slate-500">Page <span class="font-bold text-slate-800">{{ currentPage }}</span> of {{ totalPages }}</span>
+                    <div class="flex gap-2">
+                        <button @click="changePage(currentPage - 1)" :disabled="currentPage === 1" class="px-3 py-1.5 text-xs font-bold text-slate-600 bg-white border border-slate-300 rounded-md hover:bg-slate-50 disabled:opacity-50 transition shadow-sm">Prev</button>
+                        <button @click="changePage(currentPage + 1)" :disabled="currentPage === totalPages" class="px-3 py-1.5 text-xs font-bold text-slate-600 bg-white border border-slate-300 rounded-md hover:bg-slate-50 disabled:opacity-50 transition shadow-sm">Next</button>
                     </div>
                 </div>
             </div>
+
         </main>
     </div>
 
@@ -81,20 +105,61 @@
         createApp({
             setup() {
                 const user = ref(null);
-                const recipient = ref('');
-                const messageText = ref('');
+
+                const notifications = ref([]);
+                const unreadCount = ref(0);
+                const currentPage = ref(1);
+                const totalPages = ref(1);
+
+                const fetchNotifications = async () => {
+                    try {
+                        const response = await apiCall(`/notifications?page=${currentPage.value}&per_page=20`);
+                        notifications.value = response.notifications || [];
+                        unreadCount.value = response.unread_count || 0;
+                        if (response.pagination) {
+                            currentPage.value = response.pagination.page;
+                            totalPages.value = response.pagination.pages || 1;
+                        }
+                    } catch (err) {
+                        notifications.value = [];
+                    }
+                };
+
+                const changePage = (page) => {
+                    if (page >= 1 && page <= totalPages.value) {
+                        currentPage.value = page;
+                        fetchNotifications();
+                    }
+                };
+
+                const markRead = async (id) => {
+                    try {
+                        await apiCall(`/notifications/${id}/read`, { method: 'PUT' });
+                        fetchNotifications();
+                    } catch (err) {}
+                };
+
+                const markAllRead = async () => {
+                    try {
+                        await apiCall('/notifications/read-all', { method: 'PUT' });
+                        fetchNotifications();
+                    } catch (err) {}
+                };
+
+                const dismissNotification = async (id) => {
+                    try {
+                        await apiCall(`/notifications/${id}`, { method: 'DELETE' });
+                        notifications.value = notifications.value.filter(n => n.id !== id);
+                    } catch (err) {}
+                };
 
                 onMounted(() => {
                     user.value = requireAuth();
+                    if (user.value) refreshUserProfile(user);
+                    if (user.value) fetchNotifications();
                 });
 
-                const sendMessage = () => {
-                    showToast('Backend endpoint for DMs not implemented yet.', 'error');
-                    messageText.value = '';
-                    recipient.value = '';
-                };
-
-                return { user, recipient, messageText, sendMessage, logout, goHome };
+                return { user, notifications, unreadCount, currentPage, totalPages, changePage, markRead, markAllRead, dismissNotification, logout, goHome };
             }
         }).mount('#app');
     </script>

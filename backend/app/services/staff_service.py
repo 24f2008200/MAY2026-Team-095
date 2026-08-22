@@ -11,6 +11,7 @@ from app.services.complaint_service import (
     _add_timeline_entry,
     _complaint_response,
     _get_user,
+    _notify_comment_participants,
     _timeline_response,
     get_all_complaints,
     get_complaint,
@@ -90,27 +91,25 @@ def update_complaint_status(complaint_id: int):
             "message": "This complaint is not assigned to you.",
         }, 403
 
-    if complaint.status in {
-        ComplaintStatus.CLOSED,
-        ComplaintStatus.OPEN,
+    if complaint.status not in {
+        ComplaintStatus.ASSIGNED,
+        ComplaintStatus.IN_PROGRESS,
     }:
         return {
             "success": False,
-            "message": "Cannot update status for this complaint.",
+            "message": "Only active assigned work orders can be updated.",
         }, 400
 
     if (
         new_status == ComplaintStatus.IN_PROGRESS
         and complaint.status not in {
             ComplaintStatus.ASSIGNED,
-            ComplaintStatus.REOPENED,
         }
     ):
         return {
             "success": False,
             "message": (
-                "Complaint must be ASSIGNED or REOPENED before "
-                "moving to IN_PROGRESS."
+                "Complaint must be ASSIGNED before moving to IN_PROGRESS."
             ),
         }, 400
 
@@ -129,6 +128,7 @@ def update_complaint_status(complaint_id: int):
 
     if new_status == ComplaintStatus.RESOLVED:
         complaint.resolved_at = datetime.now(timezone.utc)
+        complaint.closed_at = None
 
     comment = data.get("comment")
 
@@ -166,6 +166,90 @@ def update_complaint_status(complaint_id: int):
     }, 200
 
 
+def get_dashboard_summary():
+    user_id = int(get_jwt_identity())
+
+    status_counts = {
+        status: Complaint.query.filter_by(
+            assigned_staff_id=user_id,
+            status=status,
+        ).count()
+        for status in (
+            ComplaintStatus.ASSIGNED,
+            ComplaintStatus.IN_PROGRESS,
+            ComplaintStatus.RESOLVED,
+            ComplaintStatus.CLOSED,
+        )
+    }
+
+    return {
+        "success": True,
+        "dashboard": {
+            "assigned": status_counts[ComplaintStatus.ASSIGNED],
+            "inProgress": status_counts[ComplaintStatus.IN_PROGRESS],
+            "resolved": status_counts[ComplaintStatus.RESOLVED],
+            "closed": status_counts[ComplaintStatus.CLOSED],
+        },
+    }, 200
+
+
+def get_history():
+    user_id = int(get_jwt_identity())
+
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 10, type=int)
+    status = request.args.get("status", type=str)
+
+    page = max(page, 1)
+    per_page = min(max(per_page, 1), 100)
+
+    query = Complaint.query.filter(
+        Complaint.assigned_staff_id == user_id,
+        Complaint.status.in_(
+            [ComplaintStatus.RESOLVED, ComplaintStatus.CLOSED]
+        ),
+    )
+
+    if status:
+        try:
+            status_enum = ComplaintStatus(status)
+        except ValueError:
+            return {
+                "success": False,
+                "message": "Invalid status filter.",
+            }, 400
+
+        if status_enum not in {ComplaintStatus.RESOLVED, ComplaintStatus.CLOSED}:
+            return {
+                "success": False,
+                "message": "History only includes RESOLVED or CLOSED complaints.",
+            }, 400
+
+        query = query.filter(Complaint.status == status_enum)
+
+    query = query.order_by(Complaint.resolved_at.desc().nullslast())
+
+    pagination = query.paginate(
+        page=page,
+        per_page=per_page,
+        error_out=False,
+    )
+
+    return {
+        "success": True,
+        "history": [
+            _complaint_response(complaint)
+            for complaint in pagination.items
+        ],
+        "pagination": {
+            "page": pagination.page,
+            "per_page": pagination.per_page,
+            "total": pagination.total,
+            "pages": pagination.pages,
+        },
+    }, 200
+
+
 def add_timeline_update(complaint_id: int):
     json_data = request.get_json(silent=True)
 
@@ -198,6 +282,12 @@ def add_timeline_update(complaint_id: int):
             "message": "This complaint is not assigned to you.",
         }, 403
 
+    if complaint.status not in {ComplaintStatus.ASSIGNED, ComplaintStatus.IN_PROGRESS}:
+        return {
+            "success": False,
+            "message": "Completed or unassigned complaints are read-only for staff.",
+        }, 400
+
     try:
         update = _add_timeline_entry(
             complaint=complaint,
@@ -206,16 +296,7 @@ def add_timeline_update(complaint_id: int):
             comment=comment,
         )
 
-        create_notification(
-            user_id=complaint.resident_id,
-            complaint_id=complaint.id,
-            title="Complaint Update",
-            message=(
-                f"New update on complaint {complaint.complaint_code}: "
-                f"{comment}"
-            ),
-            notification_type="TIMELINE_UPDATE",
-        )
+        _notify_comment_participants(complaint, user, comment)
 
         db.session.commit()
     except IntegrityError:

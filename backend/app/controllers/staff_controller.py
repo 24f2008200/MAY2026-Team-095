@@ -4,6 +4,8 @@ from app.services.staff_service import (
     add_timeline_update,
     get_assigned_complaint,
     get_assigned_complaints,
+    get_dashboard_summary,
+    get_history,
     update_complaint_status,
 )
 
@@ -24,3 +26,11 @@ def update_status_handler(complaint_id: int) -> tuple[dict[str, Any], int]:
 
 def add_timeline_handler(complaint_id: int) -> tuple[dict[str, Any], int]:
     return add_timeline_update(complaint_id)
+
+
+def dashboard_summary_handler() -> tuple[dict[str, Any], int]:
+    return get_dashboard_summary()
+
+
+def history_handler() -> tuple[dict[str, Any], int]:
+    return get_history()

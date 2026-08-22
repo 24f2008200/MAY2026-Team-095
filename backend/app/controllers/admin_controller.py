@@ -21,11 +21,17 @@ from app.services.notification_service import create_notification
 from app.services.admin_service import (
     get_dashboard,
     get_reports,
+    list_reviews,
     list_staff,
     create_staff,
     remove_staff,
     assign_staff,
     create_category,
+    list_all_categories,
+    set_category_status,
+    list_pending_residents,
+    approve_resident,
+    reject_resident,
 )
 
 
@@ -41,6 +47,10 @@ def reports_handler() -> tuple[dict[str, Any], int]:
     return get_reports()
 
 
+def reviews_handler() -> tuple[dict[str, Any], int]:
+    return list_reviews()
+
+
 def list_staff_handler() -> tuple[dict[str, Any], int]:
     return list_staff()
 
@@ -49,11 +59,27 @@ def create_category_handler() -> tuple[dict[str, Any], int]:
     return create_category()
 
 
+def list_all_categories_handler() -> tuple[dict[str, Any], int]:
+    return list_all_categories()
+
+
+def update_category_status_handler(category_id: int) -> tuple[dict[str, Any], int]:
+    json_data = request.get_json(silent=True) or {}
+    is_active = json_data.get("is_active")
+
+    if not isinstance(is_active, bool):
+        return {
+            "success": False,
+            "message": "is_active (true/false) is required.",
+        }, 400
+
+    return set_category_status(category_id, is_active)
+
+
 def create_staff_handler() -> tuple[dict[str, Any], int]:
     """
     Create a new maintenance staff account.
     Only accessible by administrators.
-    #i added it: delegates to admin_service.create_staff.
     """
     json_data = request.get_json(silent=True)
     return create_staff(json_data)
@@ -62,7 +88,6 @@ def create_staff_handler() -> tuple[dict[str, Any], int]:
 def remove_staff_handler(staff_id: int) -> tuple[dict[str, Any], int]:
     """
     Deactivate a staff account.
-    #i added it: delegates to admin_service.remove_staff.
     """
     admin_id = int(get_jwt_identity())
     return remove_staff(staff_id, admin_id)
@@ -71,10 +96,21 @@ def remove_staff_handler(staff_id: int) -> tuple[dict[str, Any], int]:
 def list_complaints_handler() -> tuple[dict[str, Any], int]:
     """
     List all complaints for admin dashboard.
-    #i added it: returns all complaints with full details.
     """
     complaints = Complaint.query.order_by(Complaint.created_at.desc()).all()
     return {
         "success": True,
         "complaints": [_complaint_response(c) for c in complaints],
     }, 200
+
+
+def list_pending_residents_handler() -> tuple[dict[str, Any], int]:
+    return list_pending_residents()
+
+
+def approve_resident_handler(resident_id: int) -> tuple[dict[str, Any], int]:
+    return approve_resident(resident_id)
+
+
+def reject_resident_handler(resident_id: int) -> tuple[dict[str, Any], int]:
+    return reject_resident(resident_id)

@@ -34,6 +34,7 @@
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-6 overflow-x-auto">
                     <a href="dashboard-staff.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition"><i class="fas fa-clipboard-list mr-1.5 text-base"></i> My Queue</a>
                     <a href="staff-history.html" class="nav-link border-indigo-600 text-indigo-700 py-2 px-3 text-xs font-bold border-b-2 flex items-center transition"><i class="fas fa-check-double mr-1.5 text-base"></i> History</a>
+                    <a href="messages.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition"><i class="fas fa-bell mr-1.5 text-base"></i> Notifications</a>
                 </div>
             </nav>
         </header>
@@ -47,7 +48,7 @@
                 </div>
 
                 <div class="px-5 py-3 border-b border-slate-200 bg-white flex flex-col sm:flex-row gap-3 items-center">
-                    <select v-model="statusFilter" class="bg-slate-50 border border-slate-300 text-slate-700 text-xs font-bold rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none w-full sm:w-auto">
+                    <select v-model="statusFilter" @change="applyFilters" class="bg-slate-50 border border-slate-300 text-slate-700 text-xs font-bold rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none w-full sm:w-auto">
                         <option value="">All Completed</option>
                         <option value="RESOLVED">Resolved (Needs Review)</option>
                         <option value="CLOSED">Closed</option>
@@ -66,20 +67,20 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 bg-white">
-                            <tr v-if="filteredHistory.length === 0">
+                            <tr v-if="historyData.length === 0">
                                 <td colspan="5" class="px-5 py-12 text-center text-slate-500 text-sm font-medium"><i class="fas fa-filter text-2xl text-slate-300 mb-2 block"></i> No records found for these filters.</td>
                             </tr>
-                            <tr v-for="c in filteredHistory" :key="c.id" class="hover:bg-slate-50 transition duration-150">
-                                <td class="px-5 py-4 font-bold text-slate-800 text-sm">{{ c.id }}</td>
-                                <td class="px-5 py-4 text-sm text-slate-700 font-medium">{{ c.category }}</td>
+                            <tr v-for="c in historyData" :key="c.id" class="hover:bg-slate-50 transition duration-150">
+                                <td class="px-5 py-4 font-bold text-slate-800 text-sm">{{ c.complaint_code || c.id }}</td>
+                                <td class="px-5 py-4 text-sm text-slate-700 font-medium">{{ c.category?.name || c.category || 'N/A' }}</td>
                                 <td class="px-5 py-4 text-xs font-medium text-slate-500">{{ c.resolved_at && !isNaN(new Date(c.resolved_at).getTime()) ? new Date(c.resolved_at).toLocaleDateString() : '--' }}</td>
-                                <td class="px-5 py-4"><span :class="'status-pill status-' + c.status.replace(' ','')">{{ c.status }}</span></td>
+                                <td class="px-5 py-4"><span :class="'status-pill status-' + c.status.replace(' ','')">{{ c.status.replace('_', ' ') }}</span></td>
                                 <td class="px-5 py-4">
-                                    <div v-if="c.rating">
+                                    <div v-if="c.feedback?.rating">
                                         <div class="flex gap-0.5 text-[12px] mb-1">
-                                            <i v-for="i in 5" :key="i" :class="i <= parseInt(c.rating) ? 'fas fa-star text-amber-400' : 'far fa-star text-slate-200'"></i>
+                                            <i v-for="i in 5" :key="i" :class="i <= parseInt(c.feedback?.rating) ? 'fas fa-star text-amber-400' : 'far fa-star text-slate-200'"></i>
                                         </div>
-                                        <p class="text-xs text-slate-600 font-medium">"{{ c.feedbackComment }}"</p>
+                                        <p class="text-xs text-slate-600 font-medium">"{{ c.feedback?.comment || 'No written feedback' }}"</p>
                                     </div>
                                     <span v-else class="text-slate-400 text-[10px] italic">Pending Review</span>
                                 </td>
@@ -87,42 +88,69 @@
                         </tbody>
                     </table>
                 </div>
+
+                <div v-if="totalPages > 1" class="px-5 py-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center">
+                    <span class="text-xs font-medium text-slate-500">Page <span class="font-bold text-slate-800">{{ currentPage }}</span> of {{ totalPages }} <span class="hidden sm:inline">({{ totalItems }} total records)</span></span>
+                    <div class="flex gap-2">
+                        <button @click="changePage(currentPage - 1)" :disabled="currentPage === 1" class="px-3 py-1.5 text-xs font-bold text-slate-600 bg-white border border-slate-300 rounded-md hover:bg-slate-50 disabled:opacity-50 transition shadow-sm">Prev</button>
+                        <button @click="changePage(currentPage + 1)" :disabled="currentPage === totalPages" class="px-3 py-1.5 text-xs font-bold text-slate-600 bg-white border border-slate-300 rounded-md hover:bg-slate-50 disabled:opacity-50 transition shadow-sm">Next</button>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
 
     <script src="../js/utils.js"></script>
     <script>
-        const { createApp, ref, computed, onMounted } = Vue;
+        const { createApp, ref, onMounted } = Vue;
 
         createApp({
             setup() {
                 const user = ref(null);
                 const historyData = ref([]);
                 const statusFilter = ref('');
+                
+                const currentPage = ref(1);
+                const totalPages = ref(1);
+                const totalItems = ref(0);
 
                 const fetchHistory = async () => {
+                    let queryParams = [`page=${currentPage.value}`, `per_page=10`];
+                    if (statusFilter.value) queryParams.push(`status=${encodeURIComponent(statusFilter.value)}`);
+                    const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
+
                     try {
-                        const response = await apiCall('/staff/complaints/history');
-                        historyData.value = response.history || response.complaints || response || [];
+                        const response = await apiCall(`/staff/complaints/history${queryString}`);
+                        historyData.value = response.history || response.complaints || [];
+                        if (response.pagination) {
+                            currentPage.value = response.pagination.page;
+                            totalPages.value = response.pagination.pages || 1;
+                            totalItems.value = response.pagination.total || 0;
+                        }
                     } catch (err) {
                         historyData.value = [];
                     }
                 };
 
+                const applyFilters = () => {
+                    currentPage.value = 1;
+                    fetchHistory();
+                };
+
+                const changePage = (page) => {
+                    if (page >= 1 && page <= totalPages.value) {
+                        currentPage.value = page;
+                        fetchHistory();
+                    }
+                };
+
                 onMounted(() => {
                     user.value = requireAuth('STAFF');
+                    if (user.value) refreshUserProfile(user, 'STAFF');
                     if (user.value) fetchHistory();
                 });
 
-                const filteredHistory = computed(() => {
-                    if (statusFilter.value) {
-                        return historyData.value.filter(c => c.status === statusFilter.value);
-                    }
-                    return historyData.value;
-                });
-
-                return { user, historyData, statusFilter, filteredHistory, logout, goHome };
+                return { user, historyData, statusFilter, currentPage, totalPages, totalItems, applyFilters, changePage, logout, goHome };
             }
         }).mount('#app');
     </script>

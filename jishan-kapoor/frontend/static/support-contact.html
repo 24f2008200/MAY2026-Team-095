@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Smart Society | Support</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <link rel="icon" type="image/svg+xml" href="../images/favicon.svg">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+<body>
+    <div id="app" class="min-h-screen flex flex-col bg-slate-50">
+        <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex justify-between items-center">
+                <div class="flex items-center cursor-pointer" @click="goHome()">
+                    <div class="mr-3"><img src="../images/logo.svg" alt="Smart Society Logo" class="w-8 h-8 rounded-md shadow-sm" /></div>
+                    <div><h1 class="font-extrabold text-lg text-slate-900 tracking-tight leading-none">Smart Society</h1><p class="text-[9px] text-indigo-600 font-bold uppercase tracking-widest mt-0.5">Complaint Resolution</p></div>
+                </div>
+                <div class="flex items-center space-x-4 relative">
+                    <div class="h-6 w-px bg-slate-200 hidden sm:block"></div>
+                    <div class="flex items-center gap-3 cursor-default">
+                        <div class="text-right hidden sm:block">
+                            <p class="text-sm font-bold text-slate-900 leading-tight">{{ user?.name }}</p>
+                            <p class="text-[0.65rem] text-slate-500 font-bold uppercase tracking-wider mt-0.5">{{ user?.role }}</p>
+                        </div>
+                        <div class="w-8 h-8 rounded-md bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm border border-indigo-200">{{ user?.name ? user.name.charAt(0) : 'U' }}</div>
+                    </div>
+                    <button @click="logout()" class="text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition p-1.5 rounded-md ml-1" title="Sign Out"><i class="fas fa-sign-out-alt text-lg"></i></button>
+                </div>
+            </div>
+                    <nav v-if="user" class="bg-slate-50 border-t border-slate-200">
+                <div v-if="user.role === 'ADMIN'" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-6 overflow-x-auto">
+                    <a href="dashboard-admin.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition whitespace-nowrap"><i class="fas fa-chart-pie mr-1.5 text-base"></i> Portal</a>
+                    <a href="admin-staff.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition whitespace-nowrap"><i class="fas fa-users mr-1.5 text-base"></i> Staff</a>
+                    <a href="admin-approvals.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition whitespace-nowrap"><i class="fas fa-user-check mr-1.5 text-base"></i> Approvals</a>
+                    <a href="admin-reports.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition whitespace-nowrap"><i class="fas fa-search mr-1.5 text-base"></i> Records</a>
+                    <a href="messages.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition whitespace-nowrap"><i class="fas fa-bell mr-1.5 text-base"></i> Notifications</a>
+                </div>
+                <div v-else-if="user.role === 'STAFF'" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-6 overflow-x-auto">
+                    <a href="dashboard-staff.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition whitespace-nowrap"><i class="fas fa-clipboard-list mr-1.5 text-base"></i> My Queue</a>
+                    <a href="staff-history.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition whitespace-nowrap"><i class="fas fa-check-double mr-1.5 text-base"></i> History</a>
+                    <a href="messages.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition whitespace-nowrap"><i class="fas fa-bell mr-1.5 text-base"></i> Notifications</a>
+                </div>
+                <div v-else class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-6 overflow-x-auto">
+                    <a href="dashboard-resident.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition whitespace-nowrap"><i class="fas fa-home mr-1.5 text-base"></i> Portal</a>
+                    <a href="messages.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition whitespace-nowrap"><i class="fas fa-bell mr-1.5 text-base"></i> Notifications</a>
+                </div>
+            </nav>
+        </header>
+        <main class="flex-grow p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full space-y-6">
+            <div class="flex items-center space-x-4 mb-2">
+                <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Facility Directory & Support</h2>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="md:col-span-1 space-y-6">
+                    <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+                        <h3 class="font-bold text-sm text-slate-800 uppercase tracking-wide mb-4 border-b border-slate-100 pb-2">Emergency Contacts</h3>
+                        <ul class="space-y-4">
+                            <li class="flex items-start"><div class="w-8 h-8 rounded-md bg-rose-50 border border-rose-100 text-rose-600 flex items-center justify-center shrink-0 mr-3"><i class="fas fa-fire-extinguisher"></i></div><div><p class="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Fire / Police / EMS</p><p class="text-lg font-black text-slate-800 mt-0.5">911</p></div></li>
+                            <li class="flex items-start"><div class="w-8 h-8 rounded-md bg-amber-50 border border-amber-100 text-amber-600 flex items-center justify-center shrink-0 mr-3"><i class="fas fa-shield-alt"></i></div><div><p class="text-[10px] font-bold text-slate-500 uppercase tracking-wide">24/7 Security Desk</p><p class="text-sm font-bold text-slate-800 mt-0.5">(555) 019-8234</p></div></li>
+                        </ul>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+                        <h3 class="font-bold text-sm text-slate-800 uppercase tracking-wide mb-4 border-b border-slate-100 pb-2">Management Office</h3>
+                        <div class="text-sm text-slate-600 space-y-3 font-medium">
+                            <p class="flex items-center"><i class="fas fa-map-marker-alt w-5 text-slate-400"></i> HQ, Ground Floor</p>
+                            <p class="flex items-center"><i class="fas fa-envelope w-5 text-slate-400"></i> admin@smartsociety.os</p>
+                            <p class="flex items-center"><i class="fas fa-phone w-5 text-slate-400"></i> (555) 012-3456</p>
+                            <div class="mt-4 pt-4 border-t border-slate-100"><p class="font-bold text-[10px] text-slate-500 uppercase tracking-wide mb-1">Standard Hours</p><p>Mon - Fri: 9:00 AM - 6:00 PM</p></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="md:col-span-2">
+                    <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-6 md:p-8 h-full">
+                        <h3 class="font-extrabold text-xl text-slate-900 mb-2">General Inquiry</h3>
+                        <p class="text-sm text-slate-500 mb-6 font-medium">For non-maintenance questions (billing, leasing, amenities), contact administration directly.</p>
+                        <form @submit.prevent="sendInquiry" class="space-y-5">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Your Name</label><input :value="user?.name" type="text" class="form-input w-full border border-slate-200 p-2.5 rounded-md text-sm bg-slate-50 font-bold text-slate-700" readonly /></div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Topic</label>
+                                    <select v-model="topic" class="form-select w-full border border-slate-300 p-2.5 rounded-md text-sm bg-white font-medium text-slate-700" required>
+                                        <option value="" disabled>Select topic...</option>
+                                        <option>Billing & Payments</option><option>Lease & Documentation</option><option>Amenities Booking</option><option>Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Message</label>
+                                <textarea v-model="inquiryText" rows="5" class="form-textarea w-full border border-slate-300 p-3 rounded-md text-sm resize-none font-medium text-slate-700" placeholder="How can we help?" required></textarea>
+                            </div>
+                            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-6 rounded-md shadow-sm transition text-sm">Send Message</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="toast" class="fixed bottom-6 right-6 z-50 hidden items-center px-4 py-3 rounded-md shadow-lg border bg-slate-900 border-slate-800 text-white">
+        <i class="fas fa-check-circle text-emerald-400 mr-3 text-lg"></i>
+        <span id="toastMsg" class="font-medium text-sm">Success</span>
+    </div>
+
+    <script src="../js/utils.js"></script>
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const user = ref(null);
+                const topic = ref('');
+                const inquiryText = ref('');
+
+                onMounted(() => {
+                    user.value = requireAuth();
+                    if (user.value) refreshUserProfile(user);
+                });
+
+                const sendInquiry = () => {
+                    showToast('Backend endpoint for inquiries not implemented yet.', 'error');
+                    topic.value = '';
+                    inquiryText.value = '';
+                };
+
+                return { user, topic, inquiryText, sendInquiry, logout, goHome };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

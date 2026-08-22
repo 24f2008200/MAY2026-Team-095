@@ -1,0 +1,1444 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    />
+
+    <title>Smart Society | Assign Resource</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link
+        rel="stylesheet"
+        href="../assets/css/styles.css"
+    />
+
+    <link
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+        rel="stylesheet"
+    />
+
+    <link
+        rel="icon"
+        type="image/svg+xml"
+        href="../images/favicon.svg"
+    />
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+
+
+<body>
+
+<div
+    id="app"
+    class="min-h-screen flex flex-col bg-slate-50"
+>
+
+    <!-- HEADER -->
+    <header
+        class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm"
+    >
+
+        <div
+            class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex justify-between items-center"
+        >
+
+            <div
+                class="flex items-center cursor-pointer"
+                @click="goHome()"
+            >
+
+                <div class="mr-3">
+
+                    <img
+                        src="../images/logo.svg"
+                        alt="Smart Society Logo"
+                        class="w-8 h-8 rounded-md shadow-sm"
+                    />
+
+                </div>
+
+
+                <div>
+
+                    <h1
+                        class="font-extrabold text-lg text-slate-900 tracking-tight leading-none"
+                    >
+                        Smart Society
+                    </h1>
+
+                    <p
+                        class="text-[9px] text-indigo-600 font-bold uppercase tracking-widest mt-0.5"
+                    >
+                        Complaint Resolution
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div
+                class="flex items-center space-x-4 relative"
+            >
+
+                <div
+                    class="h-6 w-px bg-slate-200 hidden sm:block"
+                ></div>
+
+
+                <div
+                    class="flex items-center gap-3 cursor-default"
+                >
+
+                    <div
+                        class="text-right hidden sm:block"
+                    >
+
+                        <p
+                            class="text-sm font-bold text-slate-900 leading-tight"
+                        >
+                            {{ user?.name }}
+                        </p>
+
+                        <p
+                            class="text-[0.65rem] text-slate-500 font-bold uppercase tracking-wider mt-0.5"
+                        >
+                            {{ user?.role }}
+                        </p>
+
+                    </div>
+
+
+                    <div
+                        class="w-8 h-8 rounded-md bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm border border-indigo-200"
+                    >
+                        {{
+                            user?.name
+                                ? user.name.charAt(0)
+                                : 'U'
+                        }}
+                    </div>
+
+                </div>
+
+
+                <button
+                    @click="logout()"
+                    class="text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition p-1.5 rounded-md ml-1"
+                    title="Sign Out"
+                >
+                    <i
+                        class="fas fa-sign-out-alt text-lg"
+                    ></i>
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <!-- ADMIN NAVIGATION -->
+        <nav
+            class="bg-slate-50 border-t border-slate-200"
+        >
+
+            <div
+                class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-6 overflow-x-auto"
+            >
+
+                <a
+                    href="dashboard-admin.html"
+                    class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition whitespace-nowrap"
+                >
+                    <i
+                        class="fas fa-chart-pie mr-1.5 text-base"
+                    ></i>
+                    Portal
+                </a>
+
+
+                <a
+                    href="admin-staff.html"
+                    class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition whitespace-nowrap"
+                >
+                    <i
+                        class="fas fa-users mr-1.5 text-base"
+                    ></i>
+                    Staff
+                </a>
+
+
+                <a
+                    href="admin-approvals.html"
+                    class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition whitespace-nowrap"
+                >
+                    <i
+                        class="fas fa-user-check mr-1.5 text-base"
+                    ></i>
+                    Approvals
+                </a>
+
+
+                <a
+                    href="admin-reports.html"
+                    class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition whitespace-nowrap"
+                >
+                    <i
+                        class="fas fa-search mr-1.5 text-base"
+                    ></i>
+                    Records
+                </a>
+
+
+                <a
+                    href="messages.html"
+                    class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition whitespace-nowrap"
+                >
+                    <i
+                        class="fas fa-bell mr-1.5 text-base"
+                    ></i>
+                    Notifications
+                </a>
+
+            </div>
+
+        </nav>
+
+    </header>
+
+
+    <!-- MAIN -->
+    <main
+        class="flex-grow px-4 sm:px-6 lg:px-8 py-8 lg:py-10 max-w-7xl mx-auto w-full space-y-8"
+    >
+
+        <!-- PAGE HEADING -->
+        <section
+            class="flex items-start gap-4"
+        >
+
+            <button
+                @click="goBack"
+                type="button"
+                class="w-11 h-11 shrink-0 inline-flex items-center justify-center bg-white border border-slate-300 text-slate-600 hover:text-indigo-700 hover:border-indigo-300 hover:bg-indigo-50 rounded-xl shadow-sm transition"
+                title="Back to ticket"
+            >
+                <i
+                    class="fas fa-arrow-left"
+                ></i>
+            </button>
+
+
+            <div
+                class="max-w-3xl"
+            >
+
+                <!-- BLUE LINE REMOVED -->
+                <div
+                    class="text-[11px] font-bold uppercase tracking-[0.18em] text-indigo-600 mb-2"
+                >
+                    Ticket Dispatch
+                </div>
+
+
+                <h2
+                    class="text-3xl font-extrabold text-slate-900 tracking-tight"
+                >
+                    {{
+                        complaint?.assigned_staff_id
+                            ? 'Reassign Staff'
+                            : 'Assign Staff'
+                    }}
+                </h2>
+
+
+                <p
+                    class="text-sm text-slate-500 font-medium mt-2 leading-relaxed"
+                >
+                    Review the incident, compare technician fit and workload,
+                    then confirm the assignment. Existing ticket behavior and
+                    workflow remain unchanged.
+                </p>
+
+            </div>
+
+        </section>
+
+
+        <div
+            class="grid grid-cols-1 xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,0.85fr)] gap-7 items-start"
+        >
+
+            <!-- INCIDENT PANEL -->
+            <section
+                class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden"
+            >
+
+                <div
+                    class="px-6 md:px-8 py-5 border-b border-slate-200 bg-slate-50/70 flex items-center justify-between gap-4"
+                >
+
+                    <div
+                        class="flex items-center gap-3"
+                    >
+
+                        <div
+                            class="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center"
+                        >
+                            <i
+                                class="fas fa-clipboard-list"
+                            ></i>
+                        </div>
+
+
+                        <div>
+
+                            <h3
+                                class="text-base font-extrabold text-slate-900"
+                            >
+                                Incident Briefing
+                            </h3>
+
+                            <p
+                                class="text-xs text-slate-500 mt-0.5"
+                            >
+                                Ticket context before dispatch
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <span
+                        v-if="complaint"
+                        :class="'status-pill text-xs status-' + complaint.status.replace(' ', '')"
+                    >
+                        {{ complaint.status }}
+                    </span>
+
+                </div>
+
+
+                <div
+                    class="p-6 md:p-8 space-y-7"
+                >
+
+                    <div
+                        class="grid grid-cols-1 sm:grid-cols-2 gap-5"
+                    >
+
+                        <!-- TICKET ID -->
+                        <div
+                            class="rounded-xl border border-slate-200 bg-slate-50/60 p-4"
+                        >
+
+                            <span
+                                class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5"
+                            >
+                                System ID
+                            </span>
+
+                            <span
+                                class="text-sm font-extrabold text-slate-900"
+                            >
+                                {{
+                                    complaint?.complaint_code ||
+                                    complaint?.id ||
+                                    'Loading...'
+                                }}
+                            </span>
+
+                        </div>
+
+
+                        <!-- RESIDENT -->
+                        <div
+                            class="rounded-xl border border-slate-200 bg-slate-50/60 p-4"
+                        >
+
+                            <span
+                                class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5"
+                            >
+                                Resident
+                            </span>
+
+                            <span
+                                class="text-sm font-bold text-slate-900"
+                            >
+                                {{
+                                    complaint?.resident?.name ||
+                                    '...'
+                                }}
+                            </span>
+
+                            <span
+                                class="block text-xs text-slate-500 mt-1"
+                            >
+                                Flat
+                                {{
+                                    complaint?.resident?.flat_number ||
+                                    'N/A'
+                                }}
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- CLASSIFICATION -->
+                    <div>
+
+                        <span
+                            class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2"
+                        >
+                            Classification
+                        </span>
+
+                        <div
+                            class="border border-slate-200 rounded-xl p-4"
+                        >
+
+                            <p
+                                class="text-sm font-extrabold text-slate-900"
+                            >
+                                {{
+                                    complaint
+                                        ? complaint.category?.name
+                                            + ' - '
+                                            + complaint.title
+                                        : '...'
+                                }}
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- DESCRIPTION -->
+                    <div>
+
+                        <span
+                            class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2"
+                        >
+                            Description
+                        </span>
+
+                        <div
+                            class="bg-slate-50 p-5 rounded-xl border border-slate-200 text-slate-700 text-sm leading-7 font-medium min-h-[150px]"
+                        >
+                            {{
+                                complaint?.description ||
+                                '...'
+                            }}
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- ASSIGNMENT PANEL -->
+            <section
+                class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden xl:sticky xl:top-24 min-w-0"
+            >
+
+                <div
+                    class="px-6 py-5 border-b border-slate-200 bg-slate-50/70 flex items-start gap-3"
+                >
+
+                    <div
+                        class="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center shrink-0"
+                    >
+                        <i
+                            class="fas fa-user-check"
+                        ></i>
+                    </div>
+
+
+                    <div>
+
+                        <h3
+                            class="text-base font-extrabold text-slate-900"
+                        >
+                            {{
+                                complaint?.assigned_staff_id
+                                    ? 'Reassignment'
+                                    : 'Assignment'
+                            }}
+                            Configuration
+                        </h3>
+
+                        <p
+                            class="text-xs text-slate-500 mt-1"
+                        >
+                            Choose an active technician and optionally add
+                            internal dispatch notes.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <form
+                    @submit.prevent="handleAssign"
+                    class="p-6 md:p-7 space-y-6"
+                >
+
+                    <!-- STAFF SELECT -->
+                    <div
+                        class="min-w-0"
+                    >
+
+                        <label
+                            class="block text-xs font-bold text-slate-700 mb-2"
+                        >
+                            Available Personnel
+
+                            <span
+                                class="text-rose-500"
+                            >
+                                *
+                            </span>
+                        </label>
+
+
+                        <select
+                            v-model="selectedStaffId"
+                            @focus="fetchStaffList"
+                            class="form-select block w-full min-w-0 max-w-full h-12 border border-slate-300 px-3.5 pr-10 rounded-lg text-sm bg-white font-bold text-slate-800 overflow-hidden text-ellipsis whitespace-nowrap focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none"
+                            style="width:100%; max-width:100%; min-width:0; box-sizing:border-box;"
+                            required
+                        >
+
+                            <option
+                                value=""
+                                disabled
+                            >
+                                {{
+                                    orderedStaff.length
+                                        ? 'Select technician...'
+                                        : 'No active staff available'
+                                }}
+                            </option>
+
+
+                            <option
+                                v-for="staff in orderedStaff"
+                                :key="staff.id"
+                                :value="staff.id"
+                            >
+                                {{
+                                    staffOptionLabel(staff)
+                                }}
+                            </option>
+
+                        </select>
+
+
+                        <p
+                            class="text-xs text-slate-400 mt-2"
+                        >
+                            Matching trade is recommended first. Rating and active
+                            workload are shown after selection.
+                        </p>
+
+                    </div>
+
+
+                    <!-- SELECTED TECHNICIAN -->
+                    <div
+                        v-if="selectedStaff"
+                        class="rounded-xl border border-indigo-100 bg-indigo-50/40 p-5 min-w-0"
+                    >
+
+                        <div
+                            class="flex items-start justify-between gap-4 min-w-0"
+                        >
+
+                            <div
+                                class="min-w-0 flex-1"
+                            >
+
+                                <span
+                                    class="block text-[10px] font-bold text-indigo-500 uppercase tracking-wider mb-1"
+                                >
+                                    Selected Technician
+                                </span>
+
+                                <p
+                                    class="text-base font-extrabold text-slate-900 break-words"
+                                >
+                                    {{
+                                        selectedStaff.name
+                                    }}
+                                </p>
+
+                                <p
+                                    class="text-xs text-slate-500 mt-1 break-words"
+                                >
+                                    {{
+                                        selectedStaff.trade ||
+                                        'General'
+                                    }}
+                                </p>
+
+                            </div>
+
+
+                            <span
+                                v-if="isRecommended(selectedStaff)"
+                                class="shrink-0 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-1 text-[10px] font-bold text-emerald-700"
+                            >
+                                Recommended
+                            </span>
+
+                        </div>
+
+
+                        <div
+                            class="grid grid-cols-2 gap-3 mt-5"
+                        >
+
+                            <!-- RATING -->
+                            <div
+                                class="rounded-lg bg-white border border-slate-200 px-3.5 py-3 min-w-0"
+                            >
+
+                                <span
+                                    class="block text-[9px] uppercase tracking-wide font-bold text-slate-400 mb-1"
+                                >
+                                    Resident Rating
+                                </span>
+
+                                <span
+                                    class="font-extrabold text-slate-900"
+                                >
+                                    {{
+                                        selectedStaff.average_rating !== null &&
+                                        selectedStaff.average_rating !== undefined
+
+                                            ? '★ '
+                                                + Number(
+                                                    selectedStaff.average_rating
+                                                ).toFixed(2)
+                                                + ' ('
+                                                + (
+                                                    selectedStaff.review_count ||
+                                                    0
+                                                )
+                                                + ')'
+
+                                            : 'Unrated'
+                                    }}
+                                </span>
+
+                            </div>
+
+
+                            <!-- ACTIVE JOBS -->
+                            <div
+                                class="rounded-lg bg-white border border-slate-200 px-3.5 py-3 min-w-0"
+                            >
+
+                                <span
+                                    class="block text-[9px] uppercase tracking-wide font-bold text-slate-400 mb-1"
+                                >
+                                    Active Jobs
+                                </span>
+
+                                <span
+                                    class="font-extrabold text-slate-900"
+                                >
+                                    {{
+                                        selectedStaff.assigned_complaints_count ||
+                                        0
+                                    }}
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- REMARKS -->
+                    <div>
+
+                        <label
+                            class="block text-xs font-bold text-slate-700 mb-2"
+                        >
+                            Dispatch Instructions
+
+                            <span
+                                class="font-medium text-slate-400"
+                            >
+                                (internal, optional)
+                            </span>
+                        </label>
+
+
+                        <textarea
+                            v-model="assignRemarks"
+                            rows="5"
+                            placeholder="Add SLA notes, access instructions, or other technician guidance..."
+                            class="form-textarea w-full border border-slate-300 p-3.5 rounded-lg text-sm bg-white resize-y font-medium leading-relaxed focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none"
+                        ></textarea>
+
+                    </div>
+
+
+                    <!-- SUBMIT -->
+                    <div
+                        class="pt-1"
+                    >
+
+                        <button
+                            type="submit"
+                            :disabled="isLoading"
+                            class="w-full h-12 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-sm transition flex justify-center items-center gap-2 text-sm disabled:opacity-50"
+                        >
+
+                            <i
+                                class="fas fa-check"
+                            ></i>
+
+                            {{
+                                isLoading
+                                    ? 'Saving...'
+                                    : (
+                                        complaint?.assigned_staff_id
+                                            ? 'Confirm Reassignment'
+                                            : 'Assign Staff'
+                                    )
+                            }}
+
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </section>
+
+        </div>
+
+    </main>
+
+</div>
+
+
+<!-- TOAST -->
+<div
+    id="toast"
+    class="fixed bottom-6 right-6 z-50 hidden items-center px-4 py-3 rounded-md shadow-lg border bg-slate-900 border-slate-800 text-white"
+>
+
+    <i
+        class="fas fa-check-circle text-emerald-400 mr-3 text-lg"
+    ></i>
+
+    <span
+        id="toastMsg"
+        class="font-medium text-sm"
+    >
+        Success
+    </span>
+
+</div>
+
+
+<script src="../js/utils.js"></script>
+
+<script>
+
+const {
+    createApp,
+    ref,
+    computed,
+    onMounted
+} = Vue;
+
+
+createApp({
+
+    setup() {
+
+        const user =
+            ref(null);
+
+
+        const complaint =
+            ref(null);
+
+
+        const staffList =
+            ref([]);
+
+
+        const selectedStaffId =
+            ref('');
+
+
+        const assignRemarks =
+            ref('');
+
+
+        const isLoading =
+            ref(false);
+
+
+        let currentTicketId =
+            null;
+
+
+        /* ================================================================
+           STAFF ORDERING
+           ================================================================ */
+
+        const orderedStaff =
+            computed(() => {
+
+                const category =
+                    String(
+                        complaint.value
+                            ?.category
+                            ?.name ||
+                        ''
+                    )
+                        .trim()
+                        .toLowerCase();
+
+
+                const ratingValue =
+                    staff => {
+
+                        if (
+                            staff.average_rating === null ||
+                            staff.average_rating === undefined
+                        ) {
+                            return -1;
+                        }
+
+                        return Number(
+                            staff.average_rating
+                        );
+
+                    };
+
+
+                return [
+                    ...staffList.value
+                ].sort(
+                    (a, b) => {
+
+                        const aTrade =
+                            String(
+                                a.trade || ''
+                            )
+                                .trim()
+                                .toLowerCase();
+
+
+                        const bTrade =
+                            String(
+                                b.trade || ''
+                            )
+                                .trim()
+                                .toLowerCase();
+
+
+                        const aMatch =
+                            aTrade === category
+                                ? 1
+                                : 0;
+
+
+                        const bMatch =
+                            bTrade === category
+                                ? 1
+                                : 0;
+
+
+                        if (
+                            aMatch !== bMatch
+                        ) {
+                            return (
+                                bMatch -
+                                aMatch
+                            );
+                        }
+
+
+                        if (
+                            ratingValue(a) !==
+                            ratingValue(b)
+                        ) {
+                            return (
+                                ratingValue(b) -
+                                ratingValue(a)
+                            );
+                        }
+
+
+                        if (
+                            (
+                                a.review_count ||
+                                0
+                            ) !==
+                            (
+                                b.review_count ||
+                                0
+                            )
+                        ) {
+                            return (
+                                (
+                                    b.review_count ||
+                                    0
+                                ) -
+                                (
+                                    a.review_count ||
+                                    0
+                                )
+                            );
+                        }
+
+
+                        if (
+                            (
+                                a.assigned_complaints_count ||
+                                0
+                            ) !==
+                            (
+                                b.assigned_complaints_count ||
+                                0
+                            )
+                        ) {
+                            return (
+                                (
+                                    a.assigned_complaints_count ||
+                                    0
+                                ) -
+                                (
+                                    b.assigned_complaints_count ||
+                                    0
+                                )
+                            );
+                        }
+
+
+                        return String(
+                            a.name || ''
+                        ).localeCompare(
+                            String(
+                                b.name || ''
+                            )
+                        );
+
+                    }
+                );
+
+            });
+
+
+        /* ================================================================
+           SELECTED STAFF
+           ================================================================ */
+
+        const selectedStaff =
+            computed(() =>
+
+                staffList.value.find(
+                    staff =>
+                        String(staff.id) ===
+                        String(
+                            selectedStaffId.value
+                        )
+                ) ||
+                null
+
+            );
+
+
+        /* ================================================================
+           RECOMMENDED STAFF
+           ================================================================ */
+
+        const isRecommended =
+            staff => {
+
+                const trade =
+                    String(
+                        staff?.trade ||
+                        ''
+                    )
+                        .trim()
+                        .toLowerCase();
+
+
+                const category =
+                    String(
+                        complaint.value
+                            ?.category
+                            ?.name ||
+                        ''
+                    )
+                        .trim()
+                        .toLowerCase();
+
+
+                return Boolean(
+                    trade &&
+                    category &&
+                    trade === category
+                );
+
+            };
+
+
+        /* ================================================================
+           DROPDOWN LABEL
+           ================================================================ */
+
+        const shorten =
+            (
+                value,
+                maxLength
+            ) => {
+
+                const text =
+                    String(
+                        value ||
+                        ''
+                    ).trim();
+
+
+                return (
+                    text.length >
+                    maxLength
+                )
+                    ? text
+                        .slice(
+                            0,
+                            Math.max(
+                                1,
+                                maxLength - 1
+                            )
+                        )
+                        .trimEnd()
+                        + '…'
+
+                    : text;
+
+            };
+
+
+        const staffOptionLabel =
+            staff => {
+
+                const name =
+                    shorten(
+                        staff?.name ||
+                        'Staff',
+                        24
+                    );
+
+
+                const trade =
+                    shorten(
+                        staff?.trade ||
+                        'General',
+                        16
+                    );
+
+
+                return (
+                    `${name} — ${trade}`
+                    +
+                    (
+                        isRecommended(
+                            staff
+                        )
+                            ? ' · Recommended'
+                            : ''
+                    )
+                );
+
+            };
+
+
+        /* ================================================================
+           LOAD COMPLAINT
+           ================================================================ */
+
+        const fetchComplaintData =
+            async () => {
+
+                try {
+
+                    const response =
+                        await apiCall(
+                            `/complaints/${currentTicketId}`
+                        );
+
+
+                    complaint.value =
+                        response.complaint ||
+                        response;
+
+
+                    if (
+                        !canAssignComplaint(
+                            user.value,
+                            complaint.value
+                        )
+                    ) {
+
+                        showToast(
+                            'This ticket is not in a state that can be assigned.',
+                            'error'
+                        );
+
+
+                        setTimeout(
+                            () => {
+
+                                window.location.href =
+                                    `complaint-details.html?id=${currentTicketId}`;
+
+                            },
+                            1200
+                        );
+
+
+                        return;
+
+                    }
+
+
+                    selectedStaffId.value =
+                        complaint.value
+                            .assigned_staff_id ||
+                        '';
+
+
+                } catch (err) {
+
+                    console.error(
+                        'Failed to fetch complaint:',
+                        err
+                    );
+
+
+                    showToast(
+                        'Failed to load ticket.',
+                        'error'
+                    );
+
+
+                    setTimeout(
+                        () =>
+                            window.history.back(),
+                        2000
+                    );
+
+                }
+
+            };
+
+
+        /* ================================================================
+           LOAD STAFF
+           ================================================================ */
+
+        const fetchStaffList =
+            async () => {
+
+                try {
+
+                    /*
+                     * Cache-busting timestamp so newly-created
+                     * staff appear immediately.
+                     */
+                    const response =
+                        await apiCall(
+                            `/admin/staff?_=${Date.now()}`,
+                            {
+                                suppressErrorToast:
+                                    true
+                            }
+                        );
+
+
+                    staffList.value =
+                        response.staff ||
+                        [];
+
+
+                } catch (err) {
+
+                    staffList.value =
+                        [];
+
+
+                    showToast(
+                        'Failed to load active staff. Please try again.',
+                        'error'
+                    );
+
+                }
+
+            };
+
+
+        /* ================================================================
+           PAGE LOAD
+           ================================================================ */
+
+        onMounted(() => {
+
+            user.value =
+                requireAuth(
+                    'Admin'
+                );
+
+
+            if (
+                user.value
+            ) {
+
+                refreshUserProfile(
+                    user,
+                    'Admin'
+                );
+
+            }
+
+
+            if (
+                !user.value
+            ) {
+                return;
+            }
+
+
+            const params =
+                new URLSearchParams(
+                    window.location.search
+                );
+
+
+            currentTicketId =
+                params.get(
+                    'id'
+                );
+
+
+            if (
+                !currentTicketId
+            ) {
+
+                window.location.href =
+                    'dashboard-admin.html';
+
+                return;
+
+            }
+
+
+            fetchComplaintData();
+
+            fetchStaffList();
+
+        });
+
+
+        /* ================================================================
+           BACK
+           ================================================================ */
+
+        const goBack =
+            () => {
+
+                if (
+                    currentTicketId
+                ) {
+
+                    window.location.href =
+                        `complaint-details.html?id=${currentTicketId}`;
+
+                    return;
+
+                }
+
+
+                window.location.href =
+                    'dashboard-admin.html';
+
+            };
+
+
+        /* ================================================================
+           ASSIGN / REASSIGN
+           ================================================================ */
+
+        const handleAssign =
+            async () => {
+
+                isLoading.value =
+                    true;
+
+
+                try {
+
+                    await fetchStaffList();
+
+
+                    const selected =
+                        staffList.value.find(
+                            staff =>
+                                String(
+                                    staff.id
+                                ) ===
+                                String(
+                                    selectedStaffId.value
+                                )
+                        );
+
+
+                    if (
+                        !selected
+                    ) {
+
+                        isLoading.value =
+                            false;
+
+
+                        showToast(
+                            'The selected staff member is no longer active. Please select another technician.',
+                            'error'
+                        );
+
+
+                        return;
+
+                    }
+
+
+                    /*
+                     * Always force remarks to a string.
+                     * Blank field becomes "" rather than null.
+                     */
+                    const safeRemarks =
+                        String(
+                            assignRemarks.value ??
+                            ''
+                        ).trim();
+
+
+                    await apiCall(
+                        `/admin/complaints/${currentTicketId}/assign`,
+                        {
+                            method:
+                                'PUT',
+
+                            body: {
+                                staff_id:
+                                    parseInt(
+                                        selectedStaffId.value
+                                    ),
+
+                                remarks:
+                                    safeRemarks
+                            }
+                        }
+                    );
+
+
+                    showToast(
+                        complaint.value
+                            ?.assigned_staff_id
+
+                            ? 'Staff reassigned successfully.'
+
+                            : 'Staff assigned successfully.'
+                    );
+
+
+                    setTimeout(
+                        () => {
+
+                            window.location.href =
+                                'dashboard-admin.html';
+
+                        },
+                        1000
+                    );
+
+
+                } catch (err) {
+
+                    isLoading.value =
+                        false;
+
+                }
+
+            };
+
+
+        return {
+
+            user,
+
+            complaint,
+
+            staffList,
+
+            orderedStaff,
+
+            selectedStaff,
+
+            selectedStaffId,
+
+            assignRemarks,
+
+            isLoading,
+
+            fetchStaffList,
+
+            isRecommended,
+
+            staffOptionLabel,
+
+            goBack,
+
+            handleAssign,
+
+            logout,
+
+            goHome
+
+        };
+
+    }
+
+}).mount('#app');
+
+</script>
+
+</body>
+
+</html>

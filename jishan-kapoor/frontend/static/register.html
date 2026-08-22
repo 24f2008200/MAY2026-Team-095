@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Smart Society | Register</title>
+    <link rel="icon" type="image/svg+xml" href="../images/favicon.svg">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+<body class="bg-slate-50 text-slate-900 antialiased">
+    <div id="app" class="min-h-screen w-full flex flex-col md:flex-row m-0 p-0 overflow-x-hidden">
+        <div class="w-full md:w-1/2 p-6 sm:p-10 md:p-14 flex flex-col justify-center bg-white order-2 md:order-1 md:min-h-screen overflow-y-auto">
+            <div class="w-full max-w-lg mx-auto space-y-6 py-4 sm:py-6">
+                <div>
+                    <h2 class="font-extrabold text-3xl text-slate-900 tracking-tight mb-2">Request Access</h2>
+                    <p class="text-sm text-slate-500 font-medium">Register as a new resident.</p>
+                </div>
+
+                <div v-if="errorMessage" role="alert" aria-live="polite" class="auth-alert auth-alert-error">
+                    <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
+                    <span>{{ errorMessage }}</span>
+                </div>
+
+                <div v-if="successMessage" role="status" aria-live="polite" class="auth-alert auth-alert-success">
+                    <i class="fas fa-check-circle" aria-hidden="true"></i>
+                    <span>{{ successMessage }}</span>
+                </div>
+
+                <form @submit.prevent="handleRegister" class="space-y-5" novalidate>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <div>
+                            <label for="firstName" class="block text-xs font-bold text-slate-700 uppercase mb-2">First Name</label>
+                            <input id="firstName" v-model="firstName" @input="clearFeedback" type="text" autocomplete="given-name" class="form-input w-full border border-slate-300 p-3 rounded-lg text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100" required />
+                        </div>
+                        <div>
+                            <label for="lastName" class="block text-xs font-bold text-slate-700 uppercase mb-2">Last Name</label>
+                            <input id="lastName" v-model="lastName" @input="clearFeedback" type="text" autocomplete="family-name" class="form-input w-full border border-slate-300 p-3 rounded-lg text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100" required />
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <div>
+                            <label for="email" class="block text-xs font-bold text-slate-700 uppercase mb-2">Email Address</label>
+                            <input id="email" v-model="email" @input="clearFeedback" type="email" inputmode="email" autocomplete="email" autocapitalize="none" spellcheck="false" class="form-input w-full border border-slate-300 p-3 rounded-lg text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100" required />
+                        </div>
+                        <div>
+                            <label for="mobileNumber" class="block text-xs font-bold text-slate-700 uppercase mb-2">Mobile Number</label>
+                            <input id="mobileNumber" v-model="mobileNumber" @input="sanitizeMobile" type="tel" inputmode="numeric" autocomplete="tel" maxlength="10" pattern="[6-9][0-9]{9}" placeholder="9876543210" class="form-input w-full border border-slate-300 p-3 rounded-lg text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100" required />
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <div>
+                            <label for="flatNumber" class="block text-xs font-bold text-slate-700 uppercase mb-2">Flat Number</label>
+                            <input id="flatNumber" v-model="flatNumber" @input="clearFeedback" type="text" autocomplete="off" placeholder="B-101" class="form-input w-full border border-slate-300 p-3 rounded-lg text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100" required />
+                        </div>
+                        <div>
+                            <label for="building" class="block text-xs font-bold text-slate-700 uppercase mb-2">Building</label>
+                            <input id="building" v-model="building" @input="clearFeedback" type="text" autocomplete="off" minlength="2" maxlength="100" placeholder="Block B" class="form-input w-full border border-slate-300 p-3 rounded-lg text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100" required />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="registerPassword" class="block text-xs font-bold text-slate-700 uppercase mb-2">Password</label>
+                        <div class="relative rounded-lg shadow-sm">
+                            <input id="registerPassword" v-model="password" @input="clearFeedback" :type="showPassword ? 'text' : 'password'" autocomplete="new-password" placeholder="********" class="form-input password-input w-full border border-slate-300 p-3 pr-12 rounded-lg text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100" required />
+                            <button type="button" @click="showPassword = !showPassword" :aria-label="showPassword ? 'Hide password' : 'Show password'" :aria-pressed="showPassword" class="absolute inset-y-0 right-0 w-11 flex items-center justify-center text-slate-400 hover:text-slate-600 focus:outline-none focus:text-indigo-600 transition rounded-r-lg">
+                                <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                        <p class="mt-2 text-xs text-slate-500">Use at least 8 characters with at least one uppercase letter.</p>
+                    </div>
+
+                    <button type="submit" :disabled="isLoading || Boolean(successMessage)" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg transition shadow-sm mt-4 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2">
+                        <i v-if="isLoading" class="fas fa-circle-notch fa-spin" aria-hidden="true"></i>
+                        <span>{{ isLoading ? 'Submitting Application...' : 'Submit Application' }}</span>
+                    </button>
+                </form>
+
+                <div class="text-center text-sm font-medium border-t border-slate-100 pt-6">
+                    <a href="../index.html" class="text-slate-500 hover:text-slate-900 transition"><i class="fas fa-arrow-left mr-1.5 text-xs" aria-hidden="true"></i>Back to Login</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="w-full md:w-1/2 bg-slate-900 text-white p-8 sm:p-12 md:p-16 relative overflow-hidden flex flex-col justify-center items-center text-center select-none order-1 md:order-2 min-h-[240px] md:min-h-screen">
+            <div class="absolute -right-20 -bottom-20 opacity-[0.03] pointer-events-none"><i class="fas fa-city text-[320px]"></i></div>
+            <div class="relative z-10 max-w-sm">
+                <div class="mb-6 flex justify-center"><img src="../images/logo.svg" alt="Smart Society Logo" class="w-16 h-16 rounded-xl shadow-md bg-white/10 p-1" /></div>
+                <h3 class="font-extrabold text-3xl mb-4 leading-snug tracking-tight">Join the Community</h3>
+                <p class="text-slate-400 text-sm leading-relaxed">Submit your details and our admin team will verify your residency and grant access.</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/utils.js"></script>
+    <script>
+        const { createApp, ref } = Vue;
+
+        createApp({
+            setup() {
+                const firstName = ref('');
+                const lastName = ref('');
+                const email = ref('');
+                const mobileNumber = ref('');
+                const flatNumber = ref('');
+                const building = ref('');
+                const password = ref('');
+                const isLoading = ref(false);
+                const errorMessage = ref('');
+                const successMessage = ref('');
+                const showPassword = ref(false);
+
+                const clearFeedback = () => {
+                    errorMessage.value = '';
+                };
+
+                const sanitizeMobile = () => {
+                    mobileNumber.value = mobileNumber.value.replace(/\D/g, '').slice(0, 10);
+                    clearFeedback();
+                };
+
+                const validateInputs = () => {
+                    if (!firstName.value.trim() || !lastName.value.trim()) {
+                        return 'Please enter your first and last name.';
+                    }
+
+                    const normalizedEmail = email.value.trim().toLowerCase();
+                    if (!normalizedEmail) {
+                        return 'Please enter your email address.';
+                    }
+
+                    const mobileRegex = /^[6-9]\d{9}$/;
+                    if (!mobileRegex.test(mobileNumber.value.trim())) {
+                        return 'Enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9.';
+                    }
+
+                    if (!flatNumber.value.trim()) {
+                        return 'Please enter your flat number.';
+                    }
+
+                    const normalizedBuilding = building.value.trim();
+                    if (!normalizedBuilding) {
+                        return 'Please enter your building.';
+                    }
+                    if (normalizedBuilding.length < 2 || normalizedBuilding.length > 100) {
+                        return 'Building must be between 2 and 100 characters.';
+                    }
+
+                    if (password.value.length < 8) {
+                        return 'Password must be at least 8 characters long.';
+                    }
+
+                    if (!/[A-Z]/.test(password.value)) {
+                        return 'Password must contain at least one uppercase letter.';
+                    }
+
+                    return null;
+                };
+
+                const handleRegister = async () => {
+                    if (isLoading.value) return;
+
+                    errorMessage.value = '';
+                    successMessage.value = '';
+
+                    const validationError = validateInputs();
+                    if (validationError) {
+                        errorMessage.value = validationError;
+                        return;
+                    }
+
+                    isLoading.value = true;
+                    const payload = {
+                        name: `${firstName.value.trim()} ${lastName.value.trim()}`.replace(/\s+/g, ' '),
+                        email: email.value.trim().toLowerCase(),
+                        mobile_number: mobileNumber.value.trim(),
+                        flat_number: flatNumber.value.trim(),
+                        building: building.value.trim(),
+                        // Do not trim passwords; spaces may intentionally be part of a password.
+                        password: password.value
+                    };
+
+                    try {
+                        await apiCall('/auth/register', {
+                            method: 'POST',
+                            body: payload,
+                            suppressErrorToast: true
+                        });
+
+                        successMessage.value = 'Registration submitted successfully. An admin must approve your account before you can sign in.';
+                        setTimeout(() => { window.location.href = '../index.html'; }, 2200);
+                    } catch (err) {
+                        if (err.status === 409) {
+                            errorMessage.value = 'An account with this email address or mobile number already exists.';
+                        } else if (err.status === 422 || err.status === 400) {
+                            errorMessage.value = err.message || 'Please review the information you entered and try again.';
+                        } else {
+                            errorMessage.value = err.message || 'We could not submit your registration. Please try again.';
+                        }
+                    } finally {
+                        isLoading.value = false;
+                    }
+                };
+
+                return {
+                    firstName,
+                    lastName,
+                    email,
+                    mobileNumber,
+                    flatNumber,
+                    building,
+                    password,
+                    isLoading,
+                    errorMessage,
+                    successMessage,
+                    showPassword,
+                    clearFeedback,
+                    sanitizeMobile,
+                    handleRegister
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

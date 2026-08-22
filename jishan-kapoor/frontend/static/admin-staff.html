@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Smart Society | Staff Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link rel="icon" type="image/svg+xml" href="../images/favicon.svg">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+<body class="min-h-screen flex flex-col bg-slate-50 text-slate-800 font-sans">
+    <div id="app" class="min-h-screen flex flex-col">
+        <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex justify-between items-center">
+                <div class="flex items-center cursor-pointer" @click="goHome()">
+                    <div class="mr-3"><img src="../images/logo.svg" alt="Smart Society Logo" class="w-8 h-8 rounded-md shadow-sm" /></div>
+                    <div><h1 class="font-extrabold text-lg text-slate-900 tracking-tight leading-none">Smart Society</h1><p class="text-[9px] text-indigo-600 font-bold uppercase tracking-widest mt-0.5">Complaint Resolution</p></div>
+                </div>
+                <div class="flex items-center space-x-4 relative">
+                    <div class="h-6 w-px bg-slate-200 hidden sm:block"></div>
+                    <div class="flex items-center gap-3 cursor-default">
+                        <div class="text-right hidden sm:block">
+                            <p class="text-sm font-bold text-slate-900 leading-tight">{{ user?.name }}</p>
+                            <p class="text-[0.65rem] text-slate-500 font-bold uppercase tracking-wider mt-0.5">{{ user?.role }}</p>
+                        </div>
+                        <div class="w-8 h-8 rounded-md bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm border border-indigo-200">{{ user?.name ? user.name.charAt(0) : 'U' }}</div>
+                    </div>
+                    <button @click="logout()" class="text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition p-1.5 rounded-md ml-1" title="Sign Out"><i class="fas fa-sign-out-alt text-lg"></i></button>
+                </div>
+            </div>
+            <nav class="bg-slate-50 border-t border-slate-200">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-6 overflow-x-auto">
+                    <a href="dashboard-admin.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition"><i class="fas fa-chart-pie mr-1.5 text-base"></i> Portal</a>
+                    <a href="admin-staff.html" class="nav-link border-indigo-600 text-indigo-700 py-2 px-3 text-xs font-bold border-b-2 flex items-center transition"><i class="fas fa-users mr-1.5 text-base"></i> Staff</a>
+                    <a href="admin-approvals.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition"><i class="fas fa-user-check mr-1.5 text-base"></i> Approvals</a>
+                    <a href="admin-reports.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition"><i class="fas fa-search mr-1.5 text-base"></i> Records</a>
+                    <a href="messages.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition"><i class="fas fa-bell mr-1.5 text-base"></i> Notifications</a>
+                </div>
+            </nav>
+        </header>
+
+        <main class="flex-grow px-4 sm:px-6 lg:px-8 py-8 lg:py-10 max-w-7xl mx-auto w-full space-y-8">
+            <section class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
+                <div class="max-w-2xl">
+                    <div class="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-indigo-600 mb-2">
+                        <span class="w-7 h-px bg-indigo-300"></span>
+                        Administration
+                    </div>
+                    <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight">Staff Management</h2>
+                    <p class="text-sm md:text-base text-slate-500 mt-2 font-medium leading-relaxed">Create staff accounts, review resident-rated performance, manage workload visibility, and maintain complaint categories from one workspace.</p>
+                </div>
+            </section>
+
+            <section class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                <div class="px-6 md:px-8 py-5 border-b border-slate-200 bg-slate-50/70 flex items-start gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0"><i class="fas fa-user-plus"></i></div>
+                    <div>
+                        <h3 class="text-base font-extrabold text-slate-900">Add Staff Member</h3>
+                        <p class="text-xs text-slate-500 mt-1">Provision a new maintenance account. The technician becomes available for ticket assignment immediately after creation.</p>
+                    </div>
+                </div>
+                <form @submit.prevent="handleAddStaff" class="p-6 md:p-8">
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-2">Full Name</label>
+                            <input v-model="newStaff.name" type="text" placeholder="e.g. Sarah Connor" class="w-full h-11 border border-slate-300 px-3.5 rounded-lg text-sm bg-white focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none transition" required>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-2">Trade / Role</label>
+                            <select v-model="newStaff.trade" class="w-full h-11 border border-slate-300 px-3.5 rounded-lg text-sm bg-white focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none transition" required>
+                                <option disabled value="">Select Trade...</option>
+                                <option v-for="cat in categories.filter(c => c.is_active)" :key="cat.id" :value="cat.name">{{ cat.name }}</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-2">Email / Username</label>
+                            <input v-model="newStaff.email" type="email" placeholder="staff@smartsociety.com" class="w-full h-11 border border-slate-300 px-3.5 rounded-lg text-sm bg-white focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none transition" required>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-2">Mobile <span class="font-medium text-slate-400">(optional)</span></label>
+                            <input v-model="newStaff.mobileNumber" type="tel" inputmode="numeric" maxlength="10" placeholder="10 digits" class="w-full h-11 border border-slate-300 px-3.5 rounded-lg text-sm bg-white focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none transition">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-2">Temporary Password</label>
+                            <input v-model="newStaff.password" type="password" placeholder="Minimum 8 characters" class="w-full h-11 border border-slate-300 px-3.5 rounded-lg text-sm bg-white focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none transition" required minlength="8">
+                        </div>
+                        <div class="flex items-end">
+                            <button type="submit" :disabled="isLoading" class="w-full h-11 bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 rounded-lg text-sm shadow-sm transition disabled:opacity-50 flex items-center justify-center gap-2">
+                                <i class="fas fa-plus"></i>
+                                {{ isLoading ? 'Creating...' : 'Create Staff Account' }}
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </section>
+
+            <section class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                <div class="px-6 md:px-8 py-6 border-b border-slate-200">
+                    <div class="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-5">
+                        <div class="max-w-xl">
+                            <div class="flex items-center gap-2 mb-1.5">
+                                <div class="w-9 h-9 rounded-lg bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-500"><i class="fas fa-ranking-star"></i></div>
+                                <h3 class="text-base font-extrabold text-slate-900">Staff Performance</h3>
+                            </div>
+                            <p class="text-xs text-slate-500 leading-relaxed">Resident ratings lead the ranking, followed by review count. New staff stay fully assignable and appear as Unrated until feedback is received.</p>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full xl:w-auto xl:min-w-[650px]">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Trade</label>
+                                <select v-model="tradeFilter" class="w-full h-10 bg-slate-50 border border-slate-300 text-slate-700 text-xs font-bold rounded-lg px-3 focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none">
+                                    <option value="">All Trades</option>
+                                    <option v-for="cat in categories.filter(c => c.is_active)" :key="cat.id" :value="cat.name">{{ cat.name }}</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Sort By</label>
+                                <select v-model="performanceSort" class="w-full h-10 bg-slate-50 border border-slate-300 text-slate-700 text-xs font-bold rounded-lg px-3 focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none">
+                                    <option value="rating">Best Rated</option>
+                                    <option value="reviews">Most Reviews</option>
+                                    <option value="completed">Most Completed</option>
+                                    <option value="workload">Lowest Active Load</option>
+                                    <option value="name">Name A-Z</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Search</label>
+                                <div class="relative">
+                                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                                    <input v-model="searchQuery" type="text" placeholder="Name, email, trade..." class="w-full h-10 bg-slate-50 border border-slate-300 text-slate-700 text-xs rounded-lg pl-8 pr-3 focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse min-w-[1050px]">
+                        <thead class="bg-slate-50 border-b border-slate-200">
+                            <tr>
+                                <th class="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Rank</th>
+                                <th class="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Personnel</th>
+                                <th class="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Trade</th>
+                                <th class="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Resident Rating</th>
+                                <th class="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Reviews</th>
+                                <th class="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Completed</th>
+                                <th class="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Active Jobs</th>
+                                <th class="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 bg-white">
+                            <tr v-if="paginatedStaff.length === 0">
+                                <td colspan="8" class="px-6 py-14 text-center text-slate-500 text-sm"><i class="fas fa-users text-3xl text-slate-300 block mb-3"></i>No maintenance staff found.</td>
+                            </tr>
+                            <tr v-for="s in paginatedStaff" :key="s.id" class="hover:bg-slate-50/80 transition">
+                                <td class="px-6 py-5 whitespace-nowrap">
+                                    <span v-if="s.performance_rank" class="inline-flex items-center justify-center min-w-9 h-9 px-2 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100 text-xs font-black">#{{ s.performance_rank }}</span>
+                                    <span v-else class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Unrated</span>
+                                </td>
+                                <td class="px-6 py-5">
+                                    <p class="text-sm font-bold text-slate-900">{{ s.name }}</p>
+                                    <p class="text-xs text-slate-500 mt-1">{{ s.email || '--' }}</p>
+                                </td>
+                                <td class="px-6 py-5 text-sm font-medium text-slate-600"><span class="bg-slate-100 px-2.5 py-1.5 rounded-md text-xs border border-slate-200">{{ s.trade || 'General' }}</span></td>
+                                <td class="px-6 py-5 whitespace-nowrap">
+                                    <div v-if="s.average_rating !== null && s.average_rating !== undefined" class="flex items-center gap-2">
+                                        <span class="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center text-amber-500"><i class="fas fa-star text-xs"></i></span>
+                                        <div><span class="text-sm font-black text-slate-900">{{ Number(s.average_rating).toFixed(2) }}</span><span class="text-[10px] text-slate-400"> / 5</span></div>
+                                    </div>
+                                    <span v-else class="text-xs font-semibold text-slate-400">No rating yet</span>
+                                </td>
+                                <td class="px-6 py-5 text-sm font-bold text-slate-700">{{ s.review_count || 0 }}<span v-if="s.five_star_reviews" class="block text-[10px] text-amber-600 font-semibold mt-0.5">{{ s.five_star_reviews }} five-star</span></td>
+                                <td class="px-6 py-5 text-sm font-bold text-emerald-700">{{ s.completed_complaints_count || 0 }}</td>
+                                <td class="px-6 py-5 text-sm font-bold" :class="(s.assigned_complaints_count || 0) > 0 ? 'text-indigo-700' : 'text-slate-400'">{{ s.assigned_complaints_count || 0 }}</td>
+                                <td class="px-6 py-5 text-right">
+                                    <button @click="removeStaff(s.id)" class="text-rose-600 hover:text-rose-800 text-xs font-bold bg-rose-50 hover:bg-rose-100 px-3.5 py-2 rounded-lg border border-rose-100 transition">Deactivate</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div v-if="totalPages > 1" class="px-6 md:px-8 py-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center">
+                    <span class="text-xs font-medium text-slate-500">Page <span class="font-bold text-slate-800">{{ currentPage }}</span> of {{ totalPages }} <span class="hidden sm:inline">({{ filteredStaff.length }} total records)</span></span>
+                    <div class="flex gap-2">
+                        <button @click="changePage(currentPage - 1)" :disabled="currentPage === 1" class="px-4 py-2 text-xs font-bold text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 transition shadow-sm">Previous</button>
+                        <button @click="changePage(currentPage + 1)" :disabled="currentPage === totalPages" class="px-4 py-2 text-xs font-bold text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 transition shadow-sm">Next</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                <div class="px-6 md:px-8 py-5 border-b border-slate-200 bg-slate-50/70">
+                    <div class="flex items-start gap-3 mb-5">
+                        <div class="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-600 shrink-0"><i class="fas fa-layer-group"></i></div>
+                        <div>
+                            <h3 class="text-base font-extrabold text-slate-900">Complaint Categories</h3>
+                            <p class="text-xs text-slate-500 mt-1">Manage the service categories residents can choose when filing a request.</p>
+                        </div>
+                    </div>
+                    <form @submit.prevent="handleAddCategory" class="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_auto] gap-4 items-end">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-2">Category Name</label>
+                            <input v-model="newCategory.name" type="text" placeholder="e.g. Plumbing" class="w-full h-11 border border-slate-300 px-3.5 rounded-lg text-sm bg-white focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none" required>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-2">Description <span class="font-medium text-slate-400">(optional)</span></label>
+                            <input v-model="newCategory.description" type="text" placeholder="Water and pipe related issues" class="w-full h-11 border border-slate-300 px-3.5 rounded-lg text-sm bg-white focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none">
+                        </div>
+                        <button type="submit" :disabled="isCategoryLoading" class="h-11 bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 rounded-lg text-sm shadow-sm transition disabled:opacity-50 whitespace-nowrap">
+                            {{ isCategoryLoading ? 'Adding...' : 'Add Category' }}
+                        </button>
+                    </form>
+                </div>
+                <div class="divide-y divide-slate-100">
+                    <div v-if="categories.length === 0" class="px-6 md:px-8 py-8 text-sm text-slate-500">No categories yet - add one above.</div>
+                    <div v-for="cat in categories" :key="cat.id" class="px-6 md:px-8 py-4 flex items-center justify-between gap-5 hover:bg-slate-50/60 transition">
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-2.5">
+                                <span class="text-sm font-bold text-slate-900">{{ cat.name }}</span>
+                                <span :class="['text-[10px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full', cat.is_active ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-500 border border-slate-200']">{{ cat.is_active ? 'Active' : 'Inactive' }}</span>
+                            </div>
+                            <p v-if="cat.description" class="text-xs text-slate-500 mt-1.5">{{ cat.description }}</p>
+                        </div>
+                        <button @click="toggleCategoryStatus(cat)" :class="['text-xs font-bold px-3.5 py-2 rounded-lg border transition whitespace-nowrap', cat.is_active ? 'text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 border-rose-100' : 'text-emerald-600 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border-emerald-100']">{{ cat.is_active ? 'Deactivate' : 'Activate' }}</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div id="toast" class="fixed bottom-6 right-6 z-50 hidden items-center px-4 py-3 rounded-md shadow-lg border bg-slate-900 border-slate-800 text-white">
+        <i class="fas fa-check-circle text-emerald-400 mr-3 text-lg"></i>
+        <span id="toastMsg" class="font-medium text-sm">Success</span>
+    </div>
+
+    <script src="../js/utils.js"></script>
+    <script>
+        const { createApp, ref, onMounted, computed, watch } = Vue;
+
+        createApp({
+            setup() {
+                const user = ref(null);
+                const staffList = ref([]);
+                const isLoading = ref(false);
+                const newStaff = ref({ name: '', trade: '', email: '', password: '', mobileNumber: '' });
+
+                const categories = ref([]);
+                const newCategory = ref({ name: '', description: '' });
+                const isCategoryLoading = ref(false);
+                
+                const searchQuery = ref('');
+                const tradeFilter = ref('');
+                const performanceSort = ref('rating');
+                const currentPage = ref(1);
+                const itemsPerPage = 8;
+
+                const fetchStaffList = async () => {
+                    try {
+                        // Cache-bust the directory request so a staff member created moments
+                        // ago is immediately available on the assignment screen too.
+                        const response = await apiCall(`/admin/staff?_=${Date.now()}`);
+                        staffList.value = response.staff || [];
+                    } catch (err) {
+                        staffList.value = [];
+                    }
+                };
+
+                const fetchCategories = async () => {
+                    try {
+                        // Admin view needs inactive categories too (to re-activate them),
+                        // unlike the public /categories endpoint which only returns active ones.
+                        const response = await apiCall('/admin/categories');
+                        categories.value = response.categories || [];
+                    } catch (err) {
+                        categories.value = [];
+                    }
+                };
+
+                const toggleCategoryStatus = async (cat) => {
+                    try {
+                        await apiCall(`/admin/categories/${cat.id}/status`, {
+                            method: 'PUT',
+                            body: { is_active: !cat.is_active }
+                        });
+                        showToast(`Category ${cat.is_active ? 'deactivated' : 'activated'}.`, 'success');
+                        fetchCategories();
+                    } catch (err) {}
+                };
+
+                onMounted(() => {
+                    user.value = requireAuth('Admin');
+                    if (user.value) refreshUserProfile(user, 'Admin');
+                    if (user.value) {
+                        fetchStaffList();
+                        fetchCategories();
+                    }
+                });
+
+                const filteredStaff = computed(() => {
+                    let result = [...staffList.value];
+
+                    if (tradeFilter.value) {
+                        result = result.filter(s => String(s.trade || '').toLowerCase() === tradeFilter.value.toLowerCase());
+                    }
+
+                    if (searchQuery.value.trim()) {
+                        const q = searchQuery.value.toLowerCase();
+                        result = result.filter(s => 
+                            String(s.name || '').toLowerCase().includes(q) ||
+                            String(s.email || '').toLowerCase().includes(q) ||
+                            String(s.trade || '').toLowerCase().includes(q)
+                        );
+                    }
+
+                    const ratingValue = (s) => s.average_rating === null || s.average_rating === undefined ? -1 : Number(s.average_rating);
+                    result.sort((a, b) => {
+                        if (performanceSort.value === 'reviews') {
+                            return (b.review_count || 0) - (a.review_count || 0) || ratingValue(b) - ratingValue(a) || String(a.name || '').localeCompare(String(b.name || ''));
+                        }
+                        if (performanceSort.value === 'completed') {
+                            return (b.completed_complaints_count || 0) - (a.completed_complaints_count || 0) || ratingValue(b) - ratingValue(a) || String(a.name || '').localeCompare(String(b.name || ''));
+                        }
+                        if (performanceSort.value === 'workload') {
+                            return (a.assigned_complaints_count || 0) - (b.assigned_complaints_count || 0) || ratingValue(b) - ratingValue(a) || String(a.name || '').localeCompare(String(b.name || ''));
+                        }
+                        if (performanceSort.value === 'name') {
+                            return String(a.name || '').localeCompare(String(b.name || ''));
+                        }
+                        return ratingValue(b) - ratingValue(a) || (b.review_count || 0) - (a.review_count || 0) || (b.completed_complaints_count || 0) - (a.completed_complaints_count || 0) || String(a.name || '').localeCompare(String(b.name || ''));
+                    });
+
+                    return result;
+                });
+
+                const totalPages = computed(() => Math.ceil(filteredStaff.value.length / itemsPerPage) || 1);
+
+                const paginatedStaff = computed(() => {
+                    const start = (currentPage.value - 1) * itemsPerPage;
+                    return filteredStaff.value.slice(start, start + itemsPerPage);
+                });
+
+                const changePage = (page) => {
+                    if (page >= 1 && page <= totalPages.value) currentPage.value = page;
+                };
+
+                watch([tradeFilter, searchQuery, performanceSort], () => {
+                    currentPage.value = 1;
+                });
+
+                const handleAddStaff = async () => {
+                    isLoading.value = true;
+                    const payload = {
+                        name: newStaff.value.name.trim(),
+                        email: newStaff.value.email.trim(),
+                        flat_number: 'N/A',
+                        building: 'Staff',
+                        password: newStaff.value.password.trim(),
+                        mobile_number: newStaff.value.mobileNumber.trim() || undefined,
+                        trade: newStaff.value.trade,
+                    };
+
+                    try {
+                        await apiCall('/admin/staff', { method: 'POST', body: payload });
+                        newStaff.value = { name: '', trade: '', email: '', password: '', mobileNumber: '' };
+                        await fetchStaffList();
+                        showToast('Staff account provisioned and ready for assignment.', 'success');
+                    } catch (err) {
+                    } finally {
+                        isLoading.value = false;
+                    }
+                };
+
+                const removeStaff = async (id) => {
+                    if (!confirm('Deactivate this staff member? Their access will be revoked and active complaints will return to the admin queue for reassignment.')) return;
+                    try {
+                        await apiCall(`/admin/staff/${id}`, { method: 'DELETE' });
+                        showToast('Staff member deactivated. Active work was returned for reassignment if needed.', 'success');
+                        fetchStaffList();
+                    } catch (err) {}
+                };
+
+                const handleAddCategory = async () => {
+                    isCategoryLoading.value = true;
+                    const payload = {
+                        name: newCategory.value.name.trim(),
+                        description: newCategory.value.description.trim() || undefined,
+                    };
+                    try {
+                        await apiCall('/admin/categories', { method: 'POST', body: payload });
+                        showToast('Category added.', 'success');
+                        newCategory.value = { name: '', description: '' };
+                        fetchCategories();
+                    } catch (err) {
+                    } finally {
+                        isCategoryLoading.value = false;
+                    }
+                };
+
+                return { user, staffList, isLoading, newStaff, searchQuery, tradeFilter, performanceSort, currentPage, totalPages, filteredStaff, paginatedStaff, changePage, handleAddStaff, removeStaff, categories, newCategory, isCategoryLoading, handleAddCategory, toggleCategoryStatus, logout, goHome };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

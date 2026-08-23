@@ -123,6 +123,7 @@ def test_admin_password_rotates_from_environment(app, client):
 
 def test_password_recovery_email_edge_cases(app, client):
     from app import _sync_admin_credentials
+    from app.extensions import db
 
     invalid = client.post("/auth/forgot-password", json={"email": "not-an-email"})
     assert invalid.status_code == 400
@@ -150,10 +151,18 @@ def test_password_recovery_email_edge_cases(app, client):
         json={
             "email": "admin@example.com",
             "otp": "12345",
-            "password": "weak",
         },
     )
     assert malformed_verification.status_code == 400
+    malformed_reset = client.post(
+        "/auth/reset-password",
+        json={
+            "email": "admin@example.com",
+            "reset_token": "short",
+            "password": "weak",
+        },
+    )
+    assert malformed_reset.status_code == 400
 
     delivered = {}
 
@@ -186,7 +195,6 @@ def test_password_recovery_email_edge_cases(app, client):
         json={
             "email": "admin@example.com",
             "otp": "000000",
-            "password": "RecoveredAdmin123!",
         },
     )
     assert wrong_code.status_code == 400
@@ -197,22 +205,49 @@ def test_password_recovery_email_edge_cases(app, client):
         json={
             "email": "admin@example.com",
             "otp": otp,
-            "password": "RecoveredAdmin123!",
         },
     )
     assert verified.status_code == 200
+    reset_token = verified.json["reset_token"]
+    assert len(reset_token) >= 32
+    _login(client, "admin@example.com", "TestAdmin123!")
+
+    wrong_token = client.post(
+        "/auth/reset-password",
+        json={
+            "email": "admin@example.com",
+            "reset_token": "x" * len(reset_token),
+            "password": "RecoveredAdmin123!",
+        },
+    )
+    assert wrong_token.status_code == 400
+    _login(client, "admin@example.com", "TestAdmin123!")
+
+    reset_password = client.post(
+        "/auth/reset-password",
+        json={
+            "email": "admin@example.com",
+            "reset_token": reset_token,
+            "password": "RecoveredAdmin123!",
+        },
+    )
+    assert reset_password.status_code == 200
     assert client.post(
         "/auth/login",
         json={"email": "admin@example.com", "password": "TestAdmin123!"},
     ).status_code == 401
     _login(client, "admin@example.com", "RecoveredAdmin123!")
     assert client.post(
-        "/auth/verify-reset-otp",
+        "/auth/reset-password",
         json={
             "email": "admin@example.com",
-            "otp": otp,
+            "reset_token": reset_token,
             "password": "AnotherAdmin123!",
         },
+    ).status_code == 400
+    assert client.post(
+        "/auth/verify-reset-otp",
+        json={"email": "admin@example.com", "otp": otp},
     ).status_code == 400
 
     with app.app_context():
@@ -234,15 +269,12 @@ def test_password_recovery_email_edge_cases(app, client):
             datetime.now(timezone.utc).replace(tzinfo=None)
             - timedelta(seconds=1)
         )
-        from app.extensions import db
-
         db.session.commit()
     assert client.post(
         "/auth/verify-reset-otp",
         json={
             "email": "admin@example.com",
             "otp": expired_otp,
-            "password": "ExpiredAdmin123!",
         },
     ).status_code == 400
     _login(client, "admin@example.com", "TestAdmin123!")
@@ -263,7 +295,6 @@ def test_password_recovery_email_edge_cases(app, client):
             json={
                 "email": "admin@example.com",
                 "otp": "000000",
-                "password": "LockedAdmin123!",
             },
         ).status_code == 400
     assert client.post(
@@ -271,11 +302,42 @@ def test_password_recovery_email_edge_cases(app, client):
         json={
             "email": "admin@example.com",
             "otp": locked_otp,
-            "password": "LockedAdmin123!",
         },
     ).status_code == 400
     with app.app_context():
         assert PasswordResetOtp.query.count() == 0
+    _login(client, "admin@example.com", "TestAdmin123!")
+
+    delivered.clear()
+    with patch("app.services.auth_service.send_email", side_effect=capture_email):
+        assert client.post(
+            "/auth/forgot-password",
+            json={"email": "admin@example.com"},
+        ).status_code == 200
+    token_otp = re.search(
+        r"verification code is: (\d{6})",
+        delivered["text_body"],
+    ).group(1)
+    token_response = client.post(
+        "/auth/verify-reset-otp",
+        json={"email": "admin@example.com", "otp": token_otp},
+    )
+    assert token_response.status_code == 200
+    with app.app_context():
+        reset = PasswordResetOtp.query.one()
+        reset.expires_at = (
+            datetime.now(timezone.utc).replace(tzinfo=None)
+            - timedelta(seconds=1)
+        )
+        db.session.commit()
+    assert client.post(
+        "/auth/reset-password",
+        json={
+            "email": "admin@example.com",
+            "reset_token": token_response.json["reset_token"],
+            "password": "ExpiredAdmin123!",
+        },
+    ).status_code == 400
     _login(client, "admin@example.com", "TestAdmin123!")
 
 
@@ -373,6 +435,7 @@ def test_public_app_surfaces(client):
     assert recovery_page.status_code == 200
     assert b"Send Verification Code" in recovery_page.data
     assert b"/auth/verify-reset-otp" in recovery_page.data
+    assert b"/auth/reset-password" in recovery_page.data
     assert b"Facility Operations Console" in client.get("/static/dashboard-admin.html").data
     assert b"Resident Portal" in client.get("/static/dashboard-resident.html").data
     assert b"Technician Workspace" in client.get("/static/dashboard-staff.html").data
@@ -380,6 +443,7 @@ def test_public_app_surfaces(client):
     swagger = client.get("/swagger.json")
     assert swagger.status_code == 200
     assert "/auth/verify-reset-otp" in swagger.json["paths"]
+    assert "/auth/reset-password" in swagger.json["paths"]
 
 
 def test_complete_complaint_workflow(client):

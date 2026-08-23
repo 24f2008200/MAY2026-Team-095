@@ -163,6 +163,22 @@ class VerifyResetOtpSchema(Schema):
             error="Verification code must contain exactly six digits.",
         ),
     )
+    @validates_schema
+    def normalize(self, data, **kwargs):
+        data["email"] = data["email"].strip().lower()
+        data["otp"] = data["otp"].strip()
+
+
+class ResetPasswordSchema(Schema):
+    email = fields.Email(
+        required=True,
+        validate=validate.Length(max=120),
+    )
+    reset_token = fields.String(
+        required=True,
+        load_only=True,
+        validate=validate.Length(min=32, max=256),
+    )
     password = fields.String(
         required=True,
         load_only=True,
@@ -180,4 +196,3 @@ class VerifyResetOtpSchema(Schema):
     @validates_schema
     def normalize(self, data, **kwargs):
         data["email"] = data["email"].strip().lower()
-        data["otp"] = data["otp"].strip()

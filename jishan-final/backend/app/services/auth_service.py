@@ -23,6 +23,7 @@ from app.schemas.auth_schema import (
     ForgotPasswordSchema,
     RegisterSchema,
     LoginSchema,
+    ResetPasswordSchema,
     VerifyResetOtpSchema,
 )
 
@@ -31,6 +32,7 @@ register_schema = RegisterSchema()
 login_schema = LoginSchema()
 forgot_password_schema = ForgotPasswordSchema()
 verify_reset_otp_schema = VerifyResetOtpSchema()
+reset_password_schema = ResetPasswordSchema()
 
 OTP_TTL_MINUTES = 10
 OTP_MAX_ATTEMPTS = 5
@@ -348,7 +350,7 @@ def forgot_password():
 
 
 def verify_password_reset_otp():
-    """Validate a recovery code and replace the password exactly once."""
+    """Validate a recovery code and issue a short-lived reset token."""
     json_data = request.get_json(silent=True)
 
     if not json_data:
@@ -392,6 +394,71 @@ def verify_password_reset_otp():
         return failure
 
     if not check_password_hash(reset.code_hash, data["otp"]):
+        reset.attempts += 1
+        if reset.attempts >= OTP_MAX_ATTEMPTS:
+            db.session.delete(reset)
+        db.session.commit()
+        return failure
+
+    reset_token = secrets.token_urlsafe(32)
+    reset.code_hash = generate_password_hash(reset_token)
+    reset.expires_at = _utcnow_naive() + timedelta(minutes=OTP_TTL_MINUTES)
+    reset.attempts = 0
+    db.session.commit()
+
+    current_app.logger.info("Password reset code verified for user_id=%s", user.id)
+    return {
+        "success": True,
+        "message": "Code verified. Choose a new password.",
+        "reset_token": reset_token,
+    }, 200
+
+
+def reset_password_with_token():
+    """Replace the password after successful OTP verification."""
+    json_data = request.get_json(silent=True)
+
+    if not json_data:
+        return {
+            "success": False,
+            "message": "Request body is required.",
+        }, 400
+
+    try:
+        data = reset_password_schema.load(json_data)
+    except ValidationError as err:
+        return {
+            "success": False,
+            "errors": err.messages,
+        }, 400
+
+    failure = {
+        "success": False,
+        "message": (
+            "This password-reset session is invalid or expired. Request a "
+            "new verification code and try again."
+        ),
+    }, 400
+
+    user = User.query.filter_by(email=data["email"]).first()
+    if not user:
+        return failure
+
+    reset = PasswordResetOtp.query.filter_by(user_id=user.id).first()
+    if not reset:
+        return failure
+
+    if reset.expires_at <= _utcnow_naive():
+        db.session.delete(reset)
+        db.session.commit()
+        return failure
+
+    if reset.attempts >= OTP_MAX_ATTEMPTS:
+        db.session.delete(reset)
+        db.session.commit()
+        return failure
+
+    if not check_password_hash(reset.code_hash, data["reset_token"]):
         reset.attempts += 1
         if reset.attempts >= OTP_MAX_ATTEMPTS:
             db.session.delete(reset)

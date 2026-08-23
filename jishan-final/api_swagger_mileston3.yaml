@@ -320,14 +320,15 @@ paths:
           schema:
             $ref: '#/definitions/ErrorResponse'
         '200':
-          description: Password reset successful
+          description: Verification code accepted
         '500':
           description: Internal Server Error - unexpected failure while processing
             the request.
           schema:
             $ref: '#/definitions/ErrorResponse'
-      description: Verifies a recovery code and sets a strong new password. Codes
-        allow five failed attempts and can be used only once.
+      description: Verifies a recovery code before any new password is accepted
+        and returns a short-lived one-time reset token. Codes allow five failed
+        attempts.
       operationId: post_verify_reset_otp_resource
       parameters:
       - name: payload
@@ -335,6 +336,31 @@ paths:
         in: body
         schema:
           $ref: '#/definitions/VerifyResetOtpRequest'
+      tags:
+      - auth
+  /auth/reset-password:
+    post:
+      responses:
+        '400':
+          description: Invalid, expired, or malformed reset session
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        '200':
+          description: Password reset successful
+        '500':
+          description: Internal Server Error - unexpected failure while processing
+            the request.
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      description: Sets a strong new password using the one-time token issued only
+        after successful OTP verification.
+      operationId: post_reset_password_resource
+      parameters:
+      - name: payload
+        required: true
+        in: body
+        schema:
+          $ref: '#/definitions/ResetPasswordRequest'
       tags:
       - auth
   /auth/login:
@@ -1335,7 +1361,6 @@ definitions:
     required:
     - email
     - otp
-    - password
     properties:
       email:
         type: string
@@ -1343,6 +1368,19 @@ definitions:
       otp:
         type: string
         example: '483921'
+    type: object
+  ResetPasswordRequest:
+    required:
+    - email
+    - reset_token
+    - password
+    properties:
+      email:
+        type: string
+        example: thomas.reed@example.com
+      reset_token:
+        type: string
+        example: verified-reset-token
       password:
         type: string
         example: NewPassword@123

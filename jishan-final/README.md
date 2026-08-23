@@ -120,8 +120,10 @@ The request endpoint always returns a generic success response for unknown
 addresses, preventing account enumeration. For a registered account it asks
 Brevo to deliver a cryptographically generated six-digit verification code.
 Codes expire after 10 minutes, allow five failed attempts and work only once.
-The stored password is changed only after the code is successfully verified. A
-provider rejection returns a safe error and leaves the existing password usable.
+The recovery screen does not show or accept a new password until the code is
+verified. Verification issues a short-lived one-time reset token, and only that
+token can authorize the final password change. A provider rejection returns a
+safe error and leaves the existing password usable.
 
 ## Tests
 

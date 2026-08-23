@@ -6,6 +6,7 @@ from app.controllers.auth_controller import (
     login_user,
     get_profile,
     forgot_password_handler,
+    reset_password_handler,
     verify_password_reset_otp_handler,
 )
 
@@ -39,6 +40,14 @@ verify_reset_otp_model = auth_ns.model(
     {
         "email": fields.String(required=True, example="thomas.reed@example.com"),
         "otp": fields.String(required=True, example="483921"),
+    },
+)
+
+reset_password_model = auth_ns.model(
+    "ResetPasswordRequest",
+    {
+        "email": fields.String(required=True, example="thomas.reed@example.com"),
+        "reset_token": fields.String(required=True, example="verified-reset-token"),
         "password": fields.String(required=True, example="NewPassword@123"),
     },
 )
@@ -107,16 +116,33 @@ class VerifyResetOtpResource(Resource):
     @auth_ns.doc(
         summary="Verify password-reset OTP",
         description=(
-            "Validates a six-digit recovery code and replaces the account "
-            "password. Codes expire after ten minutes, allow at most five "
-            "failed attempts, and can be used only once."
+            "Validates a six-digit recovery code before any new password is "
+            "accepted. Codes expire after ten minutes, allow at most five "
+            "failed attempts, and issue a short-lived one-time reset token."
         ),
     )
     @auth_ns.expect(verify_reset_otp_model, validate=True)
-    @auth_ns.response(200, "Password reset successful")
+    @auth_ns.response(200, "Code verified")
     @auth_ns.response(400, "Invalid, expired, or malformed code")
     def post(self):
         return verify_password_reset_otp_handler()
+
+
+@auth_ns.route("/reset-password")
+class ResetPasswordResource(Resource):
+
+    @auth_ns.doc(
+        summary="Set a new password",
+        description=(
+            "Sets a strong new password using the one-time token issued only "
+            "after successful OTP verification."
+        ),
+    )
+    @auth_ns.expect(reset_password_model, validate=True)
+    @auth_ns.response(200, "Password reset successful")
+    @auth_ns.response(400, "Invalid, expired, or malformed reset session")
+    def post(self):
+        return reset_password_handler()
 
 
 @auth_ns.route("/profile")

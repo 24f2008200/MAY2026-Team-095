@@ -34,7 +34,8 @@ other hosting environments where SMTP traffic is permitted.
 
 Recovery sends a six-digit verification code that expires after 10 minutes,
 allows five failed attempts and works only once. Requesting a code never changes
-the current password; the password changes only after successful verification.
+the current password. The new-password form is unlocked only after verification
+and requires the short-lived one-time reset token returned by the API.
 
 ## Local verification
 

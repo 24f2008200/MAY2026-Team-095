@@ -5,6 +5,7 @@ from app.services.auth_service import (
     login,
     profile,
     register,
+    reset_password_with_token,
     verify_password_reset_otp,
 )
 
@@ -38,5 +39,10 @@ def forgot_password_handler() -> tuple[dict[str, Any], int]:
 
 
 def verify_password_reset_otp_handler() -> tuple[dict[str, Any], int]:
-    """Verify a recovery OTP and set the requested new password."""
+    """Verify a recovery OTP and issue a password-reset token."""
     return verify_password_reset_otp()
+
+
+def reset_password_handler() -> tuple[dict[str, Any], int]:
+    """Set a new password using a verified recovery token."""
+    return reset_password_with_token()

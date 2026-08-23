@@ -21,7 +21,6 @@ from app.services.notification_service import create_notification
 from app.services.admin_service import (
     get_dashboard,
     get_reports,
-    list_reviews,
     list_staff,
     create_staff,
     remove_staff,
@@ -45,10 +44,6 @@ def assign_staff_handler(complaint_id: int) -> tuple[dict[str, Any], int]:
 
 def reports_handler() -> tuple[dict[str, Any], int]:
     return get_reports()
-
-
-def reviews_handler() -> tuple[dict[str, Any], int]:
-    return list_reviews()
 
 
 def list_staff_handler() -> tuple[dict[str, Any], int]:

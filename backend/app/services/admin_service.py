@@ -15,18 +15,12 @@ from app.services.complaint_service import (
     _add_timeline_entry,
     _complaint_response,
     _get_user,
-    _parse_date_bound,
 )
 from app.services.notification_service import create_notification
 
 
 class AssignStaffSchema(Schema):
     staff_id = fields.Integer(required=True, strict=True)
-    remarks = fields.String(
-        required=False,
-        allow_none=True,
-        validate=validate.Length(max=1000),
-    )
 
 
 class CreateCategorySchema(Schema):
@@ -123,15 +117,13 @@ def assign_staff(complaint_id: int):
             "message": "Complaint not found.",
         }, 404
 
-    if complaint.status not in {
-        ComplaintStatus.OPEN,
-        ComplaintStatus.REOPENED,
-        ComplaintStatus.ASSIGNED,
-        ComplaintStatus.IN_PROGRESS,
+    if complaint.status in {
+        ComplaintStatus.CLOSED,
+        ComplaintStatus.RESOLVED,
     }:
         return {
             "success": False,
-            "message": "Only active complaints can be assigned or reassigned.",
+            "message": "Cannot assign staff to a resolved or closed complaint.",
         }, 400
 
     staff = User.query.filter_by(
@@ -146,52 +138,16 @@ def assign_staff(complaint_id: int):
             "message": "Invalid or inactive staff member.",
         }, 400
 
-    previous_staff = complaint.assigned_staff
-
-    if previous_staff and previous_staff.id == staff.id and complaint.status in {
-        ComplaintStatus.ASSIGNED,
-        ComplaintStatus.IN_PROGRESS,
-    }:
-        return {
-            "success": False,
-            "message": f"This complaint is already assigned to {staff.name}.",
-        }, 400
-
-    remarks = (data.get("remarks") or "").strip()
-    was_reassignment = previous_staff is not None
-
     complaint.assigned_staff_id = staff.id
     complaint.status = ComplaintStatus.ASSIGNED
-    complaint.resolved_at = None
-    complaint.closed_at = None
-
-    assignment_comment = (
-        f"Reassigned from {previous_staff.name} to {staff.name}."
-        if was_reassignment
-        else f"Assigned to staff: {staff.name}."
-    )
-    if remarks:
-        assignment_comment += f" Instructions: {remarks}"
 
     try:
         _add_timeline_entry(
             complaint=complaint,
             user_id=admin_id,
             status=ComplaintStatus.ASSIGNED.value,
-            comment=assignment_comment,
+            comment=f"Assigned to staff: {staff.name}",
         )
-
-        if previous_staff and previous_staff.id != staff.id:
-            create_notification(
-                user_id=previous_staff.id,
-                complaint_id=complaint.id,
-                title="Complaint Reassigned",
-                message=(
-                    f"Complaint {complaint.complaint_code} has been reassigned "
-                    f"to {staff.name} and is no longer in your active queue."
-                ),
-                notification_type="COMPLAINT_REASSIGNED",
-            )
 
         create_notification(
             user_id=staff.id,
@@ -225,7 +181,7 @@ def assign_staff(complaint_id: int):
 
     return {
         "success": True,
-        "message": "Staff reassigned successfully." if was_reassignment else "Staff assigned successfully.",
+        "message": "Staff assigned successfully.",
         "complaint": _complaint_response(complaint),
     }, 200
 
@@ -269,23 +225,6 @@ def get_reports():
 
     feedback_count = feedback_stats[0] or 0
     avg_feedback = feedback_stats[1]
-    rating_rows = (
-        db.session.query(Feedback.rating, func.count(Feedback.id))
-        .group_by(Feedback.rating)
-        .all()
-    )
-    rating_distribution = {str(star): 0 for star in range(1, 6)}
-    for rating, count in rating_rows:
-        rating_distribution[str(rating)] = count
-
-    feedback_eligible = Complaint.query.filter(
-        Complaint.status.in_([ComplaintStatus.RESOLVED, ComplaintStatus.CLOSED])
-    ).count()
-    review_rate = (
-        round((feedback_count / feedback_eligible) * 100, 1)
-        if feedback_eligible
-        else 0.0
-    )
 
     return {
         "success": True,
@@ -302,9 +241,6 @@ def get_reports():
                     if avg_feedback
                     else None
                 ),
-                "rating_distribution": rating_distribution,
-                "eligible_complaints": feedback_eligible,
-                "review_rate_percent": review_rate,
             },
             "status_overview": {
                 status.value: Complaint.query.filter_by(status=status).count()
@@ -314,171 +250,48 @@ def get_reports():
     }, 200
 
 
-def list_reviews():
-    """Paginated admin view of resident reviews across all complaints."""
-    page = max(request.args.get("page", 1, type=int), 1)
-    per_page = min(max(request.args.get("per_page", 20, type=int), 1), 100)
-    rating = request.args.get("rating", type=int)
-    date_from_raw = request.args.get("date_from", type=str)
-    date_to_raw = request.args.get("date_to", type=str)
-
-    if rating is not None and rating not in {1, 2, 3, 4, 5}:
-        return {"success": False, "message": "Rating must be between 1 and 5."}, 400
-
-    try:
-        date_from = _parse_date_bound(date_from_raw, end_of_day=False)
-        date_to = _parse_date_bound(date_to_raw, end_of_day=True)
-    except ValueError as exc:
-        return {"success": False, "message": str(exc)}, 400
-
-    if date_from and date_to and date_from > date_to:
-        return {"success": False, "message": "The start date cannot be after the end date."}, 400
-
-    query = Feedback.query
-    if rating is not None:
-        query = query.filter(Feedback.rating == rating)
-    if date_from:
-        query = query.filter(Feedback.created_at >= date_from)
-    if date_to:
-        query = query.filter(Feedback.created_at <= date_to)
-
-    pagination = query.order_by(Feedback.created_at.desc()).paginate(
-        page=page, per_page=per_page, error_out=False
-    )
-
-    reviews = []
-    for feedback in pagination.items:
-        complaint = feedback.complaint
-        reviews.append({
-            "id": feedback.id,
-            "rating": feedback.rating,
-            "comment": feedback.comment,
-            "created_at": feedback.created_at.isoformat() if feedback.created_at else None,
-            "resident": {
-                "id": feedback.resident.id,
-                "name": feedback.resident.name,
-                "flat_number": feedback.resident.flat_number,
-                "building": feedback.resident.building,
-            } if feedback.resident else None,
-            "complaint": {
-                "id": complaint.id,
-                "complaint_code": complaint.complaint_code,
-                "title": complaint.title,
-                "priority": complaint.priority.value,
-                "status": complaint.status.value,
-                "category": complaint.category.name if complaint.category else None,
-                "assigned_staff": complaint.assigned_staff.name if complaint.assigned_staff else None,
-            } if complaint else None,
-        })
-
-    return {
-        "success": True,
-        "reviews": reviews,
-        "pagination": {
-            "page": pagination.page,
-            "per_page": pagination.per_page,
-            "total": pagination.total,
-            "pages": pagination.pages,
-        },
-    }, 200
-
-
 def _extract_trade(member: User) -> str:
-    """Return the staff member's maintenance expertise."""
-    return member.trade or "General"
+    """
+    Derive trade from user record.
+    """
+    if member.building:
+        return member.building
+    return "General"
 
 
 def list_staff():
-    """Return active staff with workload and resident-review performance metrics."""
     trade = request.args.get("trade", type=str)
 
     query = User.query.filter_by(role=UserRole.STAFF, is_active=True)
 
     if trade:
-        query = query.filter(User.trade == trade)
+        query = query.filter(User.building == trade)
 
     staff_members = query.order_by(User.name.asc()).all()
-    staff_rows = []
-
-    for member in staff_members:
-        active_count = Complaint.query.filter(
-            Complaint.assigned_staff_id == member.id,
-            Complaint.status.in_([
-                ComplaintStatus.ASSIGNED,
-                ComplaintStatus.IN_PROGRESS,
-            ]),
-        ).count()
-
-        completed_count = Complaint.query.filter(
-            Complaint.assigned_staff_id == member.id,
-            Complaint.status.in_([
-                ComplaintStatus.RESOLVED,
-                ComplaintStatus.CLOSED,
-            ]),
-        ).count()
-
-        review_count, average_rating = (
-            db.session.query(
-                func.count(Feedback.id),
-                func.avg(Feedback.rating),
-            )
-            .join(Complaint, Feedback.complaint_id == Complaint.id)
-            .filter(Complaint.assigned_staff_id == member.id)
-            .first()
-        )
-
-        five_star_reviews = (
-            db.session.query(func.count(Feedback.id))
-            .join(Complaint, Feedback.complaint_id == Complaint.id)
-            .filter(
-                Complaint.assigned_staff_id == member.id,
-                Feedback.rating == 5,
-            )
-            .scalar()
-            or 0
-        )
-
-        staff_rows.append({
-            "id": member.id,
-            "name": member.name,
-            "email": member.email,
-            "mobile_number": member.mobile_number,
-            "flat_number": member.flat_number,
-            "building": member.building,
-            "trade": _extract_trade(member),
-            "username": member.email.split("@")[0] if member.email else member.name,
-            "is_active": bool(member.is_active),
-            "assigned_complaints_count": active_count,
-            "completed_complaints_count": completed_count,
-            "review_count": int(review_count or 0),
-            "average_rating": (
-                round(float(average_rating), 2)
-                if average_rating is not None
-                else None
-            ),
-            "five_star_reviews": int(five_star_reviews),
-        })
-
-    # Rank only technicians who have at least one resident review. New/unrated
-    # staff remain fully assignable; they simply show as "Unrated" until a
-    # resident reviews completed work.
-    ranked = sorted(
-        (row for row in staff_rows if row["review_count"] > 0),
-        key=lambda row: (
-            -(row["average_rating"] or 0),
-            -row["review_count"],
-            -row["completed_complaints_count"],
-            row["name"].lower(),
-        ),
-    )
-    rank_by_id = {row["id"]: index for index, row in enumerate(ranked, start=1)}
-
-    for row in staff_rows:
-        row["performance_rank"] = rank_by_id.get(row["id"])
 
     return {
         "success": True,
-        "staff": staff_rows,
+        "staff": [
+            {
+                "id": member.id,
+                "name": member.name,
+                "email": member.email,
+                "mobile_number": member.mobile_number,
+                "flat_number": member.flat_number,
+                "building": member.building,
+                "trade": _extract_trade(member),
+                "username": member.email.split("@")[0] if member.email else member.name,
+                "assigned_complaints_count": Complaint.query.filter_by(
+                    assigned_staff_id=member.id,
+                    status=ComplaintStatus.ASSIGNED,
+                ).count()
+                + Complaint.query.filter_by(
+                    assigned_staff_id=member.id,
+                    status=ComplaintStatus.IN_PROGRESS,
+                ).count(),
+            }
+            for member in staff_members
+        ],
     }, 200
 
 
@@ -555,27 +368,24 @@ def create_staff(json_data: dict) -> tuple[dict[str, Any], int]:
         role=UserRole.STAFF,
         flat_number=flat_number,
         building=building,
-        trade=trade,
         is_active=True,
     )
 
 
     try:
         db.session.add(new_staff)
-        db.session.flush()
-
-        create_notification(
-            user_id=new_staff.id,
-            complaint_id=None,
-            title="Staff Account Created",
-            message=f"Your maintenance staff account has been created. Your trade is: {trade}.",
-            notification_type="STAFF_CREATED",
-        )
-
         db.session.commit()
     except IntegrityError:
         db.session.rollback()
         return {"success": False, "message": "Unable to create staff account."}, 500
+
+    create_notification(
+        user_id=new_staff.id,
+        complaint_id=None,
+        title="Staff Account Created",
+        message=f"Your maintenance staff account has been created. Your trade is: {trade}.",
+        notification_type="STAFF_CREATED",
+    )
 
     return {
         "success": True,
@@ -585,7 +395,7 @@ def create_staff(json_data: dict) -> tuple[dict[str, Any], int]:
             "name": new_staff.name,
             "email": new_staff.email,
             "mobile_number": new_staff.mobile_number,
-            "trade": new_staff.trade,
+            "trade": trade,
             "flat_number": new_staff.flat_number,
             "building": new_staff.building,
         },
@@ -608,39 +418,6 @@ def remove_staff(staff_id: int, admin_id: int) -> tuple[dict[str, Any], int]:
     if not staff:
         return {"success": False, "message": "Staff member not found."}, 404
 
-    # Return live work to admin triage before deactivating the technician.
-    # Otherwise complaints remain assigned to an account that can no longer
-    # sign in and effectively become stranded.
-    active_complaints = Complaint.query.filter(
-        Complaint.assigned_staff_id == staff.id,
-        Complaint.status.in_([ComplaintStatus.ASSIGNED, ComplaintStatus.IN_PROGRESS]),
-    ).all()
-
-    for complaint in active_complaints:
-        complaint.assigned_staff_id = None
-        complaint.status = ComplaintStatus.OPEN
-        complaint.resolved_at = None
-        complaint.closed_at = None
-        _add_timeline_entry(
-            complaint=complaint,
-            user_id=admin_id,
-            status=ComplaintStatus.OPEN.value,
-            comment=(
-                f"{staff.name} was deactivated; complaint returned to admin "
-                "triage for reassignment."
-            ),
-        )
-        create_notification(
-            user_id=complaint.resident_id,
-            complaint_id=complaint.id,
-            title="Complaint Awaiting Reassignment",
-            message=(
-                f"Complaint {complaint.complaint_code} is awaiting a new staff "
-                "assignment because the previous technician is no longer active."
-            ),
-            notification_type="COMPLAINT_UNASSIGNED",
-        )
-
     staff.is_active = False
 
     try:
@@ -649,17 +426,9 @@ def remove_staff(staff_id: int, admin_id: int) -> tuple[dict[str, Any], int]:
         db.session.rollback()
         return {"success": False, "message": "Unable to remove staff member."}, 500
 
-    returned_count = len(active_complaints)
-    suffix = (
-        f" {returned_count} active complaint{'s' if returned_count != 1 else ''} "
-        "returned to the unassigned queue."
-        if returned_count
-        else ""
-    )
     return {
         "success": True,
-        "message": f"Staff member '{staff.name}' has been deactivated.{suffix}",
-        "returned_to_triage": returned_count,
+        "message": f"Staff member '{staff.name}' has been deactivated.",
     }, 200
 
 

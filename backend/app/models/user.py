@@ -30,13 +30,9 @@ class User(db.Model):
         default=UserRole.RESIDENT
     )
 
-    # Apartment / profile information
+    # Apartment Information
     flat_number = db.Column(db.String(20), nullable=False)
     building = db.Column(db.String(100), nullable=False)
-
-    # Maintenance expertise. Kept separate from building so staff assignment
-    # does not overload a resident/location field.
-    trade = db.Column(db.String(100), nullable=True)
 
     # Account Status
     is_active = db.Column(db.Boolean, default=True)

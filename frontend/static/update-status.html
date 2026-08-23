@@ -30,13 +30,6 @@
                     <button @click="logout()" class="text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition p-1.5 rounded-md ml-1" title="Sign Out"><i class="fas fa-sign-out-alt text-lg"></i></button>
                 </div>
             </div>
-                    <nav class="bg-slate-50 border-t border-slate-200">
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-6 overflow-x-auto">
-                    <a href="dashboard-staff.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition whitespace-nowrap"><i class="fas fa-clipboard-list mr-1.5 text-base"></i> My Queue</a>
-                    <a href="staff-history.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition whitespace-nowrap"><i class="fas fa-check-double mr-1.5 text-base"></i> History</a>
-                    <a href="messages.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition whitespace-nowrap"><i class="fas fa-bell mr-1.5 text-base"></i> Notifications</a>
-                </div>
-            </nav>
         </header>
 
         <main class="flex-grow p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full max-w-5xl space-y-6">
@@ -48,7 +41,7 @@
                 <div class="lg:w-1/2 bg-white rounded-lg shadow-sm border border-slate-200 p-6 md:p-8">
                     <h3 class="text-[10px] uppercase font-bold text-slate-400 mb-6 tracking-wider border-b border-slate-100 pb-3">Work Order Data</h3>
                     <div class="grid grid-cols-[120px_1fr] gap-y-4 text-sm">
-                        <span class="font-bold text-slate-500">Task ID</span><span class="font-bold text-slate-900">{{ complaint?.complaint_code || complaint?.id || 'Loading...' }}</span>
+                        <span class="font-bold text-slate-500">Task ID</span><span class="font-bold text-slate-900">{{ complaint?.id || 'Loading...' }}</span>
                         <span class="font-bold text-slate-500">Contact</span><span class="font-bold text-slate-700">{{ complaint?.resident?.name || '...' }} <span class="font-normal text-slate-500">(Flat {{ complaint?.resident?.flat_number || 'N/A' }})</span></span>
                         <span class="font-bold text-slate-700 mt-2">Trade Scope</span>
                                                 <span class="font-medium text-slate-700 mt-2">{{ complaint?.category?.name || 'N/A' }} - {{ complaint?.title || 'N/A' }}</span>
@@ -77,13 +70,15 @@
                         <h3 class="font-bold text-sm text-slate-800 uppercase tracking-wide mb-5">Commit Progress</h3>
                         <form @submit.prevent="updateStatus">
                             <div class="mb-5">
-                                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-2">Next State</label>
-                                <div class="w-full border border-slate-200 p-3 rounded-md text-sm bg-white font-bold text-slate-800">
-                                    <i class="fas fa-arrow-right text-indigo-500 mr-2"></i>{{ selectedStatus === 'RESOLVED' ? 'Complete Task (Resolved)' : 'Begin Work (In Progress)' }}
-                                </div>
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-2">State Transition <span class="text-rose-500">*</span></label>
+                                <select v-model="selectedStatus" class="form-select w-full border border-slate-300 p-2.5 rounded-md text-sm bg-white font-bold text-slate-800" required>
+                                    <option value="ASSIGNED">Assigned (Awaiting Start)</option>
+                                    <option value="IN_PROGRESS">Begin Work (In Progress)</option>
+                                    <option value="RESOLVED">Complete Task (Mark Resolved)</option>
+                                </select>
                             </div>
                             <div class="mb-6">
-                                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-2">Work Log <span class="text-rose-500">*</span></label>
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-2">Completion Log <span class="text-rose-500">*</span></label>
                                 <textarea v-model="comment" rows="4" placeholder="Detail the actions taken..." class="form-textarea w-full border border-slate-300 p-3 rounded-md text-sm bg-white resize-none font-medium text-slate-700" required></textarea>
                             </div>
                             <button type="submit" :disabled="isLoading" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-md shadow-sm transition text-sm disabled:opacity-50">
@@ -119,13 +114,6 @@
                     try {
                         const data = await apiCall(`/staff/complaints/${ticketId}`);
                         complaint.value = data.complaint || data;
-
-                        if (!canStaffWorkComplaint(user.value, complaint.value)) {
-                            showToast('This work order is not currently assigned to you.', 'error');
-                            setTimeout(() => { window.location.href = 'dashboard-staff.html'; }, 1200);
-                            return;
-                        }
-
                         const status = complaint.value.status;
                         selectedStatus.value = status === 'IN_PROGRESS' ? 'RESOLVED' : 'IN_PROGRESS';
                     } catch (err) {

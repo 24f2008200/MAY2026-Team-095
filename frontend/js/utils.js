@@ -1,33 +1,12 @@
-const API_BASE =
-    window.location.hostname === 'localhost' ||
-    window.location.hostname === '127.0.0.1'
-        ? 'http://127.0.0.1:5000'
-        : 'https://may2026-team-095-smart-society-backend.onrender.com';
-
-
-/* ==========================================================================
-   FILE URLS
-   ========================================================================== */
+const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://127.0.0.1:5000'
+    : 'https://smart-society-backend-2dqe.onrender.com';
 
 function resolveFileUrl(path) {
     if (!path) return '';
-
-    const value = String(path).trim();
-
-    if (
-        value.startsWith('http://') ||
-        value.startsWith('https://')
-    ) {
-        return value;
-    }
-
-    return `${API_BASE}${value}`;
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    return `${API_BASE}${path}`;
 }
-
-
-/* ==========================================================================
-   API ERROR MESSAGES
-   ========================================================================== */
 
 const API_FIELD_LABELS = {
     name: 'Name',
@@ -39,169 +18,90 @@ const API_FIELD_LABELS = {
     flat_number: 'Flat number',
     flat: 'Flat number',
     building: 'Building',
-    password: 'Password',
-    remarks: 'Remarks',
-    staff_id: 'Staff member',
-    rating: 'Rating',
-    comment: 'Comment'
+    password: 'Password'
 };
 
-
 function formatFieldValidationMessage(field, value) {
-    const label =
-        API_FIELD_LABELS[field] ||
-        String(field || '')
-            .replace(/_/g, ' ')
-            .replace(/\b\w/g, char => char.toUpperCase());
+    const label = API_FIELD_LABELS[field] || String(field || '')
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, char => char.toUpperCase());
+    const raw = Array.isArray(value) ? value.filter(Boolean).join(' ') : String(value || '').trim();
+    if (!raw) return '';
 
-    const raw = Array.isArray(value)
-        ? value.filter(Boolean).join(' ')
-        : String(value ?? '').trim();
-
-    if (!raw) {
-        return '';
-    }
-
-    const betweenMatch = raw.match(
-        /length must be between\s+(\d+)\s+and\s+(\d+)/i
-    );
-
+    const betweenMatch = raw.match(/length must be between\s+(\d+)\s+and\s+(\d+)/i);
     if (betweenMatch) {
         return `${label} must be between ${betweenMatch[1]} and ${betweenMatch[2]} characters.`;
     }
 
-    const minMatch = raw.match(
-        /shorter than minimum length\s+(\d+)|length must be at least\s+(\d+)/i
-    );
-
+    const minMatch = raw.match(/shorter than minimum length\s+(\d+)|length must be at least\s+(\d+)/i);
     if (minMatch) {
         const min = minMatch[1] || minMatch[2];
-
         return `${label} must be at least ${min} characters.`;
     }
 
-    const maxMatch = raw.match(
-        /longer than maximum length\s+(\d+)|length must be at most\s+(\d+)/i
-    );
-
+    const maxMatch = raw.match(/longer than maximum length\s+(\d+)|length must be at most\s+(\d+)/i);
     if (maxMatch) {
         const max = maxMatch[1] || maxMatch[2];
-
         return `${label} must be at most ${max} characters.`;
     }
 
-    if (
-        raw.toLowerCase().startsWith(
-            label.toLowerCase()
-        )
-    ) {
-        return raw;
-    }
-
+    // If the server already names the field, don't repeat it.
+    if (raw.toLowerCase().startsWith(label.toLowerCase())) return raw;
     return `${label}: ${raw}`;
 }
 
-
 function extractFieldErrors(container) {
-    if (
-        !container ||
-        typeof container !== 'object' ||
-        Array.isArray(container)
-    ) {
-        return '';
-    }
-
-    return Object.entries(container)
-        .map(([field, value]) =>
-            formatFieldValidationMessage(field, value)
-        )
-        .filter(Boolean)
-        .join(' ');
+    if (!container || typeof container !== 'object' || Array.isArray(container)) return '';
+    const messages = Object.entries(container)
+        .map(([field, value]) => formatFieldValidationMessage(field, value))
+        .filter(Boolean);
+    return messages.join(' ');
 }
 
-
 function extractApiMessage(errorData) {
-    if (
-        !errorData ||
-        typeof errorData !== 'object'
-    ) {
-        return '';
+    if (!errorData || typeof errorData !== 'object') return '';
+
+    const errorsMessage = extractFieldErrors(errorData.errors);
+    if (errorsMessage) return errorsMessage;
+
+    if (errorData.message && typeof errorData.message === 'object') {
+        const message = extractFieldErrors(errorData.message);
+        if (message) return message;
     }
 
-    const errorsMessage =
-        extractFieldErrors(errorData.errors);
-
-    if (errorsMessage) {
-        return errorsMessage;
-    }
-
-    if (
-        errorData.message &&
-        typeof errorData.message === 'object'
-    ) {
-        const nestedMessage =
-            extractFieldErrors(
-                errorData.message
-            );
-
-        if (nestedMessage) {
-            return nestedMessage;
-        }
-    }
-
-    if (
-        typeof errorData.message === 'string' &&
-        errorData.message.trim()
-    ) {
+    if (typeof errorData.message === 'string' && errorData.message.trim()) {
         return errorData.message.trim();
     }
 
-    if (
-        typeof errorData.detail === 'string' &&
-        errorData.detail.trim()
-    ) {
+    if (typeof errorData.detail === 'string' && errorData.detail.trim()) {
         return errorData.detail.trim();
     }
 
     return '';
 }
 
-
-function friendlyHttpMessage(
-    status,
-    serverMessage = ''
-) {
-    if (
-        serverMessage &&
-        !/^request failed with status\s+\d+/i.test(
-            serverMessage
-        )
-    ) {
+function friendlyHttpMessage(status, serverMessage = '') {
+    // Never expose raw HTTP codes (e.g. "Request failed with status 409")
+    // to end users. Prefer a useful server message when one exists.
+    if (serverMessage && !/^request failed with status\s+\d+/i.test(serverMessage)) {
         return serverMessage;
     }
 
     switch (status) {
         case 400:
             return 'Please check the information you entered and try again.';
-
         case 401:
-            return 'Your session is invalid or has expired. Please sign in again.';
-
+            return 'Authentication failed. Please check your details and try again.';
         case 403:
             return 'You do not have permission to perform this action.';
-
         case 404:
             return 'The requested information could not be found.';
-
         case 409:
-            return 'This action conflicts with the current record state. Please refresh and try again.';
-
+            return 'This information is already in use. Please review your details and try again.';
         case 422:
             return 'Some of the information entered is invalid. Please review it and try again.';
-
         case 429:
             return 'Too many attempts. Please wait a moment and try again.';
-
         default:
             return status >= 500
                 ? 'The server is temporarily unavailable. Please try again later.'
@@ -209,1207 +109,170 @@ function friendlyHttpMessage(
     }
 }
 
-
-/* ==========================================================================
-   AUTH / USER STORAGE
-   ========================================================================== */
-
-function getCurrentUser() {
-    try {
-        const stored =
-            localStorage.getItem(
-                'smartSocietyUser'
-            );
-
-        return stored
-            ? JSON.parse(stored)
-            : null;
-
-    } catch (err) {
-        console.error(
-            'Failed to read stored user:',
-            err
-        );
-
-        return null;
-    }
-}
-
-
-function setCurrentUser(user, token) {
-    if (user) {
-        localStorage.setItem(
-            'smartSocietyUser',
-            JSON.stringify(user)
-        );
-    }
+async function apiCall(endpoint, options = {}) {
+    const token = localStorage.getItem('smartSocietyToken');
+    const headers = { ...(options.headers || {}) };
+    const suppressErrorToast = Boolean(options.suppressErrorToast);
 
     if (token) {
-        localStorage.setItem(
-            'smartSocietyToken',
-            token
-        );
-    }
-}
-
-
-function clearCurrentUser() {
-    localStorage.removeItem(
-        'smartSocietyUser'
-    );
-
-    localStorage.removeItem(
-        'smartSocietyToken'
-    );
-}
-
-
-function normalizeRole(user) {
-    return String(
-        user?.role || ''
-    )
-        .trim()
-        .toUpperCase();
-}
-
-
-/* ==========================================================================
-   URL HELPERS
-   ========================================================================== */
-
-function currentPageName() {
-    return (
-        window.location.pathname
-            .split('/')
-            .pop() || ''
-    ).toLowerCase();
-}
-
-
-function loginPageUrl() {
-    return window.location.pathname.includes(
-        '/static/'
-    )
-        ? '../index.html'
-        : 'index.html';
-}
-
-
-function homeForRole(role) {
-    const normalized =
-        String(role || '')
-            .trim()
-            .toUpperCase();
-
-    if (normalized === 'ADMIN') {
-        return 'dashboard-admin.html';
+        headers['Authorization'] = `Bearer ${token}`;
     }
 
-    if (normalized === 'STAFF') {
-        return 'dashboard-staff.html';
-    }
-
-    if (normalized === 'RESIDENT') {
-        return 'dashboard-resident.html';
-    }
-
-    return loginPageUrl();
-}
-
-
-/* ==========================================================================
-   API
-   ========================================================================== */
-
-async function apiCall(
-    endpoint,
-    options = {}
-) {
-    const token =
-        localStorage.getItem(
-            'smartSocietyToken'
-        );
-
-    const headers = {
-        ...(options.headers || {})
-    };
-
-    const suppressErrorToast =
-        Boolean(
-            options.suppressErrorToast
-        );
-
-    if (token) {
-        headers.Authorization =
-            `Bearer ${token}`;
-    }
-
-    if (
-        !(options.body instanceof FormData) &&
-        !headers['Content-Type']
-    ) {
-        headers['Content-Type'] =
-            'application/json';
+    if (!(options.body instanceof FormData) && !headers['Content-Type']) {
+        headers['Content-Type'] = 'application/json';
     }
 
     const config = {
-        method:
-            options.method || 'GET',
-
-        headers
+        method: options.method || 'GET',
+        headers,
+        body: options.body instanceof FormData ? options.body : (options.body ? JSON.stringify(options.body) : null)
     };
 
-    if (
-        options.body !== undefined &&
-        options.body !== null
-    ) {
-        config.body =
-            options.body instanceof FormData
-                ? options.body
-                : JSON.stringify(
-                    options.body
-                );
-    }
-
     try {
-        const response =
-            await fetch(
-                `${API_BASE}${endpoint}`,
-                config
-            );
+        const response = await fetch(`${API_BASE}${endpoint}`, config);
 
-        if (
-            response.status === 401 &&
-            token
-        ) {
+        if (response.status === 401 && token) {
             clearCurrentUser();
-
-            window.location.replace(
-                loginPageUrl()
-            );
-
-            const error =
-                new Error(
-                    'Your session has expired. Please sign in again.'
-                );
-
-            error.status = 401;
-
-            throw error;
+            window.location.href = window.location.pathname.includes('/static/') ? '../index.html' : 'index.html';
+            const sessionError = new Error('Your session has expired. Please sign in again.');
+            sessionError.status = 401;
+            throw sessionError;
         }
 
         if (!response.ok) {
             let errorData = {};
-
-            const responseText =
-                await response
-                    .text()
-                    .catch(() => '');
-
+            const responseText = await response.text().catch(() => '');
             if (responseText) {
                 try {
-                    errorData =
-                        JSON.parse(
-                            responseText
-                        );
-                } catch (err) {
+                    errorData = JSON.parse(responseText);
+                } catch {
+                    // Some backends/proxies return plain text or an HTML error page.
+                    // Do not surface that raw content to the user.
                     errorData = {};
                 }
             }
 
-            const serverMessage =
-                extractApiMessage(
-                    errorData
-                );
-
-            const error =
-                new Error(
-                    friendlyHttpMessage(
-                        response.status,
-                        serverMessage
-                    )
-                );
-
-            error.status =
-                response.status;
-
-            error.data =
-                errorData;
-
+            const serverMessage = extractApiMessage(errorData);
+            const error = new Error(friendlyHttpMessage(response.status, serverMessage));
+            error.status = response.status;
+            error.data = errorData;
             throw error;
         }
 
-        if (
-            response.status === 204
-        ) {
-            return null;
-        }
+        if (response.status === 204) return null;
 
-        const text =
-            await response.text();
-
-        if (!text) {
-            return null;
-        }
-
+        const text = await response.text();
+        if (!text) return null;
         try {
             return JSON.parse(text);
-        } catch (err) {
+        } catch {
             return text;
         }
-
     } catch (err) {
         let normalizedError = err;
 
-        if (
-            err instanceof TypeError ||
-            err.message ===
-                'Failed to fetch' ||
-            /networkerror|network request failed/i.test(
-                err.message || ''
-            )
-        ) {
-            normalizedError =
-                new Error(
-                    'Unable to connect to the server. Please check your connection and try again.'
-                );
-
+        if (err instanceof TypeError || err.message === 'Failed to fetch' || /networkerror|network request failed/i.test(err.message || '')) {
+            normalizedError = new Error('Unable to connect to the server. Please check your connection and try again.');
             normalizedError.status = 0;
         }
 
-        if (
-            !suppressErrorToast &&
-            typeof showToast ===
-                'function'
-        ) {
-            showToast(
-                normalizedError.message ||
-                    'Something went wrong. Please try again.',
-                'error'
-            );
+        if (!suppressErrorToast && typeof showToast === 'function') {
+            showToast(normalizedError.message || 'Something went wrong. Please try again.', 'error');
         }
 
         throw normalizedError;
     }
 }
 
+function showToast(message, type = 'success') {
+    const toast = document.getElementById('toast');
+    const toastMsg = document.getElementById('toastMsg');
+    if (!toast || !toastMsg) return;
 
-/* ==========================================================================
-   COMPLAINT STATUS RULES
-   ========================================================================== */
+    toast.className = 'fixed bottom-6 right-6 z-50 flex items-center px-4 py-3 rounded-md shadow-lg border ' +
+        (type === 'error' ? 'bg-white border-rose-200 text-rose-800' : 'bg-slate-900 border-slate-800 text-white');
+    toastMsg.textContent = message;
+    toast.classList.remove('hidden');
+    clearTimeout(window.toastTimer);
+    window.toastTimer = setTimeout(() => { toast.classList.add('hidden'); }, 3500);
+}
 
-const COMPLAINT_ACTIVE_STATUSES =
-    Object.freeze([
-        'OPEN',
-        'REOPENED',
-        'ASSIGNED',
-        'IN_PROGRESS'
-    ]);
-
-
-const COMPLAINT_REOPENABLE_STATUSES =
-    Object.freeze([
-        'RESOLVED',
-        'CLOSED'
-    ]);
-
-
-function sameId(left, right) {
-    if (
-        left === null ||
-        left === undefined ||
-        right === null ||
-        right === undefined
-    ) {
-        return false;
+function getCurrentUser() {
+    try {
+        return JSON.parse(localStorage.getItem('smartSocietyUser'));
+    } catch {
+        return null;
     }
-
-    return String(left) ===
-        String(right);
 }
 
-
-function isComplaintOwner(
-    user,
-    complaint
-) {
-    return (
-        normalizeRole(user) ===
-            'RESIDENT' &&
-        sameId(
-            complaint?.resident_id,
-            user?.id
-        )
-    );
+function setCurrentUser(user, token) {
+    localStorage.setItem('smartSocietyUser', JSON.stringify(user));
+    if (token) localStorage.setItem('smartSocietyToken', token);
 }
 
-
-function isAssignedStaff(
-    user,
-    complaint
-) {
-    return (
-        normalizeRole(user) ===
-            'STAFF' &&
-        sameId(
-            complaint?.assigned_staff_id,
-            user?.id
-        )
-    );
+function clearCurrentUser() {
+    localStorage.removeItem('smartSocietyUser');
+    localStorage.removeItem('smartSocietyToken');
 }
 
+function requireAuth(requiredRole) {
+    const user = getCurrentUser();
+    const token = localStorage.getItem('smartSocietyToken');
 
-function canAssignComplaint(
-    user,
-    complaint
-) {
-    return (
-        normalizeRole(user) ===
-            'ADMIN' &&
-        COMPLAINT_ACTIVE_STATUSES.includes(
-            String(
-                complaint?.status || ''
-            ).toUpperCase()
-        )
-    );
-}
-
-
-function canStaffWorkComplaint(
-    user,
-    complaint
-) {
-    return (
-        isAssignedStaff(
-            user,
-            complaint
-        ) &&
-        [
-            'ASSIGNED',
-            'IN_PROGRESS'
-        ].includes(
-            String(
-                complaint?.status || ''
-            ).toUpperCase()
-        )
-    );
-}
-
-
-function canCloseComplaint(
-    user,
-    complaint
-) {
-    const status =
-        String(
-            complaint?.status || ''
-        ).toUpperCase();
-
-    if (
-        ![
-            ...COMPLAINT_ACTIVE_STATUSES,
-            'RESOLVED'
-        ].includes(status)
-    ) {
-        return false;
-    }
-
-    const role =
-        normalizeRole(user);
-
-    if (role === 'ADMIN') {
-        return true;
-    }
-
-    return (
-        role === 'RESIDENT' &&
-        isComplaintOwner(
-            user,
-            complaint
-        )
-    );
-}
-
-
-/* ==========================================================================
-   TIMEZONE-SAFE DATE PARSING
-
-   IMPORTANT:
-
-   Backend/SQLite timestamps such as:
-
-   2026-08-22 04:30:00
-   2026-08-22T04:30:00
-   2026-08-22T04:30:00.123456
-
-   do not contain a timezone.
-
-   Your backend stores these as UTC, therefore this function explicitly
-   interprets them as UTC.
-
-   This means it behaves correctly whether the browser is in:
-   - Canada
-   - India
-   - USA
-   - UK
-   - or any other timezone.
-   ========================================================================== */
-
-function parseServerTimestamp(timestamp) {
-    if (
-        timestamp === null ||
-        timestamp === undefined ||
-        timestamp === ''
-    ) {
+    if (!user || !token) {
+        window.location.href = window.location.pathname.includes('/static/') ? '../index.html' : 'index.html';
         return null;
     }
 
-    let value =
-        String(timestamp)
-            .trim()
-            .replace(' ', 'T');
-
-
-    /*
-     * Python can produce microseconds:
-     *
-     * .123456
-     *
-     * JavaScript normally uses milliseconds:
-     *
-     * .123
-     *
-     * Trim extra fractional digits for consistent
-     * browser support.
-     */
-    value = value.replace(
-        /\.(\d{3})\d+/,
-        '.$1'
-    );
-
-
-    /*
-     * Detect timezone information:
-     *
-     * Z
-     * +00:00
-     * -04:00
-     * +0530
-     */
-    const hasTimezone =
-        /(?:Z|[+-]\d{2}:?\d{2})$/i.test(
-            value
-        );
-
-
-    /*
-     * If no timezone is supplied,
-     * interpret the server timestamp as UTC.
-     */
-    if (!hasTimezone) {
-        value += 'Z';
-    }
-
-
-    const parsed =
-        new Date(value);
-
-
-    if (
-        Number.isNaN(
-            parsed.getTime()
-        )
-    ) {
-        console.warn(
-            'Invalid server timestamp:',
-            timestamp
-        );
-
+    if (requiredRole && String(user.role || '').toUpperCase() !== requiredRole.toUpperCase()) {
+        goHome();
         return null;
     }
-
-
-    return parsed;
-}
-
-
-/* ==========================================================================
-   REOPEN WINDOW
-   ========================================================================== */
-
-function isWithinReopenWindow(
-    complaint
-) {
-    if (!complaint) {
-        return false;
-    }
-
-
-    const status =
-        String(
-            complaint.status || ''
-        ).toUpperCase();
-
-
-    let timestamp = null;
-
-
-    /*
-     * For CLOSED tickets use closed_at.
-     *
-     * resolved_at remains a fallback for
-     * old database records where closed_at
-     * may not exist.
-     */
-    if (status === 'CLOSED') {
-        timestamp =
-            complaint.closed_at ||
-            complaint.resolved_at;
-    }
-
-
-    /*
-     * For RESOLVED tickets use resolved_at.
-     */
-    else if (
-        status === 'RESOLVED'
-    ) {
-        timestamp =
-            complaint.resolved_at;
-    }
-
-
-    /*
-     * Any other state cannot be reopened.
-     */
-    else {
-        return false;
-    }
-
-
-    const referenceTime =
-        parseServerTimestamp(
-            timestamp
-        );
-
-
-    if (!referenceTime) {
-        return false;
-    }
-
-
-    const now =
-        Date.now();
-
-
-    const elapsed =
-        now -
-        referenceTime.getTime();
-
-
-    const SEVEN_DAYS_MS =
-        7 *
-        24 *
-        60 *
-        60 *
-        1000;
-
-
-    /*
-     * Allow tiny clock differences between
-     * server and client devices.
-     */
-    const CLOCK_SKEW_ALLOWANCE_MS =
-        5 *
-        60 *
-        1000;
-
-
-    /*
-     * Valid from closure/resolution until
-     * exactly 7 days later.
-     *
-     * After this window the button disappears.
-     */
-    return (
-        elapsed >=
-            -CLOCK_SKEW_ALLOWANCE_MS &&
-        elapsed <=
-            SEVEN_DAYS_MS
-    );
-}
-
-
-function canReopenComplaint(
-    user,
-    complaint
-) {
-    if (
-        !user ||
-        !complaint
-    ) {
-        return false;
-    }
-
-
-    const status =
-        String(
-            complaint.status || ''
-        ).toUpperCase();
-
-
-    return (
-        isComplaintOwner(
-            user,
-            complaint
-        ) &&
-
-        COMPLAINT_REOPENABLE_STATUSES.includes(
-            status
-        ) &&
-
-        /*
-         * Once feedback/review has been submitted,
-         * reopening is no longer allowed.
-         */
-        !complaint.feedback &&
-
-        isWithinReopenWindow(
-            complaint
-        )
-    );
-}
-
-
-function canSubmitComplaintFeedback(
-    user,
-    complaint
-) {
-    if (
-        !user ||
-        !complaint
-    ) {
-        return false;
-    }
-
-
-    const status =
-        String(
-            complaint.status || ''
-        ).toUpperCase();
-
-
-    return (
-        isComplaintOwner(
-            user,
-            complaint
-        ) &&
-
-        COMPLAINT_REOPENABLE_STATUSES.includes(
-            status
-        ) &&
-
-        !complaint.feedback
-    );
-}
-
-
-function canCommentOnComplaint(
-    user,
-    complaint
-) {
-    if (
-        !user ||
-        !complaint
-    ) {
-        return false;
-    }
-
-
-    const status =
-        String(
-            complaint.status || ''
-        ).toUpperCase();
-
-
-    if (
-        !COMPLAINT_ACTIVE_STATUSES.includes(
-            status
-        )
-    ) {
-        return false;
-    }
-
-
-    const role =
-        normalizeRole(user);
-
-
-    if (role === 'ADMIN') {
-        return true;
-    }
-
-
-    if (role === 'RESIDENT') {
-        return isComplaintOwner(
-            user,
-            complaint
-        );
-    }
-
-
-    if (role === 'STAFF') {
-        return canStaffWorkComplaint(
-            user,
-            complaint
-        );
-    }
-
-
-    return false;
-}
-
-
-function canUploadComplaintAttachment(
-    user,
-    complaint
-) {
-    return canCommentOnComplaint(
-        user,
-        complaint
-    );
-}
-
-
-/* ==========================================================================
-   PAGE ACCESS / PAGE LOCK
-   ========================================================================== */
-
-const PAGE_ACCESS_POLICY =
-    Object.freeze({
-
-        'dashboard-admin.html':
-            'ADMIN',
-
-        'admin-staff.html':
-            'ADMIN',
-
-        'admin-approvals.html':
-            'ADMIN',
-
-        'admin-reports.html':
-            'ADMIN',
-
-        'assign-complaint.html':
-            'ADMIN',
-
-        'dashboard-staff.html':
-            'STAFF',
-
-        'staff-history.html':
-            'STAFF',
-
-        'update-status.html':
-            'STAFF',
-
-        'dashboard-resident.html':
-            'RESIDENT',
-
-        'raise-complaint.html':
-            'RESIDENT',
-
-        /*
-         * These pages support multiple roles.
-         * null means login required but no single
-         * role restriction.
-         */
-        'complaint-details.html':
-            null,
-
-        'messages.html':
-            null,
-
-        'support-contact.html':
-            null
-    });
-
-
-function ensurePageLockStyle() {
-    if (
-        document.getElementById(
-            'smart-auth-lock-style'
-        )
-    ) {
-        return;
-    }
-
-
-    const style =
-        document.createElement(
-            'style'
-        );
-
-
-    style.id =
-        'smart-auth-lock-style';
-
-
-    style.textContent = `
-        html.smart-auth-lock #app {
-            visibility: hidden !important;
-        }
-
-        [v-cloak] {
-            display: none !important;
-        }
-    `;
-
-
-    document.head.appendChild(
-        style
-    );
-}
-
-
-function lockProtectedPage() {
-    const page =
-        currentPageName();
-
-
-    if (
-        !Object.prototype
-            .hasOwnProperty.call(
-                PAGE_ACCESS_POLICY,
-                page
-            )
-    ) {
-        return;
-    }
-
-
-    ensurePageLockStyle();
-
-
-    document.documentElement
-        .classList.add(
-            'smart-auth-lock'
-        );
-
-
-    const user =
-        getCurrentUser();
-
-
-    const token =
-        localStorage.getItem(
-            'smartSocietyToken'
-        );
-
-
-    const requiredRole =
-        PAGE_ACCESS_POLICY[page];
-
-
-    if (
-        !user ||
-        !token
-    ) {
-        window.location.replace(
-            loginPageUrl()
-        );
-
-        return;
-    }
-
-
-    if (
-        requiredRole &&
-        normalizeRole(user) !==
-            requiredRole
-    ) {
-        window.location.replace(
-            homeForRole(
-                user.role
-            )
-        );
-    }
-}
-
-
-function unlockProtectedPage() {
-    document.documentElement
-        .classList.remove(
-            'smart-auth-lock'
-        );
-}
-
-
-function requireAuth(
-    requiredRole
-) {
-    const user =
-        getCurrentUser();
-
-
-    const token =
-        localStorage.getItem(
-            'smartSocietyToken'
-        );
-
-
-    if (
-        !user ||
-        !token
-    ) {
-        window.location.replace(
-            loginPageUrl()
-        );
-
-        return null;
-    }
-
-
-    if (
-        requiredRole &&
-        normalizeRole(user) !==
-            String(
-                requiredRole
-            ).toUpperCase()
-    ) {
-        window.location.replace(
-            homeForRole(
-                user.role
-            )
-        );
-
-        return null;
-    }
-
 
     return user;
 }
 
-
-/* ==========================================================================
-   SERVER SESSION VERIFICATION
-   ========================================================================== */
-
-async function refreshUserProfile(
-    userRef,
-    requiredRole
-) {
+// Re-validates the session against the server (GET /auth/profile) and
+// refreshes the cached user with authoritative data (role, flat_number,
+// etc). Fire-and-forget: keeps the cached user as a fast first paint,
+// then upgrades it once the server responds. apiCall() already redirects
+// to login on a 401, so no separate expiry handling is needed here.
+async function refreshUserProfile(userRef, requiredRole) {
     try {
-        const response =
-            await apiCall(
-                '/auth/profile',
-                {
-                    suppressErrorToast:
-                        true
-                }
-            );
-
-
-        if (
-            !response ||
-            !response.user
-        ) {
-            clearCurrentUser();
-
-            window.location.replace(
-                loginPageUrl()
-            );
-
-            return null;
+        const response = await apiCall('/auth/profile');
+        if (response && response.user) {
+            if (requiredRole && String(response.user.role || '').toUpperCase() !== requiredRole.toUpperCase()) {
+                goHome();
+                return;
+            }
+            setCurrentUser(response.user);
+            if (userRef) userRef.value = response.user;
         }
-
-
-        const serverUser =
-            response.user;
-
-
-        if (
-            requiredRole &&
-            normalizeRole(
-                serverUser
-            ) !==
-                String(
-                    requiredRole
-                ).toUpperCase()
-        ) {
-            setCurrentUser(
-                serverUser
-            );
-
-
-            window.location.replace(
-                homeForRole(
-                    serverUser.role
-                )
-            );
-
-
-            return null;
-        }
-
-
-        setCurrentUser(
-            serverUser
-        );
-
-
-        if (userRef) {
-            userRef.value =
-                serverUser;
-        }
-
-
-        unlockProtectedPage();
-
-
-        return serverUser;
-
     } catch (err) {
-        console.error(
-            'Session verification failed:',
-            err
-        );
-
-
-        /*
-         * Do NOT unlock protected content
-         * when server verification fails.
-         */
-        return null;
+        // Network/server error - keep working off the cached user.
     }
 }
-
-
-/* ==========================================================================
-   UI HELPERS
-   ========================================================================== */
-
-function showToast(
-    message,
-    type = 'success'
-) {
-    const toast =
-        document.getElementById(
-            'toast'
-        );
-
-
-    const toastMsg =
-        document.getElementById(
-            'toastMsg'
-        );
-
-
-    if (
-        !toast ||
-        !toastMsg
-    ) {
-        return;
-    }
-
-
-    toast.className =
-        'fixed bottom-6 right-6 z-50 flex items-center px-4 py-3 rounded-md shadow-lg border ' +
-        (
-            type === 'error'
-                ? 'bg-white border-rose-200 text-rose-800'
-                : 'bg-slate-900 border-slate-800 text-white'
-        );
-
-
-    toastMsg.textContent =
-        message;
-
-
-    toast.classList.remove(
-        'hidden'
-    );
-
-
-    clearTimeout(
-        window.toastTimer
-    );
-
-
-    window.toastTimer =
-        setTimeout(
-            () => {
-                toast.classList.add(
-                    'hidden'
-                );
-            },
-            3500
-        );
-}
-
-
-/* ==========================================================================
-   NAVIGATION
-   ========================================================================== */
 
 function logout() {
     clearCurrentUser();
-
-    window.location.replace(
-        loginPageUrl()
-    );
+    window.location.href = window.location.pathname.includes('/static/') ? '../index.html' : 'index.html';
 }
 
-
 function goHome() {
-    const user =
-        getCurrentUser();
-
-
+    const user = getCurrentUser();
     if (!user) {
-        window.location.replace(
-            loginPageUrl()
-        );
-
+        window.location.href = window.location.pathname.includes('/static/') ? '../index.html' : 'index.html';
         return;
     }
 
-
-    window.location.href =
-        homeForRole(
-            user.role
-        );
+    const role = String(user.role || '').toUpperCase();
+    if (role === 'ADMIN') window.location.href = 'dashboard-admin.html';
+    else if (role === 'STAFF') window.location.href = 'dashboard-staff.html';
+    else window.location.href = 'dashboard-resident.html';
 }
 
-
-function viewComplaint(
-    id,
-    returnPage
-) {
-    const prefix =
-        window.location.pathname.includes(
-            '/static/'
-        )
-            ? ''
-            : 'static/';
-
-
-    let url =
-        `${prefix}complaint-details.html?id=${encodeURIComponent(id)}`;
-
-
-    if (returnPage) {
-        url +=
-            `&return=${encodeURIComponent(returnPage)}`;
-    }
-
-
-    window.location.href =
-        url;
+function viewComplaint(id, returnPage) {
+    window.location.href = (window.location.pathname.includes('/static/') ? '' : 'static/') +
+        'complaint-details.html?id=' + encodeURIComponent(id) +
+        (returnPage ? '&return=' + encodeURIComponent(returnPage) : '');
 }
-
-
-/* ==========================================================================
-   APPLY PAGE PROTECTION IMMEDIATELY
-   ========================================================================== */
-
-lockProtectedPage();

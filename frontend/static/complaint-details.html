@@ -30,24 +30,6 @@
                     <button @click="logout()" class="text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition p-1.5 rounded-md ml-1" title="Sign Out"><i class="fas fa-sign-out-alt text-lg"></i></button>
                 </div>
             </div>
-                    <nav v-if="user" class="bg-slate-50 border-t border-slate-200">
-                <div v-if="user.role === 'ADMIN'" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-6 overflow-x-auto">
-                    <a href="dashboard-admin.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition whitespace-nowrap"><i class="fas fa-chart-pie mr-1.5 text-base"></i> Portal</a>
-                    <a href="admin-staff.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition whitespace-nowrap"><i class="fas fa-users mr-1.5 text-base"></i> Staff</a>
-                    <a href="admin-approvals.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition whitespace-nowrap"><i class="fas fa-user-check mr-1.5 text-base"></i> Approvals</a>
-                    <a href="admin-reports.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition whitespace-nowrap"><i class="fas fa-search mr-1.5 text-base"></i> Records</a>
-                    <a href="messages.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition whitespace-nowrap"><i class="fas fa-bell mr-1.5 text-base"></i> Notifications</a>
-                </div>
-                <div v-else-if="user.role === 'STAFF'" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-6 overflow-x-auto">
-                    <a href="dashboard-staff.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition whitespace-nowrap"><i class="fas fa-clipboard-list mr-1.5 text-base"></i> My Queue</a>
-                    <a href="staff-history.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition whitespace-nowrap"><i class="fas fa-check-double mr-1.5 text-base"></i> History</a>
-                    <a href="messages.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition whitespace-nowrap"><i class="fas fa-bell mr-1.5 text-base"></i> Notifications</a>
-                </div>
-                <div v-else class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-6 overflow-x-auto">
-                    <a href="dashboard-resident.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition whitespace-nowrap"><i class="fas fa-home mr-1.5 text-base"></i> Portal</a>
-                    <a href="messages.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition whitespace-nowrap"><i class="fas fa-bell mr-1.5 text-base"></i> Notifications</a>
-                </div>
-            </nav>
         </header>
 
         <main class="flex-grow p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full space-y-6">
@@ -55,7 +37,7 @@
                 <div class="flex items-center">
                     <div>
                         <div class="flex flex-wrap items-center gap-3">
-                            <h2 class="font-bold text-xl text-slate-900 tracking-tight">{{ complaint?.complaint_code || complaint?.id || 'Loading...' }}</h2>
+                            <h2 class="font-bold text-xl text-slate-900 tracking-tight">{{ complaint?.id || 'Loading...' }}</h2>
                             <span class="text-slate-400 text-xl mx-1">|</span>
                                 <span class="font-bold text-lg text-slate-700">{{ complaint?.resident?.name || '...' }}</span>
                                 <span v-if="complaint?.resident?.flat_number" class="text-xs font-bold text-slate-400">(Flat {{ complaint.resident.flat_number }})</span>
@@ -68,15 +50,13 @@
                 <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
                     <button onclick="window.print()" class="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-md hover:bg-slate-50 text-xs font-bold shadow-sm transition"><i class="fas fa-print mr-1"></i> Print</button>
 
-                    <button v-if="canAssign" @click="navigate('assign-complaint.html?id=' + complaint?.id)" class="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-md hover:bg-slate-50 text-xs font-bold shadow-sm transition"><i class="fas fa-exchange-alt mr-1"></i> {{ complaint?.assigned_staff_id ? 'Reassign Staff' : 'Assign Staff' }}</button>
-                    <button v-if="canLogWork" @click="navigate('update-status.html?id=' + complaint?.id)" class="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 text-xs font-bold shadow-sm transition">Log Work Progress</button>
+                    <button v-if="user?.role.toUpperCase() === 'ADMIN'" @click="navigate('assign-complaint.html?id=' + complaint?.id)" class="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-md hover:bg-slate-50 text-xs font-bold shadow-sm transition"><i class="fas fa-exchange-alt mr-1"></i> Dispatch/Reassign</button>
+                    <button v-if="user?.role.toUpperCase() === 'STAFF' && ['ASSIGNED','IN_PROGRESS'].includes(complaint?.status)" @click="navigate('update-status.html?id=' + complaint?.id)" class="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 text-xs font-bold shadow-sm transition">Log Work Progress</button>
 
-                    <button v-if="canSubmitReview" @click="openReviewModal" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-xs font-bold shadow-sm transition"><i class="fas fa-star mr-1"></i> Review Service</button>
-                    <button v-else-if="isOwner && complaint?.feedback?.rating" @click="openReviewModal" class="px-4 py-2 bg-amber-50 border border-amber-200 text-amber-700 rounded-md hover:bg-amber-100 text-xs font-bold shadow-sm transition"><i class="fas fa-star mr-1"></i> View Review</button>
+                    <button v-if="user?.role.toUpperCase() === 'ADMIN' && ['OPEN','ASSIGNED','IN_PROGRESS'].includes(complaint?.status)" @click="closeTicket(complaint?.id)" class="px-4 py-2 bg-amber-600 text-white rounded-md hover:bg-amber-700 text-xs font-bold shadow-sm transition"><i class="fas fa-lock mr-1"></i> Close Ticket</button>
+                    <button v-if="user?.role.toUpperCase() === 'RESIDENT' && ['OPEN','ASSIGNED','IN_PROGRESS'].includes(complaint?.status)" @click="closeTicket(complaint?.id)" class="px-4 py-2 bg-amber-600 text-white rounded-md hover:bg-amber-700 text-xs font-bold shadow-sm transition"><i class="fas fa-lock mr-1"></i> Close Ticket</button>
 
-                    <button v-if="canClose" @click="closeTicket(complaint?.id)" class="px-4 py-2 bg-amber-600 text-white rounded-md hover:bg-amber-700 text-xs font-bold shadow-sm transition"><i class="fas fa-lock mr-1"></i> {{ complaint?.status === 'RESOLVED' ? 'Accept & Close' : 'Close Ticket' }}</button>
-
-                    <button v-if="canReopen" @click="reopenTicket(complaint?.id)" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-xs font-bold shadow-sm transition"><i class="fas fa-unlock mr-1"></i> Reopen Ticket</button>
+                    <button v-if="user?.role.toUpperCase() === 'RESIDENT' && complaint?.status === 'CLOSED' && !complaint?.rating" @click="reopenTicket(complaint?.id)" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-xs font-bold shadow-sm transition"><i class="fas fa-unlock mr-1"></i> Reopen Ticket</button>
                 </div>
             </div>
 
@@ -100,7 +80,7 @@
                         <div>
                             <div class="flex items-center justify-between mb-4">
                                 <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Attached Evidence</h3>
-                                <button v-if="canUpload" @click="$refs.fileUpload.click()" class="text-xs bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 px-3 py-1.5 rounded-md font-bold shadow-sm transition flex items-center">
+                                <button @click="$refs.fileUpload.click()" class="text-xs bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 px-3 py-1.5 rounded-md font-bold shadow-sm transition flex items-center">
                                     <i class="fas fa-plus mr-1.5"></i> Add Media
                                 </button>
                                 <input type="file" ref="fileUpload" class="hidden" @change="handleMediaUpload" multiple accept="image/*,.pdf" />
@@ -134,23 +114,15 @@
                             </template>
                         </div>
                         <div class="p-4 bg-white border-t border-slate-200">
-                            <form v-if="canComment" @submit.prevent="submitMessage" class="flex gap-3">
+                            <form @submit.prevent="submitMessage" class="flex gap-3">
                                 <input v-model="newMessage" type="text" class="w-full border border-slate-300 rounded-md px-4 py-2 text-sm focus:outline-none focus:border-indigo-500" placeholder="Type a message or update..." required />
                                 <button type="submit" :disabled="isSending" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-md font-bold shadow-sm transition disabled:opacity-50">Send</button>
                             </form>
-                            <div v-else class="text-xs font-medium text-slate-500 bg-slate-50 border border-slate-200 rounded-md px-4 py-3">
-                                <i class="fas fa-lock mr-1.5"></i>This timeline is read-only in the current ticket state. If the issue still needs work, the resident can reopen it.
-                            </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="space-y-6">
-                    <div v-if="complaint?.feedback?.rating" class="bg-white border border-amber-200 rounded-xl shadow-sm p-6">
-                        <h3 class="text-sm font-bold text-slate-900 mb-3 border-b border-amber-100 pb-2">Resident Review</h3>
-                        <div class="flex gap-1 mb-2"><i v-for="i in 5" :key="i" :class="i <= complaint.feedback.rating ? 'fas fa-star text-amber-400' : 'far fa-star text-slate-200'"></i></div>
-                        <p class="text-sm text-slate-600 italic whitespace-pre-wrap">{{ complaint.feedback.comment || 'No written comment.' }}</p>
-                    </div>
                     <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
                         <h3 class="text-sm font-bold text-slate-900 mb-4 border-b border-slate-100 pb-2">Assignment Data</h3>
                         <div class="space-y-4">
@@ -168,40 +140,11 @@
                                 <p class="text-[10px] font-bold text-indigo-500 uppercase tracking-widest mb-1">Assigned To</p>
                                 <p class="text-sm font-bold text-slate-900">{{ complaint.assigned_staff?.name }}</p>
                             </div>
-                            <div v-else class="bg-slate-50 border border-slate-200 rounded-lg p-3">
-                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Assigned To</p>
-                                <p class="text-sm font-bold text-slate-600">Awaiting admin assignment</p>
-                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </main>
-
-    <div v-if="showReviewModal" class="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden border-t-4 border-t-amber-400">
-            <div class="px-5 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-                <h3 class="font-bold text-lg text-slate-800">Service Review</h3>
-                <button @click="closeReviewModal" class="text-slate-400 hover:text-rose-500"><i class="fas fa-times text-xl"></i></button>
-            </div>
-            <div class="p-5">
-                <template v-if="complaint?.feedback?.rating">
-                    <div class="flex gap-2 mb-4"><i v-for="i in 5" :key="i" :class="i <= complaint.feedback.rating ? 'fas fa-star text-amber-400 text-2xl' : 'far fa-star text-slate-200 text-2xl'"></i></div>
-                    <p class="text-sm text-slate-700 italic bg-slate-50 border border-slate-200 rounded-md p-3 whitespace-pre-wrap">{{ complaint.feedback.comment || 'No written comment.' }}</p>
-                </template>
-                <template v-else>
-                    <p class="text-xs text-slate-500 mb-4">Rate the completed service. Submitting your review will close a resolved ticket.</p>
-                    <div class="flex gap-2 mb-5">
-                        <button v-for="i in 5" :key="i" @click="reviewRating = i" type="button" class="text-2xl" :aria-label="'Rate ' + i + ' stars'">
-                            <i :class="i <= reviewRating ? 'fas fa-star text-amber-400' : 'far fa-star text-slate-300'"></i>
-                        </button>
-                    </div>
-                    <textarea v-model="reviewComment" rows="4" maxlength="1000" class="w-full border border-slate-300 rounded-md p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Share your experience (optional)"></textarea>
-                    <button @click="submitReview" :disabled="reviewSubmitting" class="w-full mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-md disabled:opacity-50">{{ reviewSubmitting ? 'Submitting...' : 'Submit Review' }}</button>
-                </template>
-            </div>
-        </div>
-    </div>
     </div>
 
     <div id="toast" class="fixed bottom-6 right-6 z-50 hidden flex items-center px-4 py-3 rounded-md shadow-lg border bg-slate-900 text-white">
@@ -210,7 +153,7 @@
 
     <script src="../js/utils.js"></script>
     <script>
-        const { createApp, ref, computed, onMounted, nextTick } = Vue;
+        const { createApp, ref, onMounted, nextTick } = Vue;
 
         createApp({
             setup() {
@@ -221,20 +164,7 @@
                 const newMessage = ref('');
                 const isSending = ref(false);
                 const chatContainer = ref(null);
-                const showReviewModal = ref(false);
-                const reviewRating = ref(0);
-                const reviewComment = ref('');
-                const reviewSubmitting = ref(false);
                 let currentId = null;
-
-                const isOwner = computed(() => isComplaintOwner(user.value, complaint.value));
-                const canAssign = computed(() => canAssignComplaint(user.value, complaint.value));
-                const canLogWork = computed(() => canStaffWorkComplaint(user.value, complaint.value));
-                const canClose = computed(() => canCloseComplaint(user.value, complaint.value));
-                const canReopen = computed(() => canReopenComplaint(user.value, complaint.value));
-                const canComment = computed(() => canCommentOnComplaint(user.value, complaint.value));
-                const canUpload = computed(() => canUploadComplaintAttachment(user.value, complaint.value));
-                const canSubmitReview = computed(() => canSubmitComplaintFeedback(user.value, complaint.value));
 
                 const fetchTicketDetails = async () => {
                     try {
@@ -278,7 +208,10 @@
                     if (!newMessage.value.trim()) return;
                     isSending.value = true;
                     try {
-                        await apiCall(`/complaints/${currentId}/timeline`, {
+                        const endpoint = (user.value?.role || '').toUpperCase() === 'STAFF'
+                            ? `/staff/complaints/${currentId}/timeline`
+                            : `/complaints/${currentId}/timeline`;
+                        await apiCall(endpoint, {
                             method: 'POST',
                             body: { comment: newMessage.value.trim() }
                         });
@@ -287,36 +220,6 @@
                     } catch (err) {
                     } finally {
                         isSending.value = false;
-                    }
-                };
-
-                const openReviewModal = () => {
-                    reviewRating.value = complaint.value?.feedback?.rating || 0;
-                    reviewComment.value = complaint.value?.feedback?.comment || '';
-                    showReviewModal.value = true;
-                };
-
-                const closeReviewModal = () => {
-                    showReviewModal.value = false;
-                };
-
-                const submitReview = async () => {
-                    if (!reviewRating.value) {
-                        showToast('Please select a star rating.', 'error');
-                        return;
-                    }
-                    if (reviewSubmitting.value) return;
-                    reviewSubmitting.value = true;
-                    try {
-                        await apiCall(`/complaints/${currentId}/feedback`, {
-                            method: 'POST',
-                            body: { rating: reviewRating.value, comment: reviewComment.value.trim() }
-                        });
-                        showToast('Review submitted successfully.', 'success');
-                        closeReviewModal();
-                        await fetchTicketDetails();
-                    } finally {
-                        reviewSubmitting.value = false;
                     }
                 };
 
@@ -368,7 +271,7 @@
                     } catch (err) {}
                 };
 
-                return { user, complaint, timeline, activeTab, newMessage, isSending, chatContainer, isOwner, canAssign, canLogWork, canClose, canReopen, canComment, canUpload, canSubmitReview, showReviewModal, reviewRating, reviewComment, reviewSubmitting, openReviewModal, closeReviewModal, submitReview, submitMessage, handleMediaUpload, navigate, logout, goHome, closeTicket, reopenTicket, resolveFileUrl };
+                return { user, complaint, timeline, activeTab, newMessage, isSending, chatContainer, submitMessage, handleMediaUpload, navigate, logout, goHome, closeTicket, reopenTicket, resolveFileUrl };
             }
         }).mount('#app');
     </script>

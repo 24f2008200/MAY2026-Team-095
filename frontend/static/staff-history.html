@@ -76,11 +76,11 @@
                                 <td class="px-5 py-4 text-xs font-medium text-slate-500">{{ c.resolved_at && !isNaN(new Date(c.resolved_at).getTime()) ? new Date(c.resolved_at).toLocaleDateString() : '--' }}</td>
                                 <td class="px-5 py-4"><span :class="'status-pill status-' + c.status.replace(' ','')">{{ c.status.replace('_', ' ') }}</span></td>
                                 <td class="px-5 py-4">
-                                    <div v-if="c.feedback?.rating">
+                                    <div v-if="c.feedback?.rating || c.rating">
                                         <div class="flex gap-0.5 text-[12px] mb-1">
-                                            <i v-for="i in 5" :key="i" :class="i <= parseInt(c.feedback?.rating) ? 'fas fa-star text-amber-400' : 'far fa-star text-slate-200'"></i>
+                                            <i v-for="i in 5" :key="i" :class="i <= parseInt(c.feedback?.rating || c.rating) ? 'fas fa-star text-amber-400' : 'far fa-star text-slate-200'"></i>
                                         </div>
-                                        <p class="text-xs text-slate-600 font-medium">"{{ c.feedback?.comment || 'No written feedback' }}"</p>
+                                        <p class="text-xs text-slate-600 font-medium">"{{ c.feedback?.comment || c.feedbackComment }}"</p>
                                     </div>
                                     <span v-else class="text-slate-400 text-[10px] italic">Pending Review</span>
                                 </td>

@@ -11,7 +11,6 @@ from app.services.complaint_service import (
     _add_timeline_entry,
     _complaint_response,
     _get_user,
-    _notify_comment_participants,
     _timeline_response,
     get_all_complaints,
     get_complaint,
@@ -91,25 +90,27 @@ def update_complaint_status(complaint_id: int):
             "message": "This complaint is not assigned to you.",
         }, 403
 
-    if complaint.status not in {
-        ComplaintStatus.ASSIGNED,
-        ComplaintStatus.IN_PROGRESS,
+    if complaint.status in {
+        ComplaintStatus.CLOSED,
+        ComplaintStatus.OPEN,
     }:
         return {
             "success": False,
-            "message": "Only active assigned work orders can be updated.",
+            "message": "Cannot update status for this complaint.",
         }, 400
 
     if (
         new_status == ComplaintStatus.IN_PROGRESS
         and complaint.status not in {
             ComplaintStatus.ASSIGNED,
+            ComplaintStatus.REOPENED,
         }
     ):
         return {
             "success": False,
             "message": (
-                "Complaint must be ASSIGNED before moving to IN_PROGRESS."
+                "Complaint must be ASSIGNED or REOPENED before "
+                "moving to IN_PROGRESS."
             ),
         }, 400
 
@@ -128,7 +129,6 @@ def update_complaint_status(complaint_id: int):
 
     if new_status == ComplaintStatus.RESOLVED:
         complaint.resolved_at = datetime.now(timezone.utc)
-        complaint.closed_at = None
 
     comment = data.get("comment")
 
@@ -282,12 +282,6 @@ def add_timeline_update(complaint_id: int):
             "message": "This complaint is not assigned to you.",
         }, 403
 
-    if complaint.status not in {ComplaintStatus.ASSIGNED, ComplaintStatus.IN_PROGRESS}:
-        return {
-            "success": False,
-            "message": "Completed or unassigned complaints are read-only for staff.",
-        }, 400
-
     try:
         update = _add_timeline_entry(
             complaint=complaint,
@@ -296,7 +290,16 @@ def add_timeline_update(complaint_id: int):
             comment=comment,
         )
 
-        _notify_comment_participants(complaint, user, comment)
+        create_notification(
+            user_id=complaint.resident_id,
+            complaint_id=complaint.id,
+            title="Complaint Update",
+            message=(
+                f"New update on complaint {complaint.complaint_code}: "
+                f"{comment}"
+            ),
+            notification_type="TIMELINE_UPDATE",
+        )
 
         db.session.commit()
     except IntegrityError:

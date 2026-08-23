@@ -103,11 +103,6 @@ class Complaint(db.Model):
         nullable=True,
     )
 
-    closed_at = db.Column(
-        db.DateTime,
-        nullable=True,
-    )
-
     # -------------------------
     # Relationships
     # -------------------------
@@ -179,11 +174,6 @@ class Complaint(db.Model):
             "resolved_at": (
                 self.resolved_at.isoformat()
                 if self.resolved_at
-                else None
-            ),
-            "closed_at": (
-                self.closed_at.isoformat()
-                if self.closed_at
                 else None
             ),
         }

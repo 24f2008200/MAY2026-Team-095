@@ -15,7 +15,6 @@ from app.controllers.complaint_controller import (
 from app.middleware.auth import (
     authenticated_required,
     resident_required,
-    roles_required,
 )
 
 complaint_ns = Namespace(
@@ -208,11 +207,11 @@ class ComplaintFeedbackResource(Resource):
 @complaint_ns.route("/<int:complaint_id>/close")
 class ComplaintCloseResource(Resource):
 
-    @roles_required("ADMIN", "RESIDENT")
+    @authenticated_required
     @complaint_ns.doc(
         security="Bearer",
         summary="Close a complaint",
-        description="An admin or the owning resident can close an active or resolved complaint.",
+        description="Admin or resident can close an open or in-progress complaint.",
     )
     @complaint_ns.response(200, "Complaint closed")
     @complaint_ns.response(400, "Validation error")
@@ -225,14 +224,11 @@ class ComplaintCloseResource(Resource):
 @complaint_ns.route("/<int:complaint_id>/reopen")
 class ComplaintReopenResource(Resource):
 
-    @resident_required
+    @authenticated_required
     @complaint_ns.doc(
         security="Bearer",
-        summary="Reopen a resolved or closed complaint",
-        description=(
-            "The owning resident can reopen an unresolved issue within 7 days. "
-            "Reopening clears the previous staff assignment and returns it to admin triage."
-        ),
+        summary="Reopen a closed complaint",
+        description="Resident can reopen a ticket closed within the last 7 days.",
     )
     @complaint_ns.response(200, "Complaint reopened")
     @complaint_ns.response(400, "Validation error")

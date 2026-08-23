@@ -25,22 +25,25 @@ from app.routes.category_routes import category_ns
 from app.routes.admin_routes import admin_ns
 from app.routes.staff_routes import staff_ns
 from app.routes.notification_routes import notification_ns
+from flask_cors import CORS
 
 def create_app():
     app = Flask(__name__)
+    CORS(app)
 
     # Configuration
+    
     app.config.from_object(Config)
 
     # Extensions
     CORS(
-        app,
-        resources={
-            r"/*": {
-                "origins": "*",
-            }
-        },
-    )
+    app,
+    resources={
+        r"/*": {
+            "origins": "*"
+        }
+    }
+)
 
     db.init_app(app)
     migrate.init_app(app, db)

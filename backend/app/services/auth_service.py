@@ -38,7 +38,6 @@ def _user_response(user: User):
         "role": user.role.value,
         "flat_number": user.flat_number,
         "building": user.building,
-        "trade": user.trade,
         "is_active": user.is_active,
         "created_at": (
             user.created_at.isoformat()

@@ -127,6 +127,36 @@ def mark_notification_read(notification_id: int):
     }, 200
 
 
+def delete_notification(notification_id: int):
+    user_id = int(get_jwt_identity())
+
+    notification = Notification.query.filter_by(
+        id=notification_id,
+        user_id=user_id,
+    ).first()
+
+    if not notification:
+        return {
+            "success": False,
+            "message": "Notification not found.",
+        }, 404
+
+    try:
+        db.session.delete(notification)
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return {
+            "success": False,
+            "message": "Unable to remove notification.",
+        }, 500
+
+    return {
+        "success": True,
+        "message": "Notification removed.",
+    }, 200
+
+
 def mark_all_notifications_read():
     user_id = int(get_jwt_identity())
 

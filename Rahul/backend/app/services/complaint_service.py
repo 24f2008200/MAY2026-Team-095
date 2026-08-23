@@ -85,6 +85,7 @@ def _user_summary(user: User | None) -> dict | None:
 
 
 def _attachment_response(attachment: Attachment) -> dict:
+    filename = os.path.basename(attachment.file_path) if attachment.file_path else None
     return {
         "id": attachment.id,
         "complaint_id": attachment.complaint_id,
@@ -93,6 +94,8 @@ def _attachment_response(attachment: Attachment) -> dict:
         "file_path": attachment.file_path,
         "file_type": attachment.file_type,
         "file_size": attachment.file_size,
+
+        "url": f"/uploads/{filename}" if filename else None,
         "created_at": (
             attachment.created_at.isoformat()
             if attachment.created_at
@@ -845,7 +848,6 @@ def close_complaint(complaint_id: int):
     """
     Close a complaint (RESOLVED → CLOSED).
     Admin or resident can close an open/in-progress complaint.
-    #i added it: allows admin and resident to close tickets.
     """
     user = _get_user(_current_user_id())
 
@@ -889,7 +891,6 @@ def reopen_complaint(complaint_id: int):
     """
     Reopen a closed complaint (CLOSED → OPEN) within 7 days.
     Only the resident who created the complaint can reopen.
-    #i added it: allows residents to reopen tickets closed within 7 days.
     """
     user = _get_user(_current_user_id())
 

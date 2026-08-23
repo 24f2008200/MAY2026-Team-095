@@ -4,59 +4,66 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Smart Society | Login</title>
+    <link rel="icon" type="image/svg+xml" href="images/favicon.svg">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="assets/css/styles.css" />
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 </head>
-<body>
-    <div id="app" class="min-h-screen flex flex-col bg-slate-50">
-        <main class="flex-grow w-full h-screen flex justify-center items-center">
-            <div class="bg-white shadow-xl rounded-none flex flex-col md:flex-row w-full h-full overflow-hidden border-0">
-                <div class="w-full md:w-1/2 p-6 md:p-10 flex flex-col justify-center">
-                    <div class="mb-8">
-                        <h2 class="font-extrabold text-2xl text-slate-900 tracking-tight mb-1">Access Portal</h2>
-                        <p class="text-sm text-slate-500 font-medium">Sign in to the complaint resolution system.</p>
-                    </div>
-
-                    <form @submit.prevent="handleLogin" class="space-y-5">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5">Email Address</label>
-                            <input v-model="email" type="email" placeholder="e.g., resident@society.com" class="form-input w-full border border-slate-300 p-2.5 rounded-md text-sm text-slate-900 transition" required />
-                        </div>
-                        <div>
-                            <div class="flex justify-between items-center mb-1.5">
-                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide">Password</label>
-                                <a href="static/forgot-password.html" class="text-xs text-indigo-600 hover:text-indigo-800 font-bold transition">Recover</a>
-                            </div>
-                            <input v-model="password" type="password" placeholder=" " class="form-input w-full border border-slate-300 p-2.5 rounded-md text-sm text-slate-900 transition" required />
-                        </div>
-                        <button type="submit" :disabled="isLoading" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-md transition shadow-sm mt-2 disabled:opacity-50">
-                            {{ isLoading ? 'Authenticating...' : 'Authenticate' }}
-                        </button>
-                    </form>
-
-                    <div class="mt-8 text-center text-sm font-medium border-t border-slate-100 pt-6">
-                        <span class="text-slate-500">Unregistered resident?</span>
-                        <a href="static/register.html" class="text-indigo-600 font-bold hover:text-indigo-800 transition ml-1">Request Access</a>
-                    </div>
+<body class="bg-slate-50 text-slate-900 antialiased">
+    <div id="app" class="min-h-screen w-full flex flex-col md:flex-row m-0 p-0 overflow-x-hidden">
+        <div class="w-full md:w-1/2 p-6 sm:p-12 md:p-16 flex flex-col justify-center bg-white order-2 md:order-1 md:min-h-screen overflow-y-auto">
+            <div class="w-full max-w-md mx-auto space-y-8 py-4 sm:py-6">
+                <div>
+                    <h2 class="font-extrabold text-3xl text-slate-900 tracking-tight mb-2">Access Portal</h2>
+                    <p class="text-sm text-slate-500 font-medium">Sign in to the complaint resolution system.</p>
                 </div>
 
-                <div class="w-full md:w-1/2 bg-slate-900 text-white p-8 md:p-12 relative overflow-hidden flex flex-col justify-between">
-                    <div class="absolute -right-20 -bottom-20 opacity-5 pointer-events-none"><i class="fas fa-city text-[300px]"></i></div>
-                    <div class="relative z-10 mb-8">
-                        <div class="mb-6"><img src="images/logo.svg" alt="Smart Society Logo" class="w-12 h-12 rounded-lg shadow-md" /></div>
-                        <h3 class="font-extrabold text-2xl mb-3 leading-snug tracking-tight">Complaint Resolution System</h3>
-                        <p class="text-slate-400 text-sm leading-relaxed">A dedicated platform for residents and staff to seamlessly track, manage, and resolve all society maintenance issues.</p>
+                <div v-if="errorMessage" role="alert" aria-live="polite" class="auth-alert auth-alert-error">
+                    <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
+                    <span>{{ errorMessage }}</span>
+                </div>
+
+                <form @submit.prevent="handleLogin" class="space-y-6" novalidate>
+                    <div>
+                        <label for="loginEmail" class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">Email Address</label>
+                        <input id="loginEmail" v-model="email" @input="clearError" type="email" inputmode="email" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="e.g., resident@society.com" class="form-input w-full border border-slate-300 p-3 rounded-lg text-sm text-slate-900 transition focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100" required />
                     </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <label for="loginPassword" class="block text-xs font-bold text-slate-700 uppercase tracking-wide">Password</label>
+                            <a href="static/forgot-password.html" class="text-xs text-indigo-600 hover:text-indigo-800 font-bold transition">Recover</a>
+                        </div>
+                        <div class="relative rounded-lg shadow-sm">
+                            <input id="loginPassword" v-model="password" @input="clearError" :type="showPassword ? 'text' : 'password'" autocomplete="current-password" placeholder="********" class="form-input password-input w-full border border-slate-300 p-3 pr-12 rounded-lg text-sm text-slate-900 transition focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100" required />
+                            <button type="button" @click="showPassword = !showPassword" :aria-label="showPassword ? 'Hide password' : 'Show password'" :aria-pressed="showPassword" class="absolute inset-y-0 right-0 w-11 flex items-center justify-center text-slate-400 hover:text-slate-600 focus:outline-none focus:text-indigo-600 transition rounded-r-lg">
+                                <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" :disabled="isLoading" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg transition shadow-sm mt-4 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2">
+                        <i v-if="isLoading" class="fas fa-circle-notch fa-spin" aria-hidden="true"></i>
+                        <span>{{ isLoading ? 'Signing In...' : 'Sign In' }}</span>
+                    </button>
+                </form>
+
+                <div class="text-center text-sm font-medium border-t border-slate-100 pt-6">
+                    <span class="text-slate-500">Unregistered resident?</span>
+                    <a href="static/register.html" class="text-indigo-600 font-bold hover:text-indigo-800 transition ml-1">Request Access</a>
                 </div>
             </div>
-        </main>
-    </div>
+        </div>
 
-    <div id="toast" class="fixed bottom-6 right-6 z-50 hidden items-center px-4 py-3 rounded-md shadow-lg border bg-slate-900 border-slate-800 text-white">
-        <i class="fas fa-check-circle text-emerald-400 mr-3 text-lg"></i>
-        <span id="toastMsg" class="font-medium text-sm">Success</span>
+        <div class="w-full md:w-1/2 bg-slate-900 text-white p-8 sm:p-12 md:p-16 relative overflow-hidden flex flex-col justify-center items-center text-center select-none order-1 md:order-2 min-h-[240px] md:min-h-screen">
+            <div class="absolute -right-20 -bottom-20 opacity-[0.03] pointer-events-none"><i class="fas fa-city text-[320px]"></i></div>
+            <div class="relative z-10 max-w-sm">
+                <div class="mb-6 flex justify-center"><img src="images/logo.svg" alt="Smart Society Logo" class="w-16 h-16 rounded-xl shadow-md bg-white/10 p-1" /></div>
+                <h3 class="font-extrabold text-3xl mb-4 leading-snug tracking-tight">Complaint Resolution System</h3>
+                <p class="text-slate-400 text-sm leading-relaxed">A dedicated platform for residents and staff to seamlessly track, manage, and resolve all society maintenance issues.</p>
+            </div>
+        </div>
     </div>
 
     <script src="js/utils.js"></script>
@@ -68,39 +75,79 @@
                 const email = ref('');
                 const password = ref('');
                 const isLoading = ref(false);
+                const errorMessage = ref('');
+                const showPassword = ref(false);
+
+                const clearError = () => {
+                    errorMessage.value = '';
+                };
+
+                const redirectUser = (role) => {
+                    const normalizedRole = String(role || '').toUpperCase();
+                    if (normalizedRole === 'ADMIN') window.location.href = 'static/dashboard-admin.html';
+                    else if (normalizedRole === 'STAFF') window.location.href = 'static/dashboard-staff.html';
+                    else window.location.href = 'static/dashboard-resident.html';
+                };
 
                 onMounted(() => {
                     const user = getCurrentUser();
                     const token = localStorage.getItem('smartSocietyToken');
-                    if (user && token) {
-                        redirectUser(user.role);
-                    }
+                    if (user && token) redirectUser(user.role);
                 });
 
-                const redirectUser = (role) => {
-                    if (role === 'ADMIN') window.location.href = 'static/dashboard-admin.html';
-                    else if (role === 'STAFF') window.location.href = 'static/dashboard-staff.html';
-                    else window.location.href = 'static/dashboard-resident.html';
-                };
-
                 const handleLogin = async () => {
+                    if (isLoading.value) return;
+
+                    errorMessage.value = '';
+                    const normalizedEmail = email.value.trim().toLowerCase();
+
+                    if (!normalizedEmail) {
+                        errorMessage.value = 'Please enter your email address.';
+                        return;
+                    }
+
+                    if (!password.value) {
+                        errorMessage.value = 'Please enter your password.';
+                        return;
+                    }
+
+                    // Keep this aligned with registration's minimum length without
+                    // altering or trimming the password the user actually entered.
+                    if (password.value.length < 8) {
+                        errorMessage.value = 'Password must be at least 8 characters long.';
+                        return;
+                    }
+
                     isLoading.value = true;
                     try {
                         const response = await apiCall('/auth/login', {
                             method: 'POST',
-                            body: { email: email.value.trim(), password: password.value.trim() }
+                            body: { email: normalizedEmail, password: password.value },
+                            suppressErrorToast: true
                         });
+
+                        if (!response || !response.user || !response.access_token) {
+                            throw new Error('We could not complete sign in. Please try again.');
+                        }
+
                         setCurrentUser(response.user, response.access_token);
-                        showToast('Authenticated successfully.');
-                        setTimeout(() => redirectUser(response.user.role), 400);
+                        redirectUser(response.user.role);
                     } catch (err) {
-                        // Handled by apiCall interceptor toast
+                        if (err.status === 401 || err.status === 404) {
+                            errorMessage.value = 'The email or password you entered is incorrect.';
+                        } else if (err.status === 403) {
+                            errorMessage.value = err.message || 'Your account is not authorized to sign in yet.';
+                        } else if (err.status === 429) {
+                            errorMessage.value = 'Too many sign-in attempts. Please wait a moment and try again.';
+                        } else {
+                            errorMessage.value = err.message || 'We could not sign you in. Please try again.';
+                        }
                     } finally {
                         isLoading.value = false;
                     }
                 };
 
-                return { email, password, isLoading, handleLogin };
+                return { email, password, isLoading, errorMessage, showPassword, clearError, handleLogin };
             }
         }).mount('#app');
     </script>

@@ -34,7 +34,9 @@
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-6 overflow-x-auto">
                     <a href="dashboard-admin.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition"><i class="fas fa-chart-pie mr-1.5 text-base"></i> Portal</a>
                     <a href="admin-staff.html" class="nav-link border-indigo-600 text-indigo-700 py-2 px-3 text-xs font-bold border-b-2 flex items-center transition"><i class="fas fa-users mr-1.5 text-base"></i> Staff</a>
+                    <a href="admin-approvals.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition"><i class="fas fa-user-check mr-1.5 text-base"></i> Approvals</a>
                     <a href="admin-reports.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition"><i class="fas fa-search mr-1.5 text-base"></i> Records</a>
+                    <a href="messages.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition"><i class="fas fa-bell mr-1.5 text-base"></i> Notifications</a>
                 </div>
             </nav>
         </header>
@@ -46,6 +48,7 @@
                     <p class="text-sm text-slate-500 mt-1 font-medium">Manage maintenance personnel and system credentials.</p>
                 </div>
             </div>
+            
             <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
                 <form @submit.prevent="handleAddStaff" class="p-5 border-b border-slate-200 bg-slate-50">
                     <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">Provision New Account</h3>
@@ -58,7 +61,7 @@
                             <label class="block text-[10px] font-bold text-slate-700 mb-1">Trade/Role</label>
                             <select v-model="newStaff.trade" class="w-full border border-slate-300 p-2 rounded-md text-sm" required>
                                 <option disabled value="">Select Trade...</option>
-                                <option value="Plumber">Plumber</option><option value="Electrician">Electrician</option><option value="Carpenter">Carpenter</option><option value="Janitorial">Janitorial</option><option value="Security">Security</option>
+                                <option value="Plumbing">Plumbing</option><option value="Electrical">Electrical</option><option value="Carpentry">Carpentry</option><option value="Janitorial">Janitorial</option><option value="Security">Security</option>
                             </select>
                         </div>
                         <div class="w-full sm:w-1/4">
@@ -74,9 +77,27 @@
                         </button>
                     </div>
                 </form>
+
+                <div class="px-5 py-4 border-b border-slate-200 bg-white flex flex-col sm:flex-row gap-3 justify-between items-center">
+                    <div class="flex gap-3 w-full sm:w-auto">
+                        <select v-model="tradeFilter" class="bg-slate-50 border border-slate-300 text-slate-700 text-xs font-bold rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none w-full sm:w-auto">
+                            <option value="">All Trades</option>
+                            <option value="Plumbing">Plumbing</option>
+                            <option value="Electrical">Electrical</option>
+                            <option value="Carpentry">Carpentry</option>
+                            <option value="Janitorial">Janitorial</option>
+                            <option value="Security">Security</option>
+                        </select>
+                    </div>
+                    <div class="relative w-full sm:w-64">
+                        <i class="fas fa-search absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                        <input v-model="searchQuery" type="text" placeholder="Search name, email..." class="w-full bg-slate-50 border border-slate-300 text-slate-700 text-xs rounded-md pl-8 pr-3 py-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+                    </div>
+                </div>
+
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
-                        <thead class="bg-white border-b border-slate-200">
+                        <thead class="bg-slate-50 border-b border-slate-200">
                             <tr>
                                 <th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Personnel</th>
                                 <th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Trade</th>
@@ -85,10 +106,10 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 bg-white">
-                            <tr v-if="staffList.length === 0">
+                            <tr v-if="paginatedStaff.length === 0">
                                 <td colspan="4" class="px-5 py-8 text-center text-slate-500 text-sm">No maintenance staff found.</td>
                             </tr>
-                            <tr v-for="s in staffList" :key="s.id" class="hover:bg-slate-50 transition">
+                            <tr v-for="s in paginatedStaff" :key="s.id" class="hover:bg-slate-50 transition">
                                 <td class="px-5 py-4 text-sm font-bold text-slate-800">{{ s.name }}</td>
                                 <td class="px-5 py-4 text-sm font-medium text-slate-600"><span class="bg-slate-100 px-2 py-1 rounded text-xs border border-slate-200">{{ s.trade || 'General' }}</span></td>
                                 <td class="px-5 py-4 text-sm font-mono text-slate-600">{{ s.username || s.email || '--' }}</td>
@@ -98,6 +119,48 @@
                             </tr>
                         </tbody>
                     </table>
+                </div>
+
+                <div v-if="totalPages > 1" class="px-5 py-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center">
+                    <span class="text-xs font-medium text-slate-500">Page <span class="font-bold text-slate-800">{{ currentPage }}</span> of {{ totalPages }} <span class="hidden sm:inline">({{ filteredStaff.length }} total records)</span></span>
+                    <div class="flex gap-2">
+                        <button @click="changePage(currentPage - 1)" :disabled="currentPage === 1" class="px-3 py-1.5 text-xs font-bold text-slate-600 bg-white border border-slate-300 rounded-md hover:bg-slate-50 disabled:opacity-50 transition shadow-sm">Prev</button>
+                        <button @click="changePage(currentPage + 1)" :disabled="currentPage === totalPages" class="px-3 py-1.5 text-xs font-bold text-slate-600 bg-white border border-slate-300 rounded-md hover:bg-slate-50 disabled:opacity-50 transition shadow-sm">Next</button>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                <div class="p-5 border-b border-slate-200 bg-slate-50">
+                    <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Complaint Categories</h3>
+                    <p class="text-xs text-slate-500 font-medium mb-3">Categories residents can pick from when logging a complaint (e.g. Electrical, Plumbing, Security).</p>
+                    <form @submit.prevent="handleAddCategory" class="flex flex-col sm:flex-row gap-3 items-end">
+                        <div class="w-full sm:w-1/3">
+                            <label class="block text-[10px] font-bold text-slate-700 mb-1">Category Name</label>
+                            <input v-model="newCategory.name" type="text" placeholder="e.g. Plumbing" class="w-full border border-slate-300 p-2 rounded-md text-sm" required>
+                        </div>
+                        <div class="w-full sm:flex-1">
+                            <label class="block text-[10px] font-bold text-slate-700 mb-1">Description (optional)</label>
+                            <input v-model="newCategory.description" type="text" placeholder="Water and pipe related issues" class="w-full border border-slate-300 p-2 rounded-md text-sm">
+                        </div>
+                        <button type="submit" :disabled="isCategoryLoading" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-2.5 rounded-md text-sm shadow-sm transition h-[38px] w-full sm:w-auto disabled:opacity-50">
+                            {{ isCategoryLoading ? '...' : 'Add' }}
+                        </button>
+                    </form>
+                </div>
+                <div class="divide-y divide-slate-100">
+                    <div v-if="categories.length === 0" class="px-5 py-6 text-sm text-slate-500">No categories yet - add one above.</div>
+                    <div v-for="cat in categories" :key="cat.id" class="px-5 py-3 flex items-center justify-between gap-3">
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm font-bold text-slate-800">{{ cat.name }}</span>
+                                <span :class="['text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full', cat.is_active ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-500 border border-slate-200']">{{ cat.is_active ? 'Active' : 'Inactive' }}</span>
+                            </div>
+                            <p v-if="cat.description" class="text-xs text-slate-500 mt-0.5 truncate">{{ cat.description }}</p>
+                        </div>
+                        <button @click="toggleCategoryStatus(cat)" :class="['text-xs font-bold uppercase tracking-wide px-3 py-1.5 rounded border transition whitespace-nowrap', cat.is_active ? 'text-rose-600 hover:text-rose-800 bg-rose-50 border-rose-100' : 'text-emerald-600 hover:text-emerald-800 bg-emerald-50 border-emerald-100']">{{ cat.is_active ? 'Deactivate' : 'Activate' }}</button>
+                    </div>
                 </div>
             </div>
         </main>
@@ -110,7 +173,7 @@
 
     <script src="../js/utils.js"></script>
     <script>
-        const { createApp, ref, onMounted } = Vue;
+        const { createApp, ref, onMounted, computed, watch } = Vue;
 
         createApp({
             setup() {
@@ -119,18 +182,87 @@
                 const isLoading = ref(false);
                 const newStaff = ref({ name: '', trade: '', email: '', password: '', mobileNumber: '', flatNumber: '' });
 
+                const categories = ref([]);
+                const newCategory = ref({ name: '', description: '' });
+                const isCategoryLoading = ref(false);
+                
+                const searchQuery = ref('');
+                const tradeFilter = ref('');
+                const currentPage = ref(1);
+                const itemsPerPage = 8;
+
                 const fetchStaffList = async () => {
                     try {
-                        const response = await apiCall('/admin/staff');
+                        const query = tradeFilter.value ? `?trade=${encodeURIComponent(tradeFilter.value)}` : '';
+                        const response = await apiCall(`/admin/staff${query}`);
                         staffList.value = response.staff || [];
                     } catch (err) {
                         staffList.value = [];
                     }
                 };
 
+                const fetchCategories = async () => {
+                    try {
+                        // Admin view needs inactive categories too (to re-activate them),
+                        // unlike the public /categories endpoint which only returns active ones.
+                        const response = await apiCall('/admin/categories');
+                        categories.value = response.categories || [];
+                    } catch (err) {
+                        categories.value = [];
+                    }
+                };
+
+                const toggleCategoryStatus = async (cat) => {
+                    try {
+                        await apiCall(`/admin/categories/${cat.id}/status`, {
+                            method: 'PUT',
+                            body: { is_active: !cat.is_active }
+                        });
+                        showToast(`Category ${cat.is_active ? 'deactivated' : 'activated'}.`, 'success');
+                        fetchCategories();
+                    } catch (err) {}
+                };
+
                 onMounted(() => {
                     user.value = requireAuth('Admin');
-                    if (user.value) fetchStaffList();
+                    if (user.value) refreshUserProfile(user, 'Admin');
+                    if (user.value) {
+                        fetchStaffList();
+                        fetchCategories();
+                    }
+                });
+
+                const filteredStaff = computed(() => {
+                    let result = staffList.value;
+                    if (searchQuery.value.trim()) {
+                        const q = searchQuery.value.toLowerCase();
+                        result = result.filter(s => 
+                            s.name.toLowerCase().includes(q) || 
+                            (s.email && s.email.toLowerCase().includes(q)) || 
+                            (s.trade && s.trade.toLowerCase().includes(q))
+                        );
+                    }
+                    return result;
+                });
+
+                const totalPages = computed(() => Math.ceil(filteredStaff.value.length / itemsPerPage) || 1);
+
+                const paginatedStaff = computed(() => {
+                    const start = (currentPage.value - 1) * itemsPerPage;
+                    return filteredStaff.value.slice(start, start + itemsPerPage);
+                });
+
+                const changePage = (page) => {
+                    if (page >= 1 && page <= totalPages.value) currentPage.value = page;
+                };
+
+                watch(tradeFilter, () => {
+                    currentPage.value = 1;
+                    fetchStaffList();
+                });
+
+                watch(searchQuery, () => {
+                    currentPage.value = 1;
                 });
 
                 const handleAddStaff = async () => {
@@ -164,7 +296,24 @@
                     } catch (err) {}
                 };
 
-                return { user, staffList, isLoading, newStaff, handleAddStaff, removeStaff, logout, goHome };
+                const handleAddCategory = async () => {
+                    isCategoryLoading.value = true;
+                    const payload = {
+                        name: newCategory.value.name.trim(),
+                        description: newCategory.value.description.trim() || undefined,
+                    };
+                    try {
+                        await apiCall('/admin/categories', { method: 'POST', body: payload });
+                        showToast('Category added.', 'success');
+                        newCategory.value = { name: '', description: '' };
+                        fetchCategories();
+                    } catch (err) {
+                    } finally {
+                        isCategoryLoading.value = false;
+                    }
+                };
+
+                return { user, staffList, isLoading, newStaff, searchQuery, tradeFilter, currentPage, totalPages, filteredStaff, paginatedStaff, changePage, handleAddStaff, removeStaff, categories, newCategory, isCategoryLoading, handleAddCategory, toggleCategoryStatus, logout, goHome };
             }
         }).mount('#app');
     </script>

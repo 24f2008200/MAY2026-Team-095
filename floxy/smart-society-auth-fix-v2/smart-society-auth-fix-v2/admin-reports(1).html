@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Smart Society | Search Records</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <link rel="icon" type="image/svg+xml" href="../images/favicon.svg">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
+</head>
+<body>
+    <div id="app" class="min-h-screen flex flex-col bg-slate-50">
+        <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex justify-between items-center">
+                <div class="flex items-center cursor-pointer" @click="goHome()">
+                    <div class="mr-3"><img src="../images/logo.svg" alt="Smart Society Logo" class="w-8 h-8 rounded-md shadow-sm" /></div>
+                    <div><h1 class="font-extrabold text-lg text-slate-900 tracking-tight leading-none">Smart Society</h1><p class="text-[9px] text-indigo-600 font-bold uppercase tracking-widest mt-0.5">Complaint Resolution</p></div>
+                </div>
+                <div class="flex items-center space-x-4 relative">
+                    <div class="h-6 w-px bg-slate-200 hidden sm:block"></div>
+                    <div class="flex items-center gap-3 cursor-default">
+                        <div class="text-right hidden sm:block">
+                            <p class="text-sm font-bold text-slate-900 leading-tight">{{ user?.name }}</p>
+                            <p class="text-[0.65rem] text-slate-500 font-bold uppercase tracking-wider mt-0.5">{{ user?.role }}</p>
+                        </div>
+                        <div class="w-8 h-8 rounded-md bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm border border-indigo-200">{{ user?.name ? user.name.charAt(0) : 'U' }}</div>
+                    </div>
+                    <button @click="logout()" class="text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition p-1.5 rounded-md ml-1" title="Sign Out"><i class="fas fa-sign-out-alt text-lg"></i></button>
+                </div>
+            </div>
+            <nav class="bg-slate-50 border-t border-slate-200">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-6 overflow-x-auto">
+                    <a href="dashboard-admin.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition"><i class="fas fa-chart-pie mr-1.5 text-base"></i> Portal</a>
+                    <a href="admin-staff.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition"><i class="fas fa-users mr-1.5 text-base"></i> Staff</a>
+                    <a href="admin-approvals.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition"><i class="fas fa-user-check mr-1.5 text-base"></i> Approvals</a>
+                    <a href="admin-reports.html" class="nav-link border-indigo-600 text-indigo-700 py-2 px-3 text-xs font-bold hover:text-slate-900 border-b-2 flex items-center transition"><i class="fas fa-search mr-1.5 text-base"></i> Records</a>
+                    <a href="messages.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition"><i class="fas fa-bell mr-1.5 text-base"></i> Notifications</a>
+                </div>
+            </nav>
+        </header>
+
+        <main class="flex-grow p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full space-y-6">
+            <div class="flex items-center space-x-4 mb-2">
+                <a href="dashboard-admin.html" class="w-8 h-8 rounded-md border border-slate-300 bg-white shadow-sm flex justify-center items-center text-slate-500 hover:text-slate-900 transition"><i class="fas fa-arrow-left text-sm"></i></a>
+                <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Search Database</h2>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-5">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Analytics Overview</h3>
+                    <button @click="fetchAnalytics" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition flex items-center"><i class="fas fa-rotate mr-1.5"></i> Refresh</button>
+                </div>
+                <div v-if="!analytics" class="text-sm text-slate-500 py-8 text-center">Loading analytics...</div>
+                <div v-else class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <div class="border border-slate-200 rounded-lg p-4 lg:col-span-2">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Complaints by Category</p>
+                        <div class="relative" style="height: 260px;"><canvas ref="categoryChartRef"></canvas></div>
+                    </div>
+                    <div class="border border-slate-200 rounded-lg p-4">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Status Breakdown</p>
+                        <div class="relative" style="height: 220px;"><canvas ref="statusChartRef"></canvas></div>
+                        <ul class="mt-3 space-y-1">
+                            <li v-for="(count, status) in analytics.status_overview" :key="status" class="flex justify-between text-xs">
+                                <span class="font-medium text-slate-600">{{ status.replace('_',' ') }}</span>
+                                <span class="font-bold text-slate-900">{{ count }}</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="border border-slate-200 rounded-lg p-4 flex flex-col justify-center items-center text-center">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 self-start">Avg. Resolution Time</p>
+                        <p class="text-4xl font-black text-indigo-600 leading-none">{{ analytics.average_resolution_hours != null ? analytics.average_resolution_hours : '—' }}</p>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wide mt-1">{{ analytics.average_resolution_hours != null ? 'hours' : 'no data yet' }}</p>
+                    </div>
+                    <div class="border border-slate-200 rounded-lg p-4 lg:col-span-2">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Resident Satisfaction</p>
+                        <div class="flex items-center gap-6">
+                            <div class="relative flex-shrink-0" style="height: 140px; width: 140px;"><canvas ref="ratingChartRef"></canvas></div>
+                            <div>
+                                <p class="text-3xl font-black text-slate-900 leading-none">{{ analytics.feedback_summary?.average_rating ?? '—' }}<span class="text-sm font-bold text-slate-400"> / 5</span></p>
+                                <p class="text-xs font-bold text-slate-500 uppercase tracking-wide mt-2">{{ analytics.feedback_summary?.total_feedback || 0 }} review{{ analytics.feedback_summary?.total_feedback === 1 ? '' : 's' }} submitted</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+                <div class="px-6 py-5 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50">
+                    <div>
+                        <p class="text-xs text-slate-500 mt-1 font-medium">Find any service request by ID, resident, or trade.</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+                        <button @click="printReport" :disabled="isPrinting" class="bg-indigo-600 border border-indigo-600 text-white hover:bg-indigo-700 font-bold text-xs px-4 py-2.5 rounded-md shadow-sm transition flex items-center justify-center disabled:opacity-50">
+                            <i class="fas fa-print mr-2"></i> {{ isPrinting ? 'Preparing PDF...' : 'Print / Save PDF' }}
+                        </button>
+                        <button @click="exportData" :disabled="isExporting" class="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 font-bold text-xs px-4 py-2.5 rounded-md shadow-sm transition flex items-center justify-center disabled:opacity-50">
+                            <i class="fas fa-download mr-2 text-indigo-500"></i> {{ isExporting ? 'Exporting...' : 'Export CSV' }}
+                        </button>
+                    </div>
+                </div>
+
+                <form @submit.prevent="applyFilters" class="bg-white p-5 border-b border-slate-200 flex flex-wrap gap-4 items-end">
+                    <div class="flex-grow md:max-w-xs">
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Search</label>
+                        <div class="relative">
+                            <i class="fas fa-search absolute left-3 top-2.5 text-slate-400 text-sm"></i>
+                            <input v-model="searchQuery" type="text" placeholder="Search ID, Name, Trade..." class="form-input w-full border border-slate-300 pl-9 p-2 rounded-md text-sm font-medium" />
+                        </div>
+                    </div>
+                    <div class="w-full sm:w-auto">
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Lifecycle Status</label>
+                        <select v-model="statusFilter" class="form-select w-full border border-slate-300 p-2 rounded-md text-sm min-w-[140px] bg-white font-medium text-slate-700">
+                            <option value="">All States</option>
+                            <option value="OPEN">Open</option>
+                            <option value="REOPENED">Reopened</option>
+                            <option value="ASSIGNED">Assigned</option>
+                            <option value="IN_PROGRESS">In Progress</option>
+                            <option value="RESOLVED">Resolved</option>
+                            <option value="CLOSED">Closed</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 text-sm font-bold rounded-md transition shadow-sm">Apply</button>
+                    <button type="button" @click="clearFilters" class="px-3 py-2 text-xs font-bold text-slate-500 hover:text-slate-900 transition underline underline-offset-2">Clear</button>
+                </form>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-slate-50 border-b border-slate-200">
+                            <tr>
+                                <th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Ref ID</th>
+                                <th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Date Logged</th>
+                                <th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Resident Info</th>
+                                <th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Trade</th>
+                                <th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Technician</th>
+                                <th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Lifecycle State</th>
+                                <th class="px-5 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 bg-white">
+                            <tr v-if="complaints.length === 0">
+                                <td colspan="7" class="px-5 py-12 text-center text-slate-500 text-sm font-medium"><i class="fas fa-search text-3xl text-slate-300 mb-3 block"></i> No records match current parameters.</td>
+                            </tr>
+                            <tr v-for="c in complaints" :key="c.id" class="hover:bg-slate-50 transition duration-150">
+                                <td class="px-5 py-3 font-bold text-slate-800 text-sm whitespace-nowrap">{{ c.complaint_code || c.id }}</td>
+                                <td class="px-5 py-3 text-xs font-medium text-slate-600 whitespace-nowrap">{{ new Date(c.created_at).toLocaleDateString() }}</td>
+                                <td class="px-5 py-3 text-sm font-semibold text-slate-700">{{ c.resident?.name || 'N/A' }}</td>
+                                <td class="px-5 py-3 text-sm font-medium text-slate-600">{{ c.category?.name || c.category || 'N/A' }}</td>
+                                <td class="px-5 py-3 text-sm font-bold" :class="c.assigned_staff?.name ? 'text-indigo-700' : 'text-slate-400 italic'">{{ c.assigned_staff?.name || '--' }}</td>
+                                <td class="px-5 py-3 whitespace-nowrap"><span :class="'status-pill text-[9px] status-' + c.status.replace(' ','')">{{ c.status.replace('_', ' ') }}</span></td>
+                                <td class="px-5 py-3 text-right whitespace-nowrap"><button @click="navigate('complaint-details.html?id=' + c.id)" class="text-indigo-600 hover:text-indigo-900 text-[10px] uppercase tracking-wide font-bold">Open Record</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                <div v-if="totalPages > 1" class="px-5 py-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center">
+                    <span class="text-xs font-medium text-slate-500">Page <span class="font-bold text-slate-800">{{ currentPage }}</span> of {{ totalPages }} <span class="hidden sm:inline">({{ totalItems }} total records)</span></span>
+                    <div class="flex gap-2">
+                        <button @click="changePage(currentPage - 1)" :disabled="currentPage === 1" class="px-3 py-1.5 text-xs font-bold text-slate-600 bg-white border border-slate-300 rounded-md hover:bg-slate-50 disabled:opacity-50 transition shadow-sm">Prev</button>
+                        <button @click="changePage(currentPage + 1)" :disabled="currentPage === totalPages" class="px-3 py-1.5 text-xs font-bold text-slate-600 bg-white border border-slate-300 rounded-md hover:bg-slate-50 disabled:opacity-50 transition shadow-sm">Next</button>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <div id="toast" class="fixed bottom-6 right-6 z-50 hidden items-center px-4 py-3 rounded-md shadow-lg border bg-slate-900 border-slate-800 text-white">
+        <i class="fas fa-check-circle text-emerald-400 mr-3 text-lg"></i>
+        <span id="toastMsg" class="font-medium text-sm">Success</span>
+    </div>
+
+    <script src="../js/utils.js"></script>
+    <script>
+        const { createApp, ref, onMounted, nextTick } = Vue;
+
+        createApp({
+            setup() {
+                const user = ref(null);
+                const complaints = ref([]);
+                const statusFilter = ref('');
+                const searchQuery = ref('');
+                const currentPage = ref(1);
+                const totalPages = ref(1);
+                const totalItems = ref(0);
+                const isExporting = ref(false);
+                const isPrinting = ref(false);
+                const analytics = ref(null);
+
+                const categoryChartRef = ref(null);
+                const statusChartRef = ref(null);
+                const ratingChartRef = ref(null);
+                let categoryChart = null;
+                let statusChart = null;
+                let ratingChart = null;
+
+                const CHART_COLORS = ['#4f46e5', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#64748b'];
+                const STATUS_COLORS = { OPEN: '#f59e0b', ASSIGNED: '#0ea5e9', IN_PROGRESS: '#8b5cf6', RESOLVED: '#10b981', CLOSED: '#64748b', REOPENED: '#ef4444' };
+
+                const renderCharts = () => {
+                    if (!analytics.value) return;
+
+                    // --- Complaints by category (horizontal bar) ---
+                    const catRows = (analytics.value.complaints_by_category || []).filter(r => r.count > 0);
+                    if (categoryChart) categoryChart.destroy();
+                    if (categoryChartRef.value) {
+                        categoryChart = new Chart(categoryChartRef.value, {
+                            type: 'bar',
+                            data: {
+                                labels: catRows.map(r => r.category),
+                                datasets: [{
+                                    label: 'Complaints',
+                                    data: catRows.map(r => r.count),
+                                    backgroundColor: catRows.map((_, i) => CHART_COLORS[i % CHART_COLORS.length]),
+                                    borderRadius: 4,
+                                }],
+                            },
+                            options: {
+                                indexAxis: 'y',
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: { legend: { display: false } },
+                                scales: {
+                                    x: { beginAtZero: true, ticks: { precision: 0 } },
+                                    y: { grid: { display: false } },
+                                },
+                            },
+                        });
+                    }
+
+                    // --- Status breakdown (doughnut) ---
+                    const statusEntries = Object.entries(analytics.value.status_overview || {}).filter(([, c]) => c > 0);
+                    if (statusChart) statusChart.destroy();
+                    if (statusChartRef.value) {
+                        statusChart = new Chart(statusChartRef.value, {
+                            type: 'doughnut',
+                            data: {
+                                labels: statusEntries.map(([s]) => s.replace('_', ' ')),
+                                datasets: [{
+                                    data: statusEntries.map(([, c]) => c),
+                                    backgroundColor: statusEntries.map(([s]) => STATUS_COLORS[s] || '#94a3b8'),
+                                    borderWidth: 2,
+                                    borderColor: '#ffffff',
+                                }],
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                cutout: '65%',
+                                plugins: { legend: { display: false } },
+                            },
+                        });
+                    }
+
+                    // --- Resident satisfaction (rating gauge, 0-5) ---
+                    const rating = analytics.value.feedback_summary?.average_rating || 0;
+                    if (ratingChart) ratingChart.destroy();
+                    if (ratingChartRef.value) {
+                        ratingChart = new Chart(ratingChartRef.value, {
+                            type: 'doughnut',
+                            data: {
+                                datasets: [{
+                                    data: [rating, Math.max(5 - rating, 0)],
+                                    backgroundColor: ['#f59e0b', '#f1f5f9'],
+                                    borderWidth: 0,
+                                }],
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                cutout: '75%',
+                                circumference: 270,
+                                rotation: 225,
+                                plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                            },
+                        });
+                    }
+                };
+
+                const fetchAnalytics = async () => {
+                    try {
+                        const response = await apiCall('/admin/reports');
+                        analytics.value = response.reports || null;
+                        await nextTick();
+                        renderCharts();
+                    } catch (err) {
+                        analytics.value = null;
+                    }
+                };
+
+                const fetchReports = async () => {
+                    let queryParams = [`page=${currentPage.value}`, `per_page=10`];
+                    if (statusFilter.value) queryParams.push(`status=${encodeURIComponent(statusFilter.value)}`);
+                    if (searchQuery.value.trim()) queryParams.push(`search=${encodeURIComponent(searchQuery.value.trim())}`);
+                    const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
+
+                    try {
+                        const response = await apiCall(`/admin/complaints${queryString}`);
+                        complaints.value = response.complaints || [];
+                        if (response.pagination) {
+                            currentPage.value = response.pagination.page;
+                            totalPages.value = response.pagination.pages || 1;
+                            totalItems.value = response.pagination.total || 0;
+                        }
+                    } catch (err) {}
+                };
+
+                const applyFilters = () => {
+                    currentPage.value = 1;
+                    fetchReports();
+                };
+
+                const clearFilters = () => {
+                    statusFilter.value = '';
+                    searchQuery.value = '';
+                    currentPage.value = 1;
+                    fetchReports();
+                };
+                
+                const changePage = (page) => {
+                    if (page >= 1 && page <= totalPages.value) {
+                        currentPage.value = page;
+                        fetchReports();
+                    }
+                };
+
+                const printReport = async () => {
+                    if (totalItems.value === 0) {
+                        showToast('No records available to print.', 'error');
+                        return;
+                    }
+                    if (isPrinting.value) return;
+
+                    // Open immediately from the click event so browsers do not block the print window.
+                    const printWindow = window.open('', '_blank');
+                    if (!printWindow) {
+                        showToast('Please allow pop-ups to print or save the report as PDF.', 'error');
+                        return;
+                    }
+
+                    isPrinting.value = true;
+                    showToast('Preparing complete printable report...', 'success');
+                    printWindow.document.write(`<!DOCTYPE html><html><head><title>Preparing report...</title></head><body style="font-family:Arial,sans-serif;padding:32px;color:#334155"><h2>Preparing complete report...</h2><p>Collecting all matching records and ticket details.</p></body></html>`);
+                    printWindow.document.close();
+
+                    const escapeHtml = (value) => String(value ?? '')
+                        .replace(/&/g, '&amp;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;')
+                        .replace(/"/g, '&quot;')
+                        .replace(/'/g, '&#039;');
+
+                    const displayValue = (value, fallback = 'N/A') => {
+                        if (value === null || value === undefined || value === '') return fallback;
+                        return escapeHtml(value);
+                    };
+
+                    const formatDateTime = (value) => {
+                        if (!value) return 'N/A';
+                        const date = new Date(value);
+                        return Number.isNaN(date.getTime()) ? displayValue(value) : escapeHtml(date.toLocaleString());
+                    };
+
+                    const prettyStatus = (value) => displayValue(String(value || 'N/A').replace(/_/g, ' '));
+
+                    try {
+                        // 1) Collect EVERY record matching the currently applied search/status filters.
+                        let allData = [];
+                        for (let p = 1; p <= totalPages.value; p++) {
+                            const queryParams = [`page=${p}`, 'per_page=10'];
+                            if (statusFilter.value) queryParams.push(`status=${encodeURIComponent(statusFilter.value)}`);
+                            if (searchQuery.value.trim()) queryParams.push(`search=${encodeURIComponent(searchQuery.value.trim())}`);
+
+                            const response = await apiCall(`/admin/complaints?${queryParams.join('&')}`);
+                            allData = allData.concat(response.complaints || []);
+                        }
+
+                        // 2) Fetch the full complaint object + timeline for every record.
+                        // Small batches avoid flooding the API when a report contains many records.
+                        const detailedRecords = [];
+                        const batchSize = 5;
+                        for (let i = 0; i < allData.length; i += batchSize) {
+                            const batch = allData.slice(i, i + batchSize);
+                            const batchResults = await Promise.all(batch.map(async (summary) => {
+                                let complaint = summary;
+                                let timeline = [];
+
+                                try {
+                                    const detailResponse = await apiCall(`/complaints/${summary.id}`);
+                                    complaint = detailResponse.complaint || detailResponse || summary;
+                                } catch (detailError) {
+                                    console.warn(`Could not load full details for complaint ${summary.id}`, detailError);
+                                }
+
+                                try {
+                                    const timelineResponse = await apiCall(`/complaints/${summary.id}/timeline`);
+                                    timeline = timelineResponse.timeline || timelineResponse.complaints || timelineResponse || [];
+                                    if (!Array.isArray(timeline)) timeline = [];
+                                } catch (timelineError) {
+                                    console.warn(`Could not load timeline for complaint ${summary.id}`, timelineError);
+                                }
+
+                                return { complaint, timeline };
+                            }));
+                            detailedRecords.push(...batchResults);
+                        }
+
+                        // Refresh analytics for the latest report snapshot when possible.
+                        let reportAnalytics = analytics.value;
+                        try {
+                            const analyticsResponse = await apiCall('/admin/reports');
+                            reportAnalytics = analyticsResponse.reports || reportAnalytics;
+                        } catch (analyticsError) {
+                            console.warn('Could not refresh analytics for print.', analyticsError);
+                        }
+
+                        const statusRows = Object.entries(reportAnalytics?.status_overview || {})
+                            .map(([status, count]) => `<tr><td>${prettyStatus(status)}</td><td>${displayValue(count, '0')}</td></tr>`)
+                            .join('') || '<tr><td colspan="2">No status data available.</td></tr>';
+
+                        const categoryRows = (reportAnalytics?.complaints_by_category || [])
+                            .map(row => `<tr><td>${displayValue(row.category)}</td><td>${displayValue(row.count, '0')}</td></tr>`)
+                            .join('') || '<tr><td colspan="2">No category data available.</td></tr>';
+
+                        const recordHtml = detailedRecords.map(({ complaint: c, timeline }, index) => {
+                            const attachments = Array.isArray(c.attachments) ? c.attachments : [];
+                            const attachmentHtml = attachments.length
+                                ? `<ul>${attachments.map((att, attIndex) => {
+                                    const rawUrl = att?.url || '';
+                                    let resolvedUrl = rawUrl;
+                                    try { resolvedUrl = resolveFileUrl(rawUrl); } catch (_) {}
+                                    const label = att?.file_name || att?.filename || att?.name || `Attachment ${attIndex + 1}`;
+                                    return `<li><a href="${escapeHtml(resolvedUrl)}" target="_blank">${escapeHtml(label)}</a></li>`;
+                                }).join('')}</ul>`
+                                : '<span class="muted">No attachments.</span>';
+
+                            const timelineHtml = timeline.length
+                                ? `<table class="timeline-table"><thead><tr><th>Date / Time</th><th>Updated By</th><th>Activity / Comment</th></tr></thead><tbody>${timeline.map(event => {
+                                    const actor = event?.updated_by_user?.name || 'System';
+                                    const activity = event?.comment || event?.action || 'Update';
+                                    return `<tr><td>${formatDateTime(event?.created_at)}</td><td>${displayValue(actor)}</td><td class="wrap">${displayValue(activity)}</td></tr>`;
+                                }).join('')}</tbody></table>`
+                                : '<p class="muted">No timeline entries available.</p>';
+
+                            const feedback = c.feedback || {};
+                            const rating = feedback.rating ?? c.rating;
+                            const feedbackComment = feedback.comment ?? feedback.comments ?? c.feedback_comment;
+                            const assignedStaff = c.assigned_staff || {};
+                            const resident = c.resident || {};
+
+                            return `
+                                <section class="record">
+                                    <div class="record-title">
+                                        <div>
+                                            <div class="record-number">Record ${index + 1} of ${detailedRecords.length}</div>
+                                            <h2>${displayValue(c.complaint_code || c.id, 'Unknown ID')} — ${displayValue(c.title, 'Untitled request')}</h2>
+                                        </div>
+                                        <div class="status-box">${prettyStatus(c.status)}</div>
+                                    </div>
+
+                                    <table class="details-table">
+                                        <tbody>
+                                            <tr><th>Reference ID</th><td>${displayValue(c.complaint_code || c.id)}</td><th>Status</th><td>${prettyStatus(c.status)}</td></tr>
+                                            <tr><th>Priority</th><td>${prettyStatus(c.priority)}</td><th>Category / Trade</th><td>${displayValue(c.category?.name || c.category)}</td></tr>
+                                            <tr><th>Date Logged</th><td>${formatDateTime(c.created_at)}</td><th>Last Updated</th><td>${formatDateTime(c.updated_at)}</td></tr>
+                                            <tr><th>Resident</th><td>${displayValue(resident.name)}</td><th>Flat Number</th><td>${displayValue(resident.flat_number || resident.flatNumber)}</td></tr>
+                                            <tr><th>Location</th><td colspan="3">${displayValue(c.location)}</td></tr>
+                                            <tr><th>Assigned Technician</th><td>${displayValue(assignedStaff.name, 'Unassigned')}</td><th>Technician Trade</th><td>${displayValue(assignedStaff.trade)}</td></tr>
+                                            ${c.resolved_at ? `<tr><th>Resolved At</th><td>${formatDateTime(c.resolved_at)}</td><th>Closed At</th><td>${formatDateTime(c.closed_at)}</td></tr>` : (c.closed_at ? `<tr><th>Closed At</th><td colspan="3">${formatDateTime(c.closed_at)}</td></tr>` : '')}
+                                            ${rating !== undefined && rating !== null ? `<tr><th>Resident Rating</th><td>${displayValue(rating)} / 5</td><th>Feedback</th><td>${displayValue(feedbackComment, 'No written feedback')}</td></tr>` : ''}
+                                        </tbody>
+                                    </table>
+
+                                    <div class="section-label">Full Description</div>
+                                    <div class="description">${displayValue(c.description, 'No description provided.')}</div>
+
+                                    <div class="two-column">
+                                        <div>
+                                            <div class="section-label">Attached Evidence</div>
+                                            <div class="attachment-list">${attachmentHtml}</div>
+                                        </div>
+                                        <div>
+                                            <div class="section-label">Record Summary</div>
+                                            <p><strong>Title:</strong> ${displayValue(c.title, 'N/A')}</p>
+                                            <p><strong>Current state:</strong> ${prettyStatus(c.status)}</p>
+                                            <p><strong>Assigned to:</strong> ${displayValue(assignedStaff.name, 'Unassigned')}</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="section-label">Timeline & Discussions</div>
+                                    ${timelineHtml}
+                                </section>`;
+                        }).join('');
+
+                        const generatedAt = new Date().toLocaleString();
+                        const generatedBy = user.value?.name || 'Administrator';
+                        const filterText = statusFilter.value ? statusFilter.value.replace(/_/g, ' ') : 'All States';
+                        const searchText = searchQuery.value.trim() || 'None';
+
+                        const html = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Smart Society - Complete Records Report</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: Arial, Helvetica, sans-serif; margin: 0; color: #0f172a; background: #fff; font-size: 10.5pt; line-height: 1.4; }
+        .page { max-width: 1000px; margin: 0 auto; padding: 22px; }
+        .screen-actions { position: sticky; top: 0; z-index: 10; background: #0f172a; color: white; padding: 10px 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+        .screen-actions button { border: 0; border-radius: 6px; padding: 9px 14px; font-weight: 700; cursor: pointer; }
+        .report-header { border-bottom: 3px solid #4f46e5; padding-bottom: 14px; margin-bottom: 18px; }
+        .report-header h1 { margin: 0; font-size: 24px; }
+        .report-header .brand { color: #4f46e5; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+        .meta-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 18px; margin-top: 12px; font-size: 9.5pt; }
+        .analytics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 14px 0 20px; }
+        .metric { border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; }
+        .metric .label { color: #64748b; text-transform: uppercase; font-size: 8pt; font-weight: 700; }
+        .metric .value { font-size: 18pt; font-weight: 800; margin-top: 3px; }
+        .analytics-tables { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+        .record { border: 1px solid #94a3b8; border-radius: 9px; margin: 0 0 20px; padding: 14px; break-inside: auto; page-break-inside: auto; }
+        .record-title { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; border-bottom: 1px solid #cbd5e1; padding-bottom: 9px; margin-bottom: 10px; break-after: avoid; }
+        .record-title h2 { margin: 2px 0 0; font-size: 15pt; }
+        .record-number { color: #64748b; font-size: 8pt; font-weight: 700; text-transform: uppercase; }
+        .status-box { border: 1px solid #a5b4fc; background: #eef2ff; color: #3730a3; border-radius: 999px; padding: 5px 9px; font-weight: 800; font-size: 8.5pt; white-space: nowrap; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #cbd5e1; padding: 6px 7px; vertical-align: top; text-align: left; }
+        th { background: #f8fafc; color: #475569; font-size: 8.5pt; text-transform: uppercase; }
+        .details-table th { width: 16%; }
+        .details-table td { width: 34%; }
+        .section-label { margin: 12px 0 5px; color: #475569; font-size: 8.5pt; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; break-after: avoid; }
+        .description { white-space: pre-wrap; border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 6px; padding: 9px; }
+        .two-column { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .two-column p { margin: 3px 0; }
+        .attachment-list ul { margin: 4px 0 0 18px; padding: 0; }
+        a { color: #3730a3; word-break: break-all; }
+        .timeline-table { font-size: 9pt; }
+        .timeline-table th:nth-child(1) { width: 22%; }
+        .timeline-table th:nth-child(2) { width: 18%; }
+        .wrap { white-space: pre-wrap; word-break: break-word; }
+        .muted { color: #64748b; font-style: italic; }
+        .footer-note { margin-top: 18px; color: #64748b; font-size: 8.5pt; text-align: center; }
+        @page { size: A4 portrait; margin: 10mm; }
+        @media print {
+            .screen-actions { display: none !important; }
+            .page { max-width: none; padding: 0; }
+            body { font-size: 9.5pt; }
+            .record { border-color: #94a3b8; }
+            a { color: #000; text-decoration: none; }
+        }
+        @media (max-width: 700px) {
+            .meta-grid, .analytics, .analytics-tables, .two-column { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="screen-actions">
+        <span>Complete report is ready. Use your browser's print dialog and choose “Save as PDF” if needed.</span>
+        <button onclick="window.print()">Print / Save PDF</button>
+    </div>
+    <div class="page">
+        <header class="report-header">
+            <div class="brand">Smart Society · Complaint Resolution</div>
+            <h1>Complete Service Records Report</h1>
+            <div class="meta-grid">
+                <div><strong>Generated:</strong> ${escapeHtml(generatedAt)}</div>
+                <div><strong>Generated by:</strong> ${escapeHtml(generatedBy)}</div>
+                <div><strong>Status filter:</strong> ${escapeHtml(filterText)}</div>
+                <div><strong>Search filter:</strong> ${escapeHtml(searchText)}</div>
+                <div><strong>Matching records:</strong> ${detailedRecords.length}</div>
+                <div><strong>Source:</strong> Admin Records / Search Database</div>
+            </div>
+        </header>
+
+        <section>
+            <div class="section-label">Analytics Snapshot</div>
+            <div class="analytics">
+                <div class="metric"><div class="label">Matching Records</div><div class="value">${detailedRecords.length}</div></div>
+                <div class="metric"><div class="label">Avg. Resolution Time</div><div class="value">${displayValue(reportAnalytics?.average_resolution_hours, '—')}</div><div>hours</div></div>
+                <div class="metric"><div class="label">Resident Satisfaction</div><div class="value">${displayValue(reportAnalytics?.feedback_summary?.average_rating, '—')} / 5</div><div>${displayValue(reportAnalytics?.feedback_summary?.total_feedback, '0')} reviews</div></div>
+            </div>
+            <div class="analytics-tables">
+                <div><div class="section-label">Status Breakdown</div><table><thead><tr><th>Status</th><th>Count</th></tr></thead><tbody>${statusRows}</tbody></table></div>
+                <div><div class="section-label">Complaints by Category</div><table><thead><tr><th>Category</th><th>Count</th></tr></thead><tbody>${categoryRows}</tbody></table></div>
+            </div>
+        </section>
+
+        ${recordHtml}
+        <div class="footer-note">End of report · ${detailedRecords.length} matching record${detailedRecords.length === 1 ? '' : 's'} included.</div>
+    </div>
+    <script>
+        window.addEventListener('load', function () {
+            setTimeout(function () { window.print(); }, 350);
+        });
+    <\/script>
+</body>
+</html>`;
+
+                        printWindow.document.open();
+                        printWindow.document.write(html);
+                        printWindow.document.close();
+                        printWindow.focus();
+                        showToast('Print report ready. Choose “Save as PDF” in the print dialog.', 'success');
+                    } catch (error) {
+                        console.error('Print Error:', error);
+                        try { printWindow.close(); } catch (_) {}
+                        showToast('Failed to prepare the printable report.', 'error');
+                    } finally {
+                        isPrinting.value = false;
+                    }
+                };
+
+                const exportData = async () => {
+                    if (totalItems.value === 0) {
+                        showToast('No records available to export.', 'error');
+                        return;
+                    }
+                    if (isExporting.value) return;
+                    
+                    isExporting.value = true;
+                    showToast('Gathering data for export...', 'success');
+                    
+                    let allData = [];
+                    
+                    try {
+                        // Loop strictly up to the known total pages matching the current filters
+                        for (let p = 1; p <= totalPages.value; p++) {
+                            let queryParams = [`page=${p}`, `per_page=10`];
+                            if (statusFilter.value) queryParams.push(`status=${encodeURIComponent(statusFilter.value)}`);
+                            if (searchQuery.value.trim()) queryParams.push(`search=${encodeURIComponent(searchQuery.value.trim())}`);
+                            const queryString = `?${queryParams.join('&')}`;
+
+                            const response = await apiCall(`/admin/complaints${queryString}`);
+                            const items = response.complaints || [];
+                            allData = allData.concat(items);
+                        }
+                        
+                        // Prevent commas inside descriptions or names from breaking columns
+                        const escapeCSV = (str) => `"${String(str).replace(/"/g, '""')}"`;
+
+                        const headers = ['Ref ID', 'Date Logged', 'Resident Info', 'Trade', 'Technician', 'Lifecycle State'];
+                        const csvRows = [headers.join(',')];
+                        
+                        allData.forEach(c => {
+                            const date = c.created_at ? new Date(c.created_at).toLocaleDateString() : 'N/A';
+                            const resident = c.resident?.name || 'N/A';
+                            const category = c.category?.name || c.category || 'N/A';
+                            const tech = c.assigned_staff?.name || '--';
+                            
+                            csvRows.push([
+                                escapeCSV(c.complaint_code || c.id),
+                                escapeCSV(date),
+                                escapeCSV(resident),
+                                escapeCSV(category),
+                                escapeCSV(tech),
+                                escapeCSV(c.status)
+                            ].join(','));
+                        });
+                        
+                        const csvString = csvRows.join('\n');
+                        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+                        const url = window.URL.createObjectURL(blob);
+                        
+                        const a = document.createElement('a');
+                        a.setAttribute('href', url);
+                        a.setAttribute('download', 'smart_society_records.csv');
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        
+                        showToast('Export successful!', 'success');
+                    } catch (error) {
+                        console.error("Export Error:", error);
+                        showToast('Failed to export data.', 'error');
+                    } finally {
+                        isExporting.value = false;
+                    }
+                };
+
+                onMounted(() => {
+                    user.value = requireAuth('Admin');
+                    if (user.value) refreshUserProfile(user, 'Admin');
+                    if (user.value) {
+                        fetchReports();
+                        fetchAnalytics();
+                    }
+                });
+
+                const navigate = (url) => window.location.href = url;
+
+                return { user, complaints, statusFilter, searchQuery, currentPage, totalPages, totalItems, isExporting, isPrinting, analytics, categoryChartRef, statusChartRef, ratingChartRef, fetchReports, applyFilters, clearFilters, changePage, printReport, exportData, fetchAnalytics, navigate, logout, goHome };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

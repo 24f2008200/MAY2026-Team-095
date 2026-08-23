@@ -1,0 +1,934 @@
+swagger: '2.0'
+basePath: /
+paths:
+  /admin/categories:
+    post:
+      responses:
+        '409':
+          description: Already exists
+        '201':
+          description: Category created
+      operationId: post_admin_category_resource
+      parameters:
+      - name: payload
+        required: true
+        in: body
+        schema:
+          $ref: '#/definitions/CreateCategoryRequest'
+      security:
+      - Bearer: []
+      tags:
+      - admin
+  /admin/complaints:
+    get:
+      responses:
+        '200':
+          description: Success
+      summary: List all complaints with optional filtering
+      operationId: get_admin_complaint_list_resource
+      parameters:
+      - description: Filter by status (OPEN, ASSIGNED, IN_PROGRESS, RESOLVED, CLOSED,
+          REOPENED)
+        name: status
+        type: string
+        in: query
+      - description: Filter by priority (LOW, MEDIUM, HIGH, URGENT)
+        name: priority
+        type: string
+        in: query
+      - description: Search in title or complaint_code
+        name: search
+        type: string
+        in: query
+      - description: Page number
+        name: page
+        type: string
+        in: query
+      - description: 'Items per page (default: 10, max: 100)'
+        name: per_page
+        type: string
+        in: query
+      security:
+      - Bearer: []
+      tags:
+      - admin
+  /admin/complaints/{complaint_id}/assign:
+    parameters:
+    - name: complaint_id
+      in: path
+      required: true
+      type: integer
+    put:
+      responses:
+        '404':
+          description: Not found
+        '400':
+          description: Validation error
+        '200':
+          description: Staff assigned
+      operationId: put_admin_assign_staff_resource
+      parameters:
+      - name: payload
+        required: true
+        in: body
+        schema:
+          $ref: '#/definitions/AssignStaffRequest'
+      security:
+      - Bearer: []
+      tags:
+      - admin
+  /admin/dashboard:
+    get:
+      responses:
+        '403':
+          description: Forbidden
+        '200':
+          description: Success
+      operationId: get_admin_dashboard_resource
+      security:
+      - Bearer: []
+      tags:
+      - admin
+  /admin/reports:
+    get:
+      responses:
+        '200':
+          description: Success
+      operationId: get_admin_reports_resource
+      security:
+      - Bearer: []
+      tags:
+      - admin
+  /admin/staff:
+    post:
+      responses:
+        '409':
+          description: Email or mobile already exists
+        '400':
+          description: Validation error
+        '201':
+          description: Staff created successfully
+      operationId: post_admin_staff_create_resource
+      parameters:
+      - name: payload
+        required: true
+        in: body
+        schema:
+          $ref: '#/definitions/CreateStaffRequest'
+      security:
+      - Bearer: []
+      tags:
+      - admin
+  /admin/staff/{staff_id}:
+    parameters:
+    - name: staff_id
+      in: path
+      required: true
+      type: integer
+    delete:
+      responses:
+        '403':
+          description: Forbidden - cannot deactivate self
+        '404':
+          description: Staff not found
+        '200':
+          description: Staff deactivated successfully
+      operationId: delete_admin_staff_resource
+      security:
+      - Bearer: []
+      tags:
+      - admin
+  /auth/forgot-password:
+    post:
+      responses:
+        '400':
+          description: Validation error
+        '200':
+          description: Request accepted
+      description: Sends a six-digit, ten-minute password-reset verification code
+        when the email is registered. The existing password is not changed, and
+        unknown addresses receive the same generic response.
+      operationId: post_forgot_password_resource
+      parameters:
+      - name: payload
+        required: true
+        in: body
+        schema:
+          $ref: '#/definitions/ForgotPasswordRequest'
+      tags:
+      - auth
+  /auth/verify-reset-otp:
+    post:
+      responses:
+        '400':
+          description: Invalid, expired, or malformed verification code
+        '200':
+          description: Verification code accepted
+      description: Verifies a recovery code before any new password is accepted
+        and returns a short-lived one-time reset token. Codes allow five failed
+        attempts.
+      operationId: post_verify_reset_otp_resource
+      parameters:
+      - name: payload
+        required: true
+        in: body
+        schema:
+          $ref: '#/definitions/VerifyResetOtpRequest'
+      tags:
+      - auth
+  /auth/reset-password:
+    post:
+      responses:
+        '400':
+          description: Invalid, expired, or malformed reset session
+        '200':
+          description: Password reset successful
+      description: Sets a strong new password using the one-time token issued only
+        after successful OTP verification.
+      operationId: post_reset_password_resource
+      parameters:
+      - name: payload
+        required: true
+        in: body
+        schema:
+          $ref: '#/definitions/ResetPasswordRequest'
+      tags:
+      - auth
+  /auth/login:
+    post:
+      responses:
+        '403':
+          description: Inactive account
+        '401':
+          description: Invalid credentials
+        '200':
+          description: Login successful
+      description: Authenticate user and return JWT access token.
+      operationId: post_login_resource
+      parameters:
+      - name: payload
+        required: true
+        in: body
+        schema:
+          $ref: '#/definitions/LoginRequest'
+      tags:
+      - auth
+  /auth/profile:
+    get:
+      responses:
+        '404':
+          description: User not found
+        '401':
+          description: Unauthorized
+        '200':
+          description: Success
+      description: Returns the currently authenticated user's profile.
+      operationId: get_profile_resource
+      security:
+      - Bearer: []
+      tags:
+      - auth
+  /auth/register:
+    post:
+      responses:
+        '500':
+          description: Internal server error
+        '409':
+          description: Email or mobile already exists
+        '400':
+          description: Validation error
+        '201':
+          description: User registered successfully
+      description: Creates a new resident account.
+      operationId: post_register_resource
+      parameters:
+      - name: payload
+        required: true
+        in: body
+        schema:
+          $ref: '#/definitions/RegisterRequest'
+      tags:
+      - auth
+  /categories:
+    get:
+      responses:
+        '401':
+          description: Unauthorized
+        '200':
+          description: Success
+      operationId: get_category_list_resource
+      security:
+      - Bearer: []
+      tags:
+      - categories
+  /complaints:
+    post:
+      responses:
+        '403':
+          description: Forbidden
+        '401':
+          description: Unauthorized
+        '400':
+          description: Validation error
+        '201':
+          description: Complaint created
+      description: Residents can submit a new maintenance complaint.
+      operationId: post_complaint_list_resource
+      parameters:
+      - name: payload
+        required: true
+        in: body
+        schema:
+          $ref: '#/definitions/CreateComplaintRequest'
+      security:
+      - Bearer: []
+      tags:
+      - complaints
+    get:
+      responses:
+        '403':
+          description: Forbidden
+        '401':
+          description: Unauthorized
+        '200':
+          description: Success
+      description: Returns complaints based on user role. Residents see their own,
+        staff see assigned, admin sees all.
+      operationId: get_complaint_list_resource
+      parameters:
+      - description: 'Page number (default: 1)'
+        name: page
+        type: string
+        in: query
+      - description: 'Items per page (default: 10, max: 100)'
+        name: per_page
+        type: string
+        in: query
+      - description: Filter by status (OPEN, ASSIGNED, etc.)
+        name: status
+        type: string
+        in: query
+      - description: Filter by priority (LOW, MEDIUM, HIGH, URGENT)
+        name: priority
+        type: string
+        in: query
+      - description: Filter by category ID
+        name: category_id
+        type: string
+        in: query
+      - description: Search in title, code, or location
+        name: search
+        type: string
+        in: query
+      security:
+      - Bearer: []
+      tags:
+      - complaints
+  /complaints/{complaint_id}:
+    parameters:
+    - name: complaint_id
+      in: path
+      required: true
+      type: integer
+    get:
+      responses:
+        '404':
+          description: Not found
+        '403':
+          description: Forbidden
+        '200':
+          description: Success
+      operationId: get_complaint_detail_resource
+      security:
+      - Bearer: []
+      tags:
+      - complaints
+    put:
+      responses:
+        '404':
+          description: Not found
+        '403':
+          description: Forbidden
+        '400':
+          description: Validation error
+        '200':
+          description: Updated
+      description: Residents can update OPEN or REOPENED complaints.
+      operationId: put_complaint_detail_resource
+      parameters:
+      - name: payload
+        required: true
+        in: body
+        schema:
+          $ref: '#/definitions/UpdateComplaintRequest'
+      security:
+      - Bearer: []
+      tags:
+      - complaints
+  /complaints/{complaint_id}/attachments:
+    parameters:
+    - name: complaint_id
+      in: path
+      required: true
+      type: integer
+    post:
+      responses:
+        '404':
+          description: Not found
+        '403':
+          description: Forbidden
+        '400':
+          description: Bad request
+        '201':
+          description: Uploaded
+      description: Upload a file attachment for a complaint.
+      operationId: post_complaint_attachment_resource
+      security:
+      - Bearer: []
+      tags:
+      - complaints
+  /complaints/{complaint_id}/close:
+    parameters:
+    - name: complaint_id
+      in: path
+      required: true
+      type: integer
+    put:
+      responses:
+        '404':
+          description: Not found
+        '403':
+          description: Forbidden
+        '400':
+          description: Validation error
+        '200':
+          description: Complaint closed
+      description: Admin or resident can close an open or in-progress complaint.
+      operationId: put_complaint_close_resource
+      security:
+      - Bearer: []
+      tags:
+      - complaints
+  /complaints/{complaint_id}/feedback:
+    parameters:
+    - name: complaint_id
+      in: path
+      required: true
+      type: integer
+    post:
+      responses:
+        '409':
+          description: Already submitted
+        '404':
+          description: Not found
+        '403':
+          description: Forbidden
+        '400':
+          description: Validation error
+        '201':
+          description: Feedback submitted
+      description: Submit feedback for a resolved or closed complaint.
+      operationId: post_complaint_feedback_resource
+      parameters:
+      - name: payload
+        required: true
+        in: body
+        schema:
+          $ref: '#/definitions/FeedbackRequest'
+      security:
+      - Bearer: []
+      tags:
+      - complaints
+  /complaints/{complaint_id}/reopen:
+    parameters:
+    - name: complaint_id
+      in: path
+      required: true
+      type: integer
+    put:
+      responses:
+        '404':
+          description: Not found
+        '403':
+          description: Forbidden
+        '400':
+          description: Validation error
+        '200':
+          description: Complaint reopened
+      description: Resident can reopen a ticket closed within the last 7 days.
+      operationId: put_complaint_reopen_resource
+      security:
+      - Bearer: []
+      tags:
+      - complaints
+  /complaints/{complaint_id}/timeline:
+    parameters:
+    - name: complaint_id
+      in: path
+      required: true
+      type: integer
+    post:
+      responses:
+        '404':
+          description: Not found
+        '403':
+          description: Forbidden
+        '400':
+          description: Validation error
+        '201':
+          description: Comment added
+      description: Post a comment on the complaint timeline. Available to the resident
+        who owns the complaint, the assigned staff member, or an admin.
+      operationId: post_complaint_timeline_resource
+      parameters:
+      - name: payload
+        required: true
+        in: body
+        schema:
+          $ref: '#/definitions/ComplaintTimelineCommentRequest'
+      security:
+      - Bearer: []
+      tags:
+      - complaints
+    get:
+      responses:
+        '404':
+          description: Not found
+        '403':
+          description: Forbidden
+        '200':
+          description: Success
+      operationId: get_complaint_timeline_resource
+      security:
+      - Bearer: []
+      tags:
+      - complaints
+  /notifications:
+    get:
+      responses:
+        '401':
+          description: Unauthorized
+        '200':
+          description: Success
+      operationId: get_notification_list_resource
+      parameters:
+      - description: 'Page number (default: 1)'
+        name: page
+        type: string
+        in: query
+      - description: 'Items per page (default: 20, max: 100)'
+        name: per_page
+        type: string
+        in: query
+      - description: Set to true to show only unread
+        name: unread_only
+        type: string
+        in: query
+      security:
+      - Bearer: []
+      tags:
+      - notifications
+  /notifications/read-all:
+    put:
+      responses:
+        '200':
+          description: All marked as read
+      operationId: put_notification_read_all_resource
+      security:
+      - Bearer: []
+      tags:
+      - notifications
+  /notifications/{notification_id}/read:
+    parameters:
+    - name: notification_id
+      in: path
+      required: true
+      type: integer
+    put:
+      responses:
+        '404':
+          description: Not found
+        '200':
+          description: Marked as read
+      operationId: put_notification_read_resource
+      security:
+      - Bearer: []
+      tags:
+      - notifications
+  /staff/complaints:
+    get:
+      responses:
+        '200':
+          description: Success
+      operationId: get_staff_complaint_list_resource
+      parameters:
+      - description: Page number
+        name: page
+        type: string
+        in: query
+      - description: Items per page
+        name: per_page
+        type: string
+        in: query
+      - description: Filter by status
+        name: status
+        type: string
+        in: query
+      - description: Filter by priority
+        name: priority
+        type: string
+        in: query
+      - description: Search term
+        name: search
+        type: string
+        in: query
+      security:
+      - Bearer: []
+      tags:
+      - staff
+  /staff/complaints/history:
+    get:
+      responses:
+        '400':
+          description: Validation error
+        '200':
+          description: Success
+      description: Resolved/closed complaints previously assigned to the staff member.
+      operationId: get_staff_complaint_history_resource
+      parameters:
+      - description: Page number
+        name: page
+        type: string
+        in: query
+      - description: Items per page
+        name: per_page
+        type: string
+        in: query
+      - description: Filter by status (RESOLVED or CLOSED)
+        name: status
+        type: string
+        in: query
+      security:
+      - Bearer: []
+      tags:
+      - staff
+  /staff/complaints/{complaint_id}:
+    parameters:
+    - name: complaint_id
+      in: path
+      required: true
+      type: integer
+    get:
+      responses:
+        '404':
+          description: Not found
+        '403':
+          description: Forbidden
+        '200':
+          description: Success
+      operationId: get_staff_complaint_detail_resource
+      security:
+      - Bearer: []
+      tags:
+      - staff
+  /staff/complaints/{complaint_id}/status:
+    parameters:
+    - name: complaint_id
+      in: path
+      required: true
+      type: integer
+    put:
+      responses:
+        '404':
+          description: Not found
+        '403':
+          description: Forbidden
+        '400':
+          description: Validation error
+        '200':
+          description: Status updated
+      description: Staff can set status to IN_PROGRESS or RESOLVED.
+      operationId: put_staff_status_update_resource
+      parameters:
+      - name: payload
+        required: true
+        in: body
+        schema:
+          $ref: '#/definitions/StatusUpdateRequest'
+      security:
+      - Bearer: []
+      tags:
+      - staff
+  /staff/complaints/{complaint_id}/timeline:
+    parameters:
+    - name: complaint_id
+      in: path
+      required: true
+      type: integer
+    post:
+      responses:
+        '404':
+          description: Not found
+        '403':
+          description: Forbidden
+        '400':
+          description: Validation error
+        '201':
+          description: Timeline update added
+      operationId: post_staff_timeline_resource
+      parameters:
+      - name: payload
+        required: true
+        in: body
+        schema:
+          $ref: '#/definitions/TimelineCommentRequest'
+      security:
+      - Bearer: []
+      tags:
+      - staff
+  /staff/dashboard/summary:
+    get:
+      responses:
+        '200':
+          description: Success
+      description: Counts of the staff member's assigned complaints by status.
+      operationId: get_staff_dashboard_summary_resource
+      security:
+      - Bearer: []
+      tags:
+      - staff
+info:
+  title: Smart Society API
+  version: 1.0.0
+  description: Apartment Maintenance & Complaint Resolution System
+produces:
+- application/json
+consumes:
+- application/json
+securityDefinitions:
+  Bearer:
+    type: apiKey
+    in: header
+    name: Authorization
+    description: 'JWT Authorization Header. Example: Bearer <token>'
+security:
+- Bearer: []
+tags:
+- name: auth
+  description: Authentication APIs
+- name: complaints
+  description: Complaint management APIs
+- name: categories
+  description: Complaint category APIs
+- name: admin
+  description: Admin management APIs
+- name: staff
+  description: Staff complaint management APIs
+- name: notifications
+  description: User notification APIs
+definitions:
+  RegisterRequest:
+    required:
+    - building
+    - email
+    - flat_number
+    - mobile_number
+    - name
+    - password
+    properties:
+      name:
+        type: string
+        example: Thomas Reed
+      email:
+        type: string
+        example: thomas.reed@example.com
+      mobile_number:
+        type: string
+        example: '9876543210'
+      password:
+        type: string
+        example: Password@123
+      flat_number:
+        type: string
+        example: A101
+      building:
+        type: string
+        example: Block A
+    type: object
+  LoginRequest:
+    required:
+    - email
+    - password
+    properties:
+      email:
+        type: string
+        example: thomas.reed@example.com
+      password:
+        type: string
+        example: Password@123
+    type: object
+  ForgotPasswordRequest:
+    required:
+    - email
+    properties:
+      email:
+        type: string
+        example: thomas.reed@example.com
+    type: object
+  VerifyResetOtpRequest:
+    required:
+    - email
+    - otp
+    properties:
+      email:
+        type: string
+        example: thomas.reed@example.com
+      otp:
+        type: string
+        example: '483921'
+    type: object
+  ResetPasswordRequest:
+    required:
+    - email
+    - reset_token
+    - password
+    properties:
+      email:
+        type: string
+        example: thomas.reed@example.com
+      reset_token:
+        type: string
+        example: verified-reset-token
+      password:
+        type: string
+        example: NewPassword@123
+    type: object
+  CreateComplaintRequest:
+    required:
+    - category_id
+    - description
+    - location
+    - title
+    properties:
+      category_id:
+        type: integer
+        example: 1
+      title:
+        type: string
+        example: Water leakage in kitchen
+      description:
+        type: string
+        example: There is continuous water leakage under the kitchen sink.
+      location:
+        type: string
+        example: Flat A101, Kitchen
+      priority:
+        type: string
+        example: MEDIUM
+    type: object
+  UpdateComplaintRequest:
+    properties:
+      title:
+        type: string
+        example: Updated title
+      description:
+        type: string
+        example: Updated description
+      location:
+        type: string
+        example: Flat A101
+      priority:
+        type: string
+        example: HIGH
+    type: object
+  ComplaintTimelineCommentRequest:
+    required:
+    - comment
+    properties:
+      comment:
+        type: string
+        example: Just checking on the status of this.
+    type: object
+  FeedbackRequest:
+    required:
+    - rating
+    properties:
+      rating:
+        type: integer
+        example: 4
+      comment:
+        type: string
+        example: Issue resolved quickly.
+    type: object
+  AssignStaffRequest:
+    required:
+    - staff_id
+    properties:
+      staff_id:
+        type: integer
+        example: 2
+    type: object
+  CreateStaffRequest:
+    required:
+    - email
+    - name
+    - password
+    - trade
+    properties:
+      name:
+        type: string
+        example: Sarah Connor
+      email:
+        type: string
+        example: staff@smartsociety.com
+      mobile_number:
+        type: string
+        example: '9876543210'
+      flat_number:
+        type: string
+        example: A-101
+      building:
+        type: string
+        example: Block A
+      password:
+        type: string
+        example: Staff@123
+      trade:
+        type: string
+        example: Plumber
+    type: object
+  CreateCategoryRequest:
+    required:
+    - name
+    properties:
+      name:
+        type: string
+        example: Plumbing
+      description:
+        type: string
+        example: Water and pipe related issues
+    type: object
+  StatusUpdateRequest:
+    required:
+    - status
+    properties:
+      status:
+        type: string
+        example: IN_PROGRESS
+      comment:
+        type: string
+        example: Started working on the issue.
+    type: object
+  TimelineCommentRequest:
+    required:
+    - comment
+    properties:
+      comment:
+        type: string
+        example: Inspected the area and ordered replacement parts.
+    type: object
+responses:
+  ParseError:
+    description: When a mask can't be parsed
+  MaskError:
+    description: When any error occurs on mask

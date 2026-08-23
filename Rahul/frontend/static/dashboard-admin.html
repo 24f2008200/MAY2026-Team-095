@@ -34,7 +34,9 @@
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-6 overflow-x-auto">
                     <a href="dashboard-admin.html" class="nav-link border-indigo-600 text-indigo-700 py-2 px-3 text-xs font-bold hover:text-slate-900 border-b-2 flex items-center transition"><i class="fas fa-chart-pie mr-1.5 text-base"></i> Portal</a>
                     <a href="admin-staff.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition"><i class="fas fa-users mr-1.5 text-base"></i> Staff</a>
+                    <a href="admin-approvals.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition"><i class="fas fa-user-check mr-1.5 text-base"></i> Approvals</a>
                     <a href="admin-reports.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition"><i class="fas fa-search mr-1.5 text-base"></i> Records</a>
+                    <a href="messages.html" class="nav-link py-2 px-3 text-xs font-bold text-slate-500 hover:text-slate-900 border-b-2 border-transparent flex items-center transition"><i class="fas fa-bell mr-1.5 text-base"></i> Notifications</a>
                 </div>
             </nav>
         </header>
@@ -75,7 +77,7 @@
 
                 <div class="px-5 py-3 border-b border-slate-200 bg-white flex flex-col sm:flex-row gap-3 justify-between items-center">
                     <div class="flex gap-3 w-full sm:w-auto">
-                        <select v-model="statusFilter" @change="fetchTableData" class="bg-slate-50 border border-slate-300 text-slate-700 text-xs font-bold rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none w-full sm:w-auto">
+                        <select v-model="statusFilter" @change="applyFilters" class="bg-slate-50 border border-slate-300 text-slate-700 text-xs font-bold rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none w-full sm:w-auto">
                             <option value="">All Statuses</option>
                             <option value="OPEN">Open</option>
                             <option value="ASSIGNED">Assigned</option>
@@ -87,7 +89,7 @@
                     </div>
                     <div class="relative w-full sm:w-64">
                         <i class="fas fa-search absolute left-3 top-2.5 text-slate-400 text-xs"></i>
-                        <input v-model="searchQuery" @keyup.enter="fetchTableData" type="text" placeholder="Search (Press Enter)..." class="w-full bg-slate-50 border border-slate-300 text-slate-700 text-xs rounded-md pl-8 pr-3 py-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+                        <input v-model="searchQuery" @keyup.enter="applyFilters" type="text" placeholder="Search (Press Enter)..." class="w-full bg-slate-50 border border-slate-300 text-slate-700 text-xs rounded-md pl-8 pr-3 py-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
                     </div>
                 </div>
 
@@ -107,26 +109,35 @@
                                 <td colspan="5" class="px-5 py-10 text-center text-slate-500 text-sm font-medium"><i class="fas fa-search text-2xl text-slate-300 mb-2 block"></i> No records found matching the criteria.</td>
                             </tr>
                             <tr v-for="c in complaints" :key="c.id" class="hover:bg-slate-50 transition duration-150">
-                                <td class="px-5 py-3 whitespace-nowrap font-bold text-slate-800 text-sm">{{ c.id }}</td>
-                                <td class="px-5 py-3 text-sm text-slate-700 font-medium">{{ c.resident?.name || 'N/A' }}</td>
-                                <td class="px-5 py-3 text-sm text-slate-700 font-medium">{{ c.category?.name || 'N/A' }}</td>
+                                <td class="px-5 py-3 whitespace-nowrap font-bold text-slate-800 text-sm">{{ c.complaint_code || c.id }}</td>
+                                <td class="px-5 py-3 text-sm text-slate-700 font-medium">
+                                    <p class="font-bold text-slate-800">{{ c.resident?.name || 'N/A' }}</p>
+                                    <p class="text-xs text-slate-500">Flat {{ c.resident?.flat_number || 'N/A' }}</p>
+                                </td>
+                                <td class="px-5 py-3 text-sm text-slate-700 font-medium">{{ c.category?.name || c.category || 'N/A' }}</td>
                                 <td class="px-5 py-3 whitespace-nowrap"><span :class="'status-pill status-' + c.status.replace(' ','')">{{ c.status.replace('_',' ') }}</span></td>
                                 <td class="px-5 py-3 whitespace-nowrap text-right flex justify-end gap-2">
                                     <button v-if="['OPEN', 'REOPENED'].includes(c.status)" @click="navigate('assign-complaint.html?id=' + c.id)" class="bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-600 hover:text-white font-bold text-[10px] uppercase tracking-wide px-3 py-1.5 rounded-md transition shadow-sm">Assign Resource</button>
                                     <button v-else @click="navigate('complaint-details.html?id=' + c.id)" class="bg-white border border-slate-300 text-slate-600 hover:bg-slate-50 font-bold text-[10px] uppercase tracking-wide px-3 py-1.5 rounded-md transition shadow-sm">Monitor</button>
-
                                     <button v-if="['OPEN','ASSIGNED','IN_PROGRESS'].includes(c.status)" @click="closeTicket(c.id)" class="bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 font-bold text-[10px] uppercase tracking-wide px-3 py-1.5 rounded-md transition shadow-sm">Close</button>
-
                                     <button v-if="c.rating" @click="openModal(c)" class="bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-500 hover:text-white font-bold text-[10px] uppercase tracking-wide px-3 py-1.5 rounded-md transition shadow-sm"><i class="fas fa-star mr-1"></i> Review</button>
                                 </td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
+
+                <div v-if="totalPages > 1" class="px-5 py-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center">
+                    <span class="text-xs font-medium text-slate-500">Page <span class="font-bold text-slate-800">{{ currentPage }}</span> of {{ totalPages }} <span class="hidden sm:inline">({{ totalItems }} total records)</span></span>
+                    <div class="flex gap-2">
+                        <button @click="changePage(currentPage - 1)" :disabled="currentPage === 1" class="px-3 py-1.5 text-xs font-bold text-slate-600 bg-white border border-slate-300 rounded-md hover:bg-slate-50 disabled:opacity-50 transition shadow-sm">Prev</button>
+                        <button @click="changePage(currentPage + 1)" :disabled="currentPage === totalPages" class="px-3 py-1.5 text-xs font-bold text-slate-600 bg-white border border-slate-300 rounded-md hover:bg-slate-50 disabled:opacity-50 transition shadow-sm">Next</button>
+                    </div>
+                </div>
+
             </div>
         </main>
 
-        <!-- Admin Review Modal -->
         <div v-if="showModal" class="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
             <div class="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden flex flex-col border-t-4 border-t-amber-400">
                 <div class="px-5 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
@@ -134,7 +145,7 @@
                     <button @click="closeModal" class="text-slate-400 hover:text-rose-500 transition"><i class="fas fa-times text-xl"></i></button>
                 </div>
                 <div class="p-5">
-                    <div class="mb-4"><label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Resident</label><p class="text-sm font-bold text-slate-800">{{ currentTicket.resident?.name || '...' }}</p></div>
+                    <div class="mb-4"><label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Resident</label><p class="text-sm font-bold text-slate-800">{{ currentTicket.resident?.name || '...' }} <span class="font-normal text-slate-500">(Flat {{ currentTicket.resident?.flat_number || 'N/A' }})</span></p></div>
                     <div class="mb-4">
                         <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Rating</label>
                         <div class="flex gap-1 mt-1">
@@ -161,6 +172,10 @@
                 const searchQuery = ref('');
                 const showModal = ref(false);
                 const currentTicket = ref(null);
+                
+                const currentPage = ref(1);
+                const totalPages = ref(1);
+                const totalItems = ref(0);
 
                 const fetchDashboardStats = async () => {
                     try {
@@ -174,27 +189,41 @@
                             resolved: data.status_counts?.RESOLVED || 0,
                             closed: data.status_counts?.CLOSED || 0,
                         };
-                    } catch (err) {
-                        showToast('Failed to load dashboard data.', 'error');
-                    }
+                    } catch (err) {}
                 };
 
                 const fetchTableData = async () => {
-                    let queryParams = [];
+                    let queryParams = [`page=${currentPage.value}`, `per_page=10`];
                     if (statusFilter.value) queryParams.push(`status=${encodeURIComponent(statusFilter.value)}`);
-                    if (searchQuery.value) queryParams.push(`search=${encodeURIComponent(searchQuery.value)}`);
+                    if (searchQuery.value.trim()) queryParams.push(`search=${encodeURIComponent(searchQuery.value.trim())}`);
                     const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
 
                     try {
                         const response = await apiCall(`/admin/complaints${queryString}`);
-                        complaints.value = response.complaints || response || [];
-                    } catch (err) {
-                        showToast('Failed to load complaints.', 'error');
+                        complaints.value = response.complaints || [];
+                        if (response.pagination) {
+                            currentPage.value = response.pagination.page;
+                            totalPages.value = response.pagination.pages || 1;
+                            totalItems.value = response.pagination.total || 0;
+                        }
+                    } catch (err) {}
+                };
+
+                const applyFilters = () => {
+                    currentPage.value = 1;
+                    fetchTableData();
+                };
+
+                const changePage = (page) => {
+                    if (page >= 1 && page <= totalPages.value) {
+                        currentPage.value = page;
+                        fetchTableData();
                     }
                 };
 
                 onMounted(() => {
                     user.value = requireAuth('Admin');
+                    if (user.value) refreshUserProfile(user, 'Admin');
                     if (user.value) {
                         fetchDashboardStats();
                         fetchTableData();
@@ -211,20 +240,19 @@
                     currentTicket.value = null;
                 };
 
-                const navigate = (url) => {
-                    window.location.href = url;
-                };
+                const navigate = (url) => window.location.href = url;
 
                 const closeTicket = async (id) => {
                     if (!confirm('Are you sure you want to close this ticket?')) return;
                     try {
                         await apiCall(`/complaints/${id}/close`, { method: 'PUT' });
                         showToast('Ticket closed successfully.', 'success');
+                        fetchDashboardStats();
                         fetchTableData();
                     } catch (err) {}
                 };
 
-                return { user, stats, complaints, statusFilter, searchQuery, showModal, currentTicket, fetchTableData, fetchDashboardStats, openModal, closeModal, navigate, closeTicket, logout, goHome };
+                return { user, stats, complaints, statusFilter, searchQuery, currentPage, totalPages, totalItems, showModal, currentTicket, fetchTableData, applyFilters, changePage, fetchDashboardStats, openModal, closeModal, navigate, closeTicket, logout, goHome };
             }
         }).mount('#app');
     </script>

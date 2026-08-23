@@ -1,3 +1,6 @@
+import secrets
+import string
+
 from marshmallow import ValidationError
 from flask import current_app, request
 from flask_jwt_extended import (
@@ -12,6 +15,8 @@ from werkzeug.security import (
 
 from app.extensions import db
 from app.models.user import User, UserRole
+from app.services.notification_service import create_notification
+from app.services.email_service import send_email
 from app.schemas.auth_schema import (
     ForgotPasswordSchema,
     RegisterSchema,
@@ -93,7 +98,7 @@ def register():
         role=UserRole.RESIDENT,
         flat_number=data["flat_number"].strip(),
         building=data["building"].strip(),
-        is_active=True,
+        is_active=False,
     )
 
     try:
@@ -110,18 +115,26 @@ def register():
             "message": "Unable to register user."
         }, 500
 
-    access_token = create_access_token(
-        identity=str(user.id),
-        additional_claims={
-            "role": user.role.value,
-            "email": user.email,
-        },
-    )
+    admins = User.query.filter_by(role=UserRole.ADMIN, is_active=True).all()
+    for admin in admins:
+        create_notification(
+            user_id=admin.id,
+            complaint_id=None,
+            title="New Resident Registration",
+            message=(
+                f"{user.name} (Flat {user.flat_number}) has registered "
+                f"and is awaiting approval."
+            ),
+            notification_type="RESIDENT_APPROVAL",
+        )
+    db.session.commit()
 
     return {
         "success": True,
-        "message": "Registration successful.",
-        "access_token": access_token,
+        "message": (
+            "Registration successful. Your account is pending admin "
+            "approval - you'll be able to log in once it's approved."
+        ),
         "user": _user_response(user),
     }, 201
 
@@ -165,9 +178,15 @@ def login():
         }, 401
 
     if not user.is_active:
+        message = (
+            "Your account is pending admin approval. You'll be able to "
+            "log in once an administrator approves it."
+            if user.role == UserRole.RESIDENT
+            else "Account has been disabled."
+        )
         return {
             "success": False,
-            "message": "Account has been disabled."
+            "message": message,
         }, 403
 
     access_token = create_access_token(
@@ -204,14 +223,35 @@ def profile():
     }, 200
 
 
+def _generate_temp_password(length: int = 12) -> str:
+    lower, upper, digits, special = (
+        string.ascii_lowercase,
+        string.ascii_uppercase,
+        string.digits,
+        "!@#$%&*?",
+    )
+
+    chars = [
+        secrets.choice(lower),
+        secrets.choice(upper),
+        secrets.choice(digits),
+        secrets.choice(special),
+    ]
+    pool = lower + upper + digits + special
+    chars += [secrets.choice(pool) for _ in range(length - len(chars))]
+    secrets.SystemRandom().shuffle(chars)
+    return "".join(chars)
+
+
 def forgot_password():
     """
-    Accepts an email and (stub) triggers a password reset.
+    Accepts an email, generates a new temporary password, emails it via
+    SMTP (see app/services/email_service.py + .env MAIL_* settings), and
+    only then overwrites the account's password.
 
-    Real email delivery is out of scope for this project, so this logs
-    the request server-side. The response is intentionally generic and
-    identical whether or not the email is registered, so the endpoint
-    can't be used to check which emails exist in the system.
+    The response is intentionally generic and identical whether or not
+    the email is registered, so the endpoint can't be used to check
+    which emails exist in the system.
     """
     json_data = request.get_json(silent=True)
 
@@ -232,22 +272,57 @@ def forgot_password():
     email = data["email"]
     user = User.query.filter_by(email=email).first()
 
-    if user:
-        current_app.logger.info(
-            "Password reset requested for user_id=%s email=%s",
-            user.id,
-            email,
-        )
-    else:
-        current_app.logger.info(
-            "Password reset requested for unregistered email=%s",
-            email,
-        )
-
-    return {
+    generic_response = {
         "success": True,
         "message": (
-            "If an account with that email exists, password reset "
-            "instructions have been sent."
+            "If an account with that email exists, a new password has "
+            "been emailed to it."
         ),
     }, 200
+
+    if not user:
+        current_app.logger.info(
+            "Password reset requested for unregistered email=%s", email
+        )
+        return generic_response
+
+    temp_password = _generate_temp_password()
+
+    subject = "Smart Society - Your Password Has Been Reset"
+    html_body = f"""
+        <p>Hi {user.name},</p>
+        <p>We received a request to reset your Smart Society account password.</p>
+        <p>Your new temporary password is:</p>
+        <p style="font-size:18px;font-weight:bold;letter-spacing:1px;">{temp_password}</p>
+        <p>Please log in with this password. If you did not request this,
+        contact an administrator immediately.</p>
+    """
+    text_body = (
+        f"Hi {user.name},\n\n"
+        f"Your new temporary Smart Society password is: {temp_password}\n\n"
+        "Please log in with this password. If you did not request this, "
+        "contact an administrator immediately."
+    )
+
+    if not send_email(user.email, subject, html_body, text_body):
+        return {
+            "success": False,
+            "message": (
+                "We couldn't send the password reset email right now. "
+                "Please try again later or contact an administrator."
+            ),
+        }, 502
+
+    user.password_hash = generate_password_hash(temp_password)
+
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return {
+            "success": False,
+            "message": "Unable to reset password. Please try again.",
+        }, 500
+
+    current_app.logger.info("Password reset email sent to user_id=%s", user.id)
+    return generic_response

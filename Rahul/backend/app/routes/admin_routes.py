@@ -4,17 +4,25 @@ from flask_restx import Namespace, Resource, fields
 from app.controllers.admin_controller import (
     assign_staff_handler,
     create_category_handler,
+    list_all_categories_handler,
+    update_category_status_handler,
     create_staff_handler,
     dashboard_handler,
     list_staff_handler,
     reports_handler,
     remove_staff_handler,
     list_complaints_handler,
+    list_pending_residents_handler,
+    approve_resident_handler,
+    reject_resident_handler,
 )
 from app.middleware.auth import admin_required
 from app.models.complaint import Complaint, ComplaintPriority, ComplaintStatus
+from app.models.category import Category
+from app.models.user import User
 from app.services.complaint_service import get_all_complaints, _complaint_response
 from app.extensions import db
+from sqlalchemy.orm import aliased
 
 admin_ns = Namespace(
     name="admin",
@@ -103,6 +111,8 @@ class AdminStaffListResource(Resource):
     @admin_ns.doc(
         security="Bearer",
         summary="List active staff members",
+        description="Optionally filter by trade using the ?trade= query param (e.g. /admin/staff?trade=Electrical).",
+        params={"trade": "Filter staff by trade (e.g. Plumbing, Electrical, Carpentry, Janitorial, Security)"},
     )
     @admin_ns.response(200, "Success")
     def get(self):
@@ -140,8 +150,25 @@ class AdminStaffResource(Resource):
         return remove_staff_handler(staff_id)
 
 
+category_status_model = admin_ns.model(
+    "CategoryStatusRequest",
+    {
+        "is_active": fields.Boolean(required=True, example=False),
+    },
+)
+
+
 @admin_ns.route("/categories")
 class AdminCategoryResource(Resource):
+
+    @admin_required
+    @admin_ns.doc(
+        security="Bearer",
+        summary="List all categories (active and inactive)",
+    )
+    @admin_ns.response(200, "Success")
+    def get(self):
+        return list_all_categories_handler()
 
     @admin_required
     @admin_ns.doc(
@@ -153,6 +180,21 @@ class AdminCategoryResource(Resource):
     @admin_ns.response(409, "Already exists")
     def post(self):
         return create_category_handler()
+
+
+@admin_ns.route("/categories/<int:category_id>/status")
+class AdminCategoryStatusResource(Resource):
+
+    @admin_required
+    @admin_ns.doc(
+        security="Bearer",
+        summary="Activate or deactivate a category",
+    )
+    @admin_ns.expect(category_status_model, validate=True)
+    @admin_ns.response(200, "Updated")
+    @admin_ns.response(404, "Not found")
+    def put(self, category_id):
+        return update_category_status_handler(category_id)
 
 
 @admin_ns.route("/complaints")
@@ -196,11 +238,25 @@ class AdminComplaintListResource(Resource):
             except KeyError:
                 pass
         if search:
+            # Also match on resident name/flat, assigned staff name, and
+            # category name - not just the ticket's own title/code.
             search_term = f"%{search}%"
-            query = query.filter(
-                db.or_(
-                    Complaint.title.ilike(search_term),
-                    Complaint.complaint_code.ilike(search_term),
+            Resident = aliased(User)
+            Staff = aliased(User)
+            query = (
+                query
+                .join(Resident, Complaint.resident_id == Resident.id)
+                .outerjoin(Staff, Complaint.assigned_staff_id == Staff.id)
+                .outerjoin(Category, Complaint.category_id == Category.id)
+                .filter(
+                    db.or_(
+                        Complaint.title.ilike(search_term),
+                        Complaint.complaint_code.ilike(search_term),
+                        Resident.name.ilike(search_term),
+                        Resident.flat_number.ilike(search_term),
+                        Staff.name.ilike(search_term),
+                        Category.name.ilike(search_term),
+                    )
                 )
             )
         
@@ -219,3 +275,47 @@ class AdminComplaintListResource(Resource):
                 "has_prev": pagination.has_prev,
             }
         }, 200
+
+
+@admin_ns.route("/residents/pending")
+class AdminPendingResidentsResource(Resource):
+
+    @admin_required
+    @admin_ns.doc(
+        security="Bearer",
+        summary="List residents pending approval",
+        description="Residents who registered but have not yet been approved by an admin.",
+    )
+    @admin_ns.response(200, "Success")
+    def get(self):
+        return list_pending_residents_handler()
+
+
+@admin_ns.route("/residents/<int:resident_id>/approve")
+class AdminApproveResidentResource(Resource):
+
+    @admin_required
+    @admin_ns.doc(
+        security="Bearer",
+        summary="Approve a pending resident registration",
+    )
+    @admin_ns.response(200, "Resident approved")
+    @admin_ns.response(404, "Not found")
+    @admin_ns.response(409, "Already approved")
+    def put(self, resident_id):
+        return approve_resident_handler(resident_id)
+
+
+@admin_ns.route("/residents/<int:resident_id>/reject")
+class AdminRejectResidentResource(Resource):
+
+    @admin_required
+    @admin_ns.doc(
+        security="Bearer",
+        summary="Reject (and remove) a pending resident registration",
+    )
+    @admin_ns.response(200, "Registration rejected")
+    @admin_ns.response(404, "Not found")
+    @admin_ns.response(409, "Already approved")
+    def delete(self, resident_id):
+        return reject_resident_handler(resident_id)

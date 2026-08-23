@@ -253,7 +253,6 @@ def get_reports():
 def _extract_trade(member: User) -> str:
     """
     Derive trade from user record.
-    #i added it: tries to get trade from building field.
     """
     if member.building:
         return member.building
@@ -261,13 +260,14 @@ def _extract_trade(member: User) -> str:
 
 
 def list_staff():
-    # #i added it: include trade and username fields in staff listing
-    staff_members = (
-        User.query
-        .filter_by(role=UserRole.STAFF, is_active=True)
-        .order_by(User.name.asc())
-        .all()
-    )
+    trade = request.args.get("trade", type=str)
+
+    query = User.query.filter_by(role=UserRole.STAFF, is_active=True)
+
+    if trade:
+        query = query.filter(User.building == trade)
+
+    staff_members = query.order_by(User.name.asc()).all()
 
     return {
         "success": True,
@@ -299,7 +299,6 @@ def create_staff(json_data: dict) -> tuple[dict[str, Any], int]:
     """
     Create a new maintenance staff account.
     Only accessible by administrators.
-    #i added it: this function handles staff creation with proper validation.
     """
     if not json_data:
         return {"success": False, "message": "Request body is required."}, 400
@@ -320,9 +319,7 @@ def create_staff(json_data: dict) -> tuple[dict[str, Any], int]:
         return {"success": False, "message": "Valid email is required."}, 400
 
     if not mobile_number:
-        # #i added it: generate a unique mobile number for staff accounts
-        # Staff accounts don't need a real mobile number for login purposes;
-        # we generate a unique placeholder to avoid unique constraint conflicts.
+
         existing_mobile = True
         counter = 0
         while existing_mobile:
@@ -374,9 +371,6 @@ def create_staff(json_data: dict) -> tuple[dict[str, Any], int]:
         is_active=True,
     )
 
-    # #i added it: store trade in building field for display purposes
-    # This is a workaround since the User model does not have a dedicated trade column.
-    # In production, a separate staff_profile table would be used.
 
     try:
         db.session.add(new_staff)
@@ -385,7 +379,6 @@ def create_staff(json_data: dict) -> tuple[dict[str, Any], int]:
         db.session.rollback()
         return {"success": False, "message": "Unable to create staff account."}, 500
 
-    # #i added it: create a notification for the new staff member
     create_notification(
         user_id=new_staff.id,
         complaint_id=None,
@@ -413,7 +406,6 @@ def remove_staff(staff_id: int, admin_id: int) -> tuple[dict[str, Any], int]:
     """
     Deactivate a staff account by setting is_active to False.
     Admin cannot deactivate their own account.
-    #i added it: proper staff removal with safety checks.
     """
     if admin_id == staff_id:
         return {"success": False, "message": "You cannot deactivate your own account."}, 403
@@ -490,3 +482,152 @@ def create_category():
         "message": "Category created successfully.",
         "category": category.to_dict(),
     }, 201
+
+
+def list_all_categories():
+    """
+    All categories (active and inactive) for the admin management view.
+    The public /categories endpoint only returns active ones.
+    """
+    categories = Category.query.order_by(Category.name.asc()).all()
+
+    return {
+        "success": True,
+        "categories": [category.to_dict() for category in categories],
+    }, 200
+
+
+def set_category_status(category_id: int, is_active: bool):
+    category = Category.query.get(category_id)
+
+    if not category:
+        return {
+            "success": False,
+            "message": "Category not found.",
+        }, 404
+
+    category.is_active = is_active
+
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return {
+            "success": False,
+            "message": "Unable to update category.",
+        }, 500
+
+    return {
+        "success": True,
+        "message": f"Category {'activated' if is_active else 'deactivated'} successfully.",
+        "category": category.to_dict(),
+    }, 200
+
+
+def _resident_summary(resident: User) -> dict:
+    return {
+        "id": resident.id,
+        "name": resident.name,
+        "email": resident.email,
+        "mobile_number": resident.mobile_number,
+        "flat_number": resident.flat_number,
+        "building": resident.building,
+        "is_active": resident.is_active,
+        "created_at": (
+            resident.created_at.isoformat()
+            if resident.created_at
+            else None
+        ),
+    }
+
+
+def list_pending_residents():
+    """
+    Residents who have registered but not yet been approved by an admin.
+    """
+    pending = (
+        User.query
+        .filter_by(role=UserRole.RESIDENT, is_active=False)
+        .order_by(User.created_at.asc())
+        .all()
+    )
+
+    return {
+        "success": True,
+        "residents": [_resident_summary(r) for r in pending],
+    }, 200
+
+
+def approve_resident(resident_id: int):
+    resident = User.query.filter_by(
+        id=resident_id,
+        role=UserRole.RESIDENT,
+    ).first()
+
+    if not resident:
+        return {
+            "success": False,
+            "message": "Resident not found.",
+        }, 404
+
+    if resident.is_active:
+        return {
+            "success": False,
+            "message": "This account is already approved.",
+        }, 409
+
+    resident.is_active = True
+    db.session.commit()
+
+    create_notification(
+        user_id=resident.id,
+        complaint_id=None,
+        title="Account Approved",
+        message=(
+            "Your resident account has been approved. You can now log "
+            "in and start raising complaints."
+        ),
+        notification_type="ACCOUNT_APPROVED",
+    )
+    db.session.commit()
+
+    return {
+        "success": True,
+        "message": "Resident approved successfully.",
+        "resident": _resident_summary(resident),
+    }, 200
+
+
+def reject_resident(resident_id: int):
+    """
+    Rejects (deletes) a pending resident registration. Only allowed while
+    the account is still pending - once approved, use staff-style
+    deactivation instead of deleting real account history.
+    """
+    resident = User.query.filter_by(
+        id=resident_id,
+        role=UserRole.RESIDENT,
+    ).first()
+
+    if not resident:
+        return {
+            "success": False,
+            "message": "Resident not found.",
+        }, 404
+
+    if resident.is_active:
+        return {
+            "success": False,
+            "message": (
+                "This account is already approved and active - it can't "
+                "be rejected, only deactivated by other means."
+            ),
+        }, 409
+
+    db.session.delete(resident)
+    db.session.commit()
+
+    return {
+        "success": True,
+        "message": "Registration rejected and removed.",
+    }, 200

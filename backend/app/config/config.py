@@ -7,7 +7,7 @@ BASE_DIR = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "..")
 )
 
-
+# Configuration class for the Flask application.
 class Config:
     # Security
     SECRET_KEY = os.getenv("SECRET_KEY", "change-this-secret-key")

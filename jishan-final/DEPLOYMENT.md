@@ -32,6 +32,10 @@ Render Free blocks outbound SMTP ports. Password recovery therefore uses
 Brevo's HTTPS API. The optional `MAIL_*` values are intended only for local or
 other hosting environments where SMTP traffic is permitted.
 
+Recovery sends a six-digit verification code that expires after 10 minutes,
+allows five failed attempts and works only once. Requesting a code never changes
+the current password; the password changes only after successful verification.
+
 ## Local verification
 
 From the repository root:

@@ -1,5 +1,6 @@
+from datetime import datetime, timedelta, timezone
+from html import escape
 import secrets
-import string
 
 from marshmallow import ValidationError
 from flask import current_app, request
@@ -14,6 +15,7 @@ from werkzeug.security import (
 )
 
 from app.extensions import db
+from app.models.password_reset_otp import PasswordResetOtp
 from app.models.user import User, UserRole
 from app.services.notification_service import create_notification
 from app.services.email_service import send_email
@@ -21,12 +23,17 @@ from app.schemas.auth_schema import (
     ForgotPasswordSchema,
     RegisterSchema,
     LoginSchema,
+    VerifyResetOtpSchema,
 )
 
 
 register_schema = RegisterSchema()
 login_schema = LoginSchema()
 forgot_password_schema = ForgotPasswordSchema()
+verify_reset_otp_schema = VerifyResetOtpSchema()
+
+OTP_TTL_MINUTES = 10
+OTP_MAX_ATTEMPTS = 5
 
 
 def _user_response(user: User):
@@ -224,31 +231,19 @@ def profile():
     }, 200
 
 
-def _generate_temp_password(length: int = 12) -> str:
-    lower, upper, digits, special = (
-        string.ascii_lowercase,
-        string.ascii_uppercase,
-        string.digits,
-        "!@#$%&*?",
-    )
+def _utcnow_naive() -> datetime:
+    """Return UTC without tzinfo for consistent SQLAlchemy DateTime storage."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
-    chars = [
-        secrets.choice(lower),
-        secrets.choice(upper),
-        secrets.choice(digits),
-        secrets.choice(special),
-    ]
-    pool = lower + upper + digits + special
-    chars += [secrets.choice(pool) for _ in range(length - len(chars))]
-    secrets.SystemRandom().shuffle(chars)
-    return "".join(chars)
+
+def _generate_otp() -> str:
+    """Generate a cryptographically secure six-digit recovery code."""
+    return str(secrets.randbelow(900000) + 100000)
 
 
 def forgot_password():
     """
-    Accepts an email, generates a new temporary password, emails it via
-    Brevo HTTPS (or the optional SMTP fallback), and
-    only then overwrites the account's password.
+    Email a short-lived verification code without changing the password.
 
     The response is intentionally generic and identical whether or not
     the email is registered, so the endpoint can't be used to check
@@ -276,8 +271,8 @@ def forgot_password():
     generic_response = {
         "success": True,
         "message": (
-            "If an account with that email exists, a new password has "
-            "been emailed to it."
+            "If an account with that email exists, a verification code "
+            "has been emailed to it."
         ),
     }, 200
 
@@ -287,22 +282,24 @@ def forgot_password():
         )
         return generic_response
 
-    temp_password = _generate_temp_password()
+    otp = _generate_otp()
+    safe_name = escape(user.name)
 
-    subject = "Smart Society - Your Password Has Been Reset"
+    subject = "Smart Society - Your Verification Code"
     html_body = f"""
         <!doctype html>
         <html>
         <body style="margin:0;padding:24px;background:#f4f5f7;font-family:Arial,sans-serif;color:#172033;">
           <div style="max-width:600px;margin:24px auto;background:#ffffff;padding:36px;border-radius:12px;">
             <h2 style="margin-top:0;">Smart Society password recovery</h2>
-            <p>Hi {user.name},</p>
+            <p>Hi {safe_name},</p>
             <p>We received a request to reset your Smart Society account password.</p>
-            <p>Use this temporary password to sign in:</p>
-            <div style="text-align:center;margin:28px 0;padding:18px;background:#f4f5f7;border-radius:8px;font-size:24px;font-weight:bold;letter-spacing:3px;">
-              {temp_password}
+            <p>Enter this verification code on the recovery page:</p>
+            <div style="text-align:center;margin:28px 0;padding:18px;background:#f4f5f7;border-radius:8px;font-size:32px;font-weight:bold;letter-spacing:8px;">
+              {otp}
             </div>
-            <p>For your security, do not share this password. If you did not request it, contact an administrator immediately.</p>
+            <p>This code expires in {OTP_TTL_MINUTES} minutes and can be used only once. For your security, do not share it.</p>
+            <p>If you did not request this change, you can safely ignore this email. Your password has not been changed.</p>
             <hr style="border:0;border-top:1px solid #e5e7eb;margin:28px 0;">
             <p style="font-size:13px;color:#64748b;">This is an automated message from Smart Society.</p>
           </div>
@@ -311,21 +308,29 @@ def forgot_password():
     """
     text_body = (
         f"Hi {user.name},\n\n"
-        f"Your new temporary Smart Society password is: {temp_password}\n\n"
-        "Please log in with this password. If you did not request this, "
-        "contact an administrator immediately."
+        f"Your Smart Society verification code is: {otp}\n\n"
+        f"This code expires in {OTP_TTL_MINUTES} minutes and can be used "
+        "only once. If you did not request this change, ignore this email. "
+        "Your password has not been changed."
     )
 
     if not send_email(user.email, subject, html_body, text_body):
         return {
             "success": False,
             "message": (
-                "We couldn't send the password reset email right now. "
+                "We couldn't send the verification email right now. "
                 "Please try again later or contact an administrator."
             ),
         }, 502
 
-    user.password_hash = generate_password_hash(temp_password)
+    reset = PasswordResetOtp.query.filter_by(user_id=user.id).first()
+    if reset is None:
+        reset = PasswordResetOtp(user_id=user.id)
+        db.session.add(reset)
+
+    reset.code_hash = generate_password_hash(otp)
+    reset.expires_at = _utcnow_naive() + timedelta(minutes=OTP_TTL_MINUTES)
+    reset.attempts = 0
 
     try:
         db.session.commit()
@@ -333,8 +338,72 @@ def forgot_password():
         db.session.rollback()
         return {
             "success": False,
-            "message": "Unable to reset password. Please try again.",
+            "message": "Unable to start password recovery. Please try again.",
         }, 500
 
-    current_app.logger.info("Password reset email sent to user_id=%s", user.id)
+    current_app.logger.info(
+        "Password reset verification email sent to user_id=%s", user.id
+    )
     return generic_response
+
+
+def verify_password_reset_otp():
+    """Validate a recovery code and replace the password exactly once."""
+    json_data = request.get_json(silent=True)
+
+    if not json_data:
+        return {
+            "success": False,
+            "message": "Request body is required.",
+        }, 400
+
+    try:
+        data = verify_reset_otp_schema.load(json_data)
+    except ValidationError as err:
+        return {
+            "success": False,
+            "errors": err.messages,
+        }, 400
+
+    failure = {
+        "success": False,
+        "message": (
+            "The verification code is invalid or expired. Request a new "
+            "code and try again."
+        ),
+    }, 400
+
+    user = User.query.filter_by(email=data["email"]).first()
+    if not user:
+        return failure
+
+    reset = PasswordResetOtp.query.filter_by(user_id=user.id).first()
+    if not reset:
+        return failure
+
+    if reset.expires_at <= _utcnow_naive():
+        db.session.delete(reset)
+        db.session.commit()
+        return failure
+
+    if reset.attempts >= OTP_MAX_ATTEMPTS:
+        db.session.delete(reset)
+        db.session.commit()
+        return failure
+
+    if not check_password_hash(reset.code_hash, data["otp"]):
+        reset.attempts += 1
+        if reset.attempts >= OTP_MAX_ATTEMPTS:
+            db.session.delete(reset)
+        db.session.commit()
+        return failure
+
+    user.password_hash = generate_password_hash(data["password"])
+    db.session.delete(reset)
+    db.session.commit()
+
+    current_app.logger.info("Password reset completed for user_id=%s", user.id)
+    return {
+        "success": True,
+        "message": "Password reset successful. You can now sign in.",
+    }, 200

@@ -1,6 +1,7 @@
 import io
 import os
 import re
+from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 
 import pytest
@@ -20,6 +21,7 @@ from app.models import (
     ComplaintUpdate,
     Feedback,
     Notification,
+    PasswordResetOtp,
     User,
 )
 
@@ -140,6 +142,18 @@ def test_password_recovery_email_edge_cases(app, client):
         )
         assert failed.status_code == 502
         _login(client, "admin@example.com", "TestAdmin123!")
+        with app.app_context():
+            assert PasswordResetOtp.query.count() == 0
+
+    malformed_verification = client.post(
+        "/auth/verify-reset-otp",
+        json={
+            "email": "admin@example.com",
+            "otp": "12345",
+            "password": "weak",
+        },
+    )
+    assert malformed_verification.status_code == 400
 
     delivered = {}
 
@@ -160,19 +174,109 @@ def test_password_recovery_email_edge_cases(app, client):
         assert accepted.status_code == 200
 
     assert delivered["to_email"] == "admin@example.com"
-    assert "Password Has Been Reset" in delivered["subject"]
-    temporary_password = re.search(
-        r"password is: (\S+)",
+    assert "Verification Code" in delivered["subject"]
+    otp = re.search(
+        r"verification code is: (\d{6})",
         delivered["text_body"],
     ).group(1)
+    _login(client, "admin@example.com", "TestAdmin123!")
+
+    wrong_code = client.post(
+        "/auth/verify-reset-otp",
+        json={
+            "email": "admin@example.com",
+            "otp": "000000",
+            "password": "RecoveredAdmin123!",
+        },
+    )
+    assert wrong_code.status_code == 400
+    _login(client, "admin@example.com", "TestAdmin123!")
+
+    verified = client.post(
+        "/auth/verify-reset-otp",
+        json={
+            "email": "admin@example.com",
+            "otp": otp,
+            "password": "RecoveredAdmin123!",
+        },
+    )
+    assert verified.status_code == 200
     assert client.post(
         "/auth/login",
         json={"email": "admin@example.com", "password": "TestAdmin123!"},
     ).status_code == 401
-    _login(client, "admin@example.com", temporary_password)
+    _login(client, "admin@example.com", "RecoveredAdmin123!")
+    assert client.post(
+        "/auth/verify-reset-otp",
+        json={
+            "email": "admin@example.com",
+            "otp": otp,
+            "password": "AnotherAdmin123!",
+        },
+    ).status_code == 400
 
     with app.app_context():
         _sync_admin_credentials()
+
+    delivered.clear()
+    with patch("app.services.auth_service.send_email", side_effect=capture_email):
+        assert client.post(
+            "/auth/forgot-password",
+            json={"email": "admin@example.com"},
+        ).status_code == 200
+    expired_otp = re.search(
+        r"verification code is: (\d{6})",
+        delivered["text_body"],
+    ).group(1)
+    with app.app_context():
+        reset = PasswordResetOtp.query.one()
+        reset.expires_at = (
+            datetime.now(timezone.utc).replace(tzinfo=None)
+            - timedelta(seconds=1)
+        )
+        from app.extensions import db
+
+        db.session.commit()
+    assert client.post(
+        "/auth/verify-reset-otp",
+        json={
+            "email": "admin@example.com",
+            "otp": expired_otp,
+            "password": "ExpiredAdmin123!",
+        },
+    ).status_code == 400
+    _login(client, "admin@example.com", "TestAdmin123!")
+
+    delivered.clear()
+    with patch("app.services.auth_service.send_email", side_effect=capture_email):
+        assert client.post(
+            "/auth/forgot-password",
+            json={"email": "admin@example.com"},
+        ).status_code == 200
+    locked_otp = re.search(
+        r"verification code is: (\d{6})",
+        delivered["text_body"],
+    ).group(1)
+    for _ in range(5):
+        assert client.post(
+            "/auth/verify-reset-otp",
+            json={
+                "email": "admin@example.com",
+                "otp": "000000",
+                "password": "LockedAdmin123!",
+            },
+        ).status_code == 400
+    assert client.post(
+        "/auth/verify-reset-otp",
+        json={
+            "email": "admin@example.com",
+            "otp": locked_otp,
+            "password": "LockedAdmin123!",
+        },
+    ).status_code == 400
+    with app.app_context():
+        assert PasswordResetOtp.query.count() == 0
+    _login(client, "admin@example.com", "TestAdmin123!")
 
 
 def test_smtp_url_is_normalized_before_delivery(app):
@@ -265,10 +369,17 @@ def test_public_app_surfaces(client):
     assert client.get("/health").json == {"status": "ok"}
     assert b"Access Portal" in client.get("/").data
     assert client.get("/assets/css/styles.css").status_code == 200
+    recovery_page = client.get("/static/forgot-password.html")
+    assert recovery_page.status_code == 200
+    assert b"Send Verification Code" in recovery_page.data
+    assert b"/auth/verify-reset-otp" in recovery_page.data
     assert b"Facility Operations Console" in client.get("/static/dashboard-admin.html").data
     assert b"Resident Portal" in client.get("/static/dashboard-resident.html").data
     assert b"Technician Workspace" in client.get("/static/dashboard-staff.html").data
     assert client.get("/api-docs/").status_code == 200
+    swagger = client.get("/swagger.json")
+    assert swagger.status_code == 200
+    assert "/auth/verify-reset-otp" in swagger.json["paths"]
 
 
 def test_complete_complaint_workflow(client):

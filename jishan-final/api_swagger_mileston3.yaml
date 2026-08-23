@@ -300,9 +300,9 @@ paths:
             the request.
           schema:
             $ref: '#/definitions/ErrorResponse'
-      description: Accepts a registered email address and (stub) triggers the password-reset
-        flow. Always returns a generic success message to avoid leaking which emails
-        are registered.
+      description: Sends a six-digit, ten-minute password-reset verification code
+        when the email is registered. The current password remains unchanged and
+        unknown addresses receive the same generic response.
       operationId: post_forgot_password_resource
       parameters:
       - name: payload
@@ -310,6 +310,31 @@ paths:
         in: body
         schema:
           $ref: '#/definitions/ForgotPasswordRequest'
+      tags:
+      - auth
+  /auth/verify-reset-otp:
+    post:
+      responses:
+        '400':
+          description: Invalid, expired, or malformed verification code
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        '200':
+          description: Password reset successful
+        '500':
+          description: Internal Server Error - unexpected failure while processing
+            the request.
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      description: Verifies a recovery code and sets a strong new password. Codes
+        allow five failed attempts and can be used only once.
+      operationId: post_verify_reset_otp_resource
+      parameters:
+      - name: payload
+        required: true
+        in: body
+        schema:
+          $ref: '#/definitions/VerifyResetOtpRequest'
       tags:
       - auth
   /auth/login:
@@ -1305,6 +1330,22 @@ definitions:
       email:
         type: string
         example: thomas.reed@example.com
+    type: object
+  VerifyResetOtpRequest:
+    required:
+    - email
+    - otp
+    - password
+    properties:
+      email:
+        type: string
+        example: thomas.reed@example.com
+      otp:
+        type: string
+        example: '483921'
+      password:
+        type: string
+        example: NewPassword@123
     type: object
   CreateComplaintRequest:
     required:

@@ -116,11 +116,12 @@ Brevo over HTTPS.
 
 ## Password recovery safety
 
-The endpoint always returns a generic success response for unknown addresses,
-preventing account enumeration. For a registered account it generates a strong
-temporary password and asks Brevo to deliver it. The stored password changes
-only after Brevo accepts the email request. A timeout or provider rejection
-returns a safe error and leaves the existing password usable.
+The request endpoint always returns a generic success response for unknown
+addresses, preventing account enumeration. For a registered account it asks
+Brevo to deliver a cryptographically generated six-digit verification code.
+Codes expire after 10 minutes, allow five failed attempts and work only once.
+The stored password is changed only after the code is successfully verified. A
+provider rejection returns a safe error and leaves the existing password usable.
 
 ## Tests
 
@@ -131,9 +132,10 @@ python -m pytest -q -p no:cacheprovider tests\test_deployment_smoke.py
 ```
 
 The suite covers seed idempotence, administrator rotation, Brevo and SMTP
-delivery behavior, recovery failure safety, login edge cases, authorization,
-registration and approval, staff creation, attachments, complaint assignment,
-status transitions, timelines and resident feedback.
+delivery behavior, OTP expiry, attempt limits, one-time use, recovery failure
+safety, login edge cases, authorization, registration and approval, staff
+creation, attachments, complaint assignment, status transitions, timelines and
+resident feedback.
 
 ## Free-hosting notes
 

@@ -8,6 +8,26 @@ from marshmallow import (
 )
 
 
+def _validate_password_strength(value):
+    if not any(c.isupper() for c in value):
+        raise ValidationError(
+            "Password must contain at least one uppercase letter."
+        )
+    if not any(c.islower() for c in value):
+        raise ValidationError(
+            "Password must contain at least one lowercase letter."
+        )
+    if not any(c.isdigit() for c in value):
+        raise ValidationError(
+            "Password must contain at least one number."
+        )
+    special = "!@#$%^&*()-_=+[]{}|;:'\",.<>?/`~"
+    if not any(c in special for c in value):
+        raise ValidationError(
+            "Password must contain at least one special character."
+        )
+
+
 class RegisterSchema(Schema):
     name = fields.String(
         required=True,
@@ -89,32 +109,7 @@ class RegisterSchema(Schema):
 
     @validates("password")
     def validate_password(self, value, **kwargs):
-        if len(value) < 8:
-            raise ValidationError(
-                "Password must be at least 8 characters."
-            )
-
-        if not any(c.isupper() for c in value):
-            raise ValidationError(
-                "Password must contain at least one uppercase letter."
-            )
-
-        if not any(c.islower() for c in value):
-            raise ValidationError(
-                "Password must contain at least one lowercase letter."
-            )
-
-        if not any(c.isdigit() for c in value):
-            raise ValidationError(
-                "Password must contain at least one number."
-            )
-
-        special = "!@#$%^&*()-_=+[]{}|;:'\",.<>?/`~"
-
-        if not any(c in special for c in value):
-            raise ValidationError(
-                "Password must contain at least one special character."
-            )
+        _validate_password_strength(value)
 
     @validates_schema
     def normalize(self, data, **kwargs):
@@ -154,3 +149,35 @@ class LoginSchema(Schema):
     @validates_schema
     def normalize(self, data, **kwargs):
         data["email"] = data["email"].strip().lower()
+
+
+class VerifyResetOtpSchema(Schema):
+    email = fields.Email(
+        required=True,
+        validate=validate.Length(max=120),
+    )
+    otp = fields.String(
+        required=True,
+        validate=validate.Regexp(
+            r"^\d{6}$",
+            error="Verification code must contain exactly six digits.",
+        ),
+    )
+    password = fields.String(
+        required=True,
+        load_only=True,
+        validate=validate.Length(
+            min=8,
+            max=128,
+            error="Password must be between 8 and 128 characters.",
+        ),
+    )
+
+    @validates("password")
+    def validate_password(self, value, **kwargs):
+        _validate_password_strength(value)
+
+    @validates_schema
+    def normalize(self, data, **kwargs):
+        data["email"] = data["email"].strip().lower()
+        data["otp"] = data["otp"].strip()

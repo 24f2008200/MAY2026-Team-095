@@ -145,8 +145,9 @@ paths:
           description: Validation error
         '200':
           description: Request accepted
-      description: Accepts an email and (stub) triggers a password reset. Always returns
-        a generic success response.
+      description: Sends a six-digit, ten-minute password-reset verification code
+        when the email is registered. The existing password is not changed, and
+        unknown addresses receive the same generic response.
       operationId: post_forgot_password_resource
       parameters:
       - name: payload
@@ -154,6 +155,24 @@ paths:
         in: body
         schema:
           $ref: '#/definitions/ForgotPasswordRequest'
+      tags:
+      - auth
+  /auth/verify-reset-otp:
+    post:
+      responses:
+        '400':
+          description: Invalid, expired, or malformed verification code
+        '200':
+          description: Password reset successful
+      description: Verifies a recovery code and sets a strong new password. Codes
+        allow five failed attempts and can be used only once.
+      operationId: post_verify_reset_otp_resource
+      parameters:
+      - name: payload
+        required: true
+        in: body
+        schema:
+          $ref: '#/definitions/VerifyResetOtpRequest'
       tags:
       - auth
   /auth/login:
@@ -736,6 +755,22 @@ definitions:
       email:
         type: string
         example: thomas.reed@example.com
+    type: object
+  VerifyResetOtpRequest:
+    required:
+    - email
+    - otp
+    - password
+    properties:
+      email:
+        type: string
+        example: thomas.reed@example.com
+      otp:
+        type: string
+        example: '483921'
+      password:
+        type: string
+        example: NewPassword@123
     type: object
   CreateComplaintRequest:
     required:

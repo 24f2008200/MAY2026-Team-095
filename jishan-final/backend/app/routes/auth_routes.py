@@ -6,6 +6,7 @@ from app.controllers.auth_controller import (
     login_user,
     get_profile,
     forgot_password_handler,
+    verify_password_reset_otp_handler,
 )
 
 auth_ns = Namespace(
@@ -30,6 +31,15 @@ forgot_password_model = auth_ns.model(
     "ForgotPasswordRequest",
     {
         "email": fields.String(required=True, example="thomas.reed@example.com"),
+    },
+)
+
+verify_reset_otp_model = auth_ns.model(
+    "VerifyResetOtpRequest",
+    {
+        "email": fields.String(required=True, example="thomas.reed@example.com"),
+        "otp": fields.String(required=True, example="483921"),
+        "password": fields.String(required=True, example="NewPassword@123"),
     },
 )
 
@@ -79,8 +89,8 @@ class ForgotPasswordResource(Resource):
     @auth_ns.doc(
         summary="Forgot password",
         description=(
-            "Emails a one-time generated password when the account exists. "
-            "The account password changes only after SMTP accepts the message. "
+            "Emails a six-digit, ten-minute verification code when the account "
+            "exists. No password changes during this request. "
             "Unknown accounts receive the same generic response."
         ),
     )
@@ -89,6 +99,24 @@ class ForgotPasswordResource(Resource):
     @auth_ns.response(400, "Validation error")
     def post(self):
         return forgot_password_handler()
+
+
+@auth_ns.route("/verify-reset-otp")
+class VerifyResetOtpResource(Resource):
+
+    @auth_ns.doc(
+        summary="Verify password-reset OTP",
+        description=(
+            "Validates a six-digit recovery code and replaces the account "
+            "password. Codes expire after ten minutes, allow at most five "
+            "failed attempts, and can be used only once."
+        ),
+    )
+    @auth_ns.expect(verify_reset_otp_model, validate=True)
+    @auth_ns.response(200, "Password reset successful")
+    @auth_ns.response(400, "Invalid, expired, or malformed code")
+    def post(self):
+        return verify_password_reset_otp_handler()
 
 
 @auth_ns.route("/profile")

@@ -19,6 +19,7 @@ from app.models import (
     Attachment,
     Notification,
     Feedback,
+    PasswordResetOtp,
 )
 
 # Routes

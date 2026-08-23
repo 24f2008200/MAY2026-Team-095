@@ -5,6 +5,7 @@ from app.services.auth_service import (
     login,
     profile,
     register,
+    verify_password_reset_otp,
 )
 
 
@@ -34,3 +35,8 @@ def forgot_password_handler() -> tuple[dict[str, Any], int]:
     Accept a forgot-password request for the given email.
     """
     return forgot_password()
+
+
+def verify_password_reset_otp_handler() -> tuple[dict[str, Any], int]:
+    """Verify a recovery OTP and set the requested new password."""
+    return verify_password_reset_otp()

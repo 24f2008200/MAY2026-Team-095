@@ -10,6 +10,7 @@ from .complaint_update import ComplaintUpdate
 from .attachment import Attachment
 from .notification import Notification
 from .feedback import Feedback
+from .password_reset_otp import PasswordResetOtp
 
 __all__ = [
     "User",
@@ -28,4 +29,6 @@ __all__ = [
     "Notification",
 
     "Feedback",
+
+    "PasswordResetOtp",
 ]
